@@ -1,0 +1,42 @@
+[package]
+name = "llm-link"
+version = "0.1.0"
+edition = "2021"
+authors = ["LLM Link Contributors"]
+description = "A configurable LLM proxy service supporting Ollama, OpenAI, and Anthropic APIs"
+license = "MIT"
+
+[dependencies]
+# Web framework
+axum = "0.7"
+tokio = { version = "1.0", features = ["full"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+
+# LLM connector - temporarily using reqwest directly due to compilation issues in llm-connector
+# llm-connector = { version = "0.3", features = ["streaming", "yaml"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+serde_yaml = "0.9"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# HTTP client (already included in llm-connector but explicit for clarity)
+reqwest = { version = "0.11", features = ["json", "stream"] }
+
+# Utilities
+clap = { version = "4.0", features = ["derive"] }
+uuid = { version = "1.0", features = ["v4"] }
+chrono = { version = "0.4", features = ["serde"] }
+futures = "0.3"
+
+[dev-dependencies]
+tempfile = "3.0"
