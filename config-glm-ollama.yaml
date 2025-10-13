@@ -1,0 +1,54 @@
+# LLM Link Configuration - GLM Backend with Ollama Protocol
+#
+# This configuration allows applications expecting Ollama protocol
+# to work with GLM (智谱AI) as the backend LLM provider.
+
+# Server configuration
+server:
+  host: "127.0.0.1"
+  port: 8080
+  log_level: "info"
+
+# LLM backend configuration - Use GLM (智谱AI) as backend
+llm_backend:
+  type: "Aliyun"  # GLM API is implemented through Aliyun backend type
+  api_key: "your-glm-api-key-here"  # Get this from https://open.bigmodel.cn/
+  model: "glm-4"  # Available models: glm-4, glm-4-plus, glm-3-turbo, glm-4-flash
+
+# API endpoint configurations
+# Enable only Ollama protocol interface
+apis:
+  # Ollama-compatible API (for applications expecting Ollama)
+  ollama:
+    enabled: true
+    path: "/ollama"
+    # Applications will use these endpoints:
+    # - POST http://localhost:8080/ollama/api/generate
+    # - POST http://localhost:8080/ollama/api/chat
+    # - GET  http://localhost:8080/ollama/api/tags
+    # - GET  http://localhost:8080/ollama/api/show/:model
+
+  # Disable other APIs if you only need Ollama protocol
+  openai:
+    enabled: false
+    path: "/v1"
+
+  anthropic:
+    enabled: false
+    path: "/anthropic"
+
+# Example usage:
+# 1. Replace "your-glm-api-key-here" with your actual GLM API key
+# 2. Start the service: `./target/release/llm-link -c config-glm-ollama.yaml`
+# 3. Your applications can now use Ollama protocol at http://localhost:8080/ollama
+# 4. All requests will be translated from Ollama format to GLM API format
+
+# Test with curl:
+# curl -X POST http://localhost:8080/ollama/api/chat \
+#   -H "Content-Type: application/json" \
+#   -d '{
+#     "model": "glm-4",
+#     "messages": [
+#       {"role": "user", "content": "Hello, world!"}
+#     ]
+#   }'

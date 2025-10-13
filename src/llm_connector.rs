@@ -271,13 +271,64 @@ impl LlmClient {
 
     async fn aliyun_chat_completion(
         &self,
-        _api_key: &str,
-        _model: &str,
-        _messages: Vec<LlmMessage>,
+        api_key: &str,
+        model: &str,
+        messages: Vec<LlmMessage>,
     ) -> Result<LlmResponse> {
-        // Aliyun implementation would go here
-        // For now, return an error
-        Err(anyhow!("Aliyun backend not implemented yet"))
+        // GLM (智谱AI) API - uses OpenAI-compatible format
+        let url = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
+
+        let glm_messages: Vec<Value> = messages
+            .into_iter()
+            .map(|msg| {
+                let role = match msg.role {
+                    LlmRole::System => "system",
+                    LlmRole::User => "user",
+                    LlmRole::Assistant => "assistant",
+                };
+                serde_json::json!({
+                    "role": role,
+                    "content": msg.content
+                })
+            })
+            .collect();
+
+        let request_body = serde_json::json!({
+            "model": model,
+            "messages": glm_messages
+        });
+
+        let response = self
+            .client
+            .post(url)
+            .header("Authorization", format!("Bearer {}", api_key))
+            .header("Content-Type", "application/json")
+            .json(&request_body)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            return Err(anyhow!("GLM API error: {}", response.status()));
+        }
+
+        let response_json: Value = response.json().await?;
+        let content = response_json["choices"][0]["message"]["content"]
+            .as_str()
+            .ok_or_else(|| anyhow!("Missing content in GLM response"))?
+            .to_string();
+
+        let usage = response_json["usage"].clone();
+        let usage = LlmUsage {
+            prompt_tokens: usage["prompt_tokens"].as_u64().unwrap_or(0) as u32,
+            completion_tokens: usage["completion_tokens"].as_u64().unwrap_or(0) as u32,
+            total_tokens: usage["total_tokens"].as_u64().unwrap_or(0) as u32,
+        };
+
+        Ok(LlmResponse {
+            content,
+            model: response_json["model"].as_str().unwrap_or(model).to_string(),
+            usage,
+        })
     }
 
     pub async fn models(&self) -> Result<Vec<LlmModel>> {
@@ -304,8 +355,29 @@ impl LlmClient {
                 self.ollama_models(base_url.as_deref()).await
             }
             LlmBackendConfig::Aliyun { .. } => {
-                // Aliyun models would go here
-                Ok(vec![])
+                // GLM (智谱AI) models
+                Ok(vec![
+                    LlmModel {
+                        id: "glm-4".to_string(),
+                        created: Some(chrono::Utc::now().timestamp()),
+                        owned_by: Some("zhipuai".to_string()),
+                    },
+                    LlmModel {
+                        id: "glm-4-plus".to_string(),
+                        created: Some(chrono::Utc::now().timestamp()),
+                        owned_by: Some("zhipuai".to_string()),
+                    },
+                    LlmModel {
+                        id: "glm-3-turbo".to_string(),
+                        created: Some(chrono::Utc::now().timestamp()),
+                        owned_by: Some("zhipuai".to_string()),
+                    },
+                    LlmModel {
+                        id: "glm-4-flash".to_string(),
+                        created: Some(chrono::Utc::now().timestamp()),
+                        owned_by: Some("zhipuai".to_string()),
+                    },
+                ])
             }
         }
     }

@@ -3,8 +3,8 @@
 
 # Server configuration
 server:
-  host: "127.0.0.1"
-  port: 8080
+  host: "localhost"
+  port: 11434
   log_level: "info"
 
 # LLM backend configuration
@@ -12,8 +12,8 @@ server:
 llm_backend:
   # Option 1: OpenAI backend
   type: "OpenAI"
-  api_key: "your-openai-api-key-here"
-  base_url: "https://api.openai.com/v1"  # Optional, defaults to OpenAI official
+  api_key: "ak_11o3bI6O03mx2yS8jb2hD61q7DJ4d"
+  base_url: "https://api.openai.com/v1" # Optional, defaults to OpenAI official
   model: "gpt-3.5-turbo"
 
   # Option 2: Anthropic backend
@@ -48,7 +48,7 @@ apis:
   openai:
     enabled: true
     path: "/v1"
-    api_key_header: null  # Optional custom header name for API key
+    api_key_header: null # Optional custom header name for API key
     # This will be available at:
     # - POST /v1/chat/completions
     # - GET /v1/models
@@ -57,11 +57,10 @@ apis:
   anthropic:
     enabled: true
     path: "/anthropic"
-    api_key_header: null  # Optional custom header name for API key
+    api_key_header: null # Optional custom header name for API key
     # This will be available at:
     # - POST /anthropic/v1/messages
     # - GET /anthropic/v1/models
-
 # Example usage:
 # 1. Start the service: `cargo run -- -c llm-link.yaml`
 # 2. Or use environment variables:
