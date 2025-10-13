@@ -2,12 +2,34 @@
 
 A configurable LLM proxy service that provides unified access to multiple LLM providers through different API interfaces (Ollama, OpenAI-compatible, and Anthropic).
 
+## Architecture
+
+```
+┌─────────────────┐
+│   Ollama        │  ← Choose ONE backend
+│   OpenAI        │
+│   Anthropic     │
+│   Aliyun        │
+└─────────────────┘
+          │
+          ▼
+┌─────────────────┐
+│   LLM Link      │  ← Proxy Service
+└─────────────────┘
+          │
+    ┌─────┼─────┐
+    ▼     ▼     ▼
+┌─────┐ ┌─────┐ ┌─────┐
+│ /v1 │ │/oll │ │/anth│  ← Multiple API formats
+└─────┘ └─────┘ └─────┘
+```
+
 ## Features
 
-- **Multiple Backend Support**: Connect to OpenAI, Anthropic, Ollama, or Aliyun LLM services
-- **Multiple API Interfaces**: Expose Ollama, OpenAI-compatible, and Anthropic APIs simultaneously
+- **Single Backend, Multiple APIs**: Connect to ONE LLM provider (OpenAI, Anthropic, Ollama, or Aliyun) and expose it through multiple API formats simultaneously
+- **API Format Compatibility**: Support for OpenAI-compatible, Ollama-compatible, and Anthropic-compatible API interfaces
 - **Flexible Configuration**: YAML-based configuration with environment variable overrides
-- **Unified Interface**: Use any application that supports these API standards with your preferred LLM provider
+- **Unified Access**: Use any application that supports these API standards with your preferred LLM provider
 - **Built with Rust**: Fast, memory-efficient, and production-ready
 
 ## Quick Start
@@ -31,24 +53,26 @@ cp llm-link.yaml.example llm-link.yaml
 Edit `llm-link.yaml` to configure your backend and API preferences:
 
 ```yaml
-# Choose your LLM backend
+# Choose ONE LLM backend
 llm_backend:
-  type: "OpenAI"
+  type: "OpenAI"  # OR "Anthropic", "Ollama", "Aliyun"
   api_key: "your-openai-api-key-here"
   model: "gpt-3.5-turbo"
 
-# Enable API interfaces
+# Enable multiple API interfaces (all point to the same backend)
 apis:
   ollama:
     enabled: true
-    path: "/ollama"
+    path: "/ollama"      # Ollama-compatible API
   openai:
     enabled: true
-    path: "/v1"
+    path: "/v1"          # OpenAI-compatible API
   anthropic:
     enabled: true
-    path: "/anthropic"
+    path: "/anthropic"   # Anthropic-compatible API
 ```
+
+**Note**: All enabled API endpoints will proxy to the same backend provider configured above.
 
 ### Running the Service
 
@@ -155,21 +179,43 @@ apis:
 
 ## Usage Examples
 
-### Using with OpenAI-compatible clients
+### Example: Ollama Backend with Multiple API Formats
 
+Configure Ollama as the backend:
+
+```yaml
+llm_backend:
+  type: "Ollama"
+  base_url: "http://localhost:11434"
+  model: "llama2"
+
+apis:
+  ollama:
+    enabled: true
+    path: "/ollama"
+  openai:
+    enabled: true
+    path: "/v1"
+  anthropic:
+    enabled: true
+    path: "/anthropic"
+```
+
+Now all three API formats work with the same Ollama instance:
+
+#### Using with OpenAI-compatible clients
 ```bash
 curl -X POST http://localhost:8080/v1/chat/completions \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "gpt-3.5-turbo",
+    "model": "llama2",
     "messages": [
       {"role": "user", "content": "Hello, world!"}
     ]
   }'
 ```
 
-### Using with Ollama clients
-
+#### Using with Ollama clients
 ```bash
 curl -X POST http://localhost:8080/ollama/api/chat \
   -H "Content-Type: application/json" \
@@ -181,19 +227,20 @@ curl -X POST http://localhost:8080/ollama/api/chat \
   }'
 ```
 
-### Using with Anthropic clients
-
+#### Using with Anthropic clients
 ```bash
 curl -X POST http://localhost:8080/anthropic/v1/messages \
   -H "Content-Type: application/json" \
   -d '{
-    "model": "claude-3-sonnet-20240229",
+    "model": "llama2",
     "max_tokens": 1024,
     "messages": [
       {"role": "user", "content": "Hello, world!"}
     ]
   }'
 ```
+
+**Result**: All three requests use different API formats but are processed by the same Ollama backend!
 
 ## Environment Variables
 
