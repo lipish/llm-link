@@ -275,10 +275,10 @@ impl LlmClient {
         model: &str,
         messages: Vec<LlmMessage>,
     ) -> Result<LlmResponse> {
-        // GLM (智谱AI) API - uses OpenAI-compatible format
-        let url = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
+        // Aliyun Wanxiang API - uses OpenAI-compatible format with GLM models
+        let url = "https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions";
 
-        let glm_messages: Vec<Value> = messages
+        let aliyun_messages: Vec<Value> = messages
             .into_iter()
             .map(|msg| {
                 let role = match msg.role {
@@ -295,7 +295,7 @@ impl LlmClient {
 
         let request_body = serde_json::json!({
             "model": model,
-            "messages": glm_messages
+            "messages": aliyun_messages
         });
 
         let response = self
@@ -308,13 +308,13 @@ impl LlmClient {
             .await?;
 
         if !response.status().is_success() {
-            return Err(anyhow!("GLM API error: {}", response.status()));
+            return Err(anyhow!("Aliyun Wanxiang API error: {}", response.status()));
         }
 
         let response_json: Value = response.json().await?;
         let content = response_json["choices"][0]["message"]["content"]
             .as_str()
-            .ok_or_else(|| anyhow!("Missing content in GLM response"))?
+            .ok_or_else(|| anyhow!("Missing content in Aliyun Wanxiang response"))?
             .to_string();
 
         let usage = response_json["usage"].clone();
@@ -355,27 +355,37 @@ impl LlmClient {
                 self.ollama_models(base_url.as_deref()).await
             }
             LlmBackendConfig::Aliyun { .. } => {
-                // GLM (智谱AI) models
+                // Aliyun Wanxiang GLM models (OpenAI-compatible)
                 Ok(vec![
+                    LlmModel {
+                        id: "glm-4.6".to_string(),
+                        created: Some(chrono::Utc::now().timestamp()),
+                        owned_by: Some("aliyun-wanxiang".to_string()),
+                    },
                     LlmModel {
                         id: "glm-4".to_string(),
                         created: Some(chrono::Utc::now().timestamp()),
-                        owned_by: Some("zhipuai".to_string()),
+                        owned_by: Some("aliyun-wanxiang".to_string()),
                     },
                     LlmModel {
                         id: "glm-4-plus".to_string(),
                         created: Some(chrono::Utc::now().timestamp()),
-                        owned_by: Some("zhipuai".to_string()),
-                    },
-                    LlmModel {
-                        id: "glm-3-turbo".to_string(),
-                        created: Some(chrono::Utc::now().timestamp()),
-                        owned_by: Some("zhipuai".to_string()),
+                        owned_by: Some("aliyun-wanxiang".to_string()),
                     },
                     LlmModel {
                         id: "glm-4-flash".to_string(),
                         created: Some(chrono::Utc::now().timestamp()),
-                        owned_by: Some("zhipuai".to_string()),
+                        owned_by: Some("aliyun-wanxiang".to_string()),
+                    },
+                    LlmModel {
+                        id: "glm-4-air".to_string(),
+                        created: Some(chrono::Utc::now().timestamp()),
+                        owned_by: Some("aliyun-wanxiang".to_string()),
+                    },
+                    LlmModel {
+                        id: "glm-4-long".to_string(),
+                        created: Some(chrono::Utc::now().timestamp()),
+                        owned_by: Some("aliyun-wanxiang".to_string()),
                     },
                 ])
             }

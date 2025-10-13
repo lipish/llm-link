@@ -1,7 +1,7 @@
-# LLM Link Configuration - GLM Backend with Ollama Protocol
+# LLM Link Configuration - Aliyun Wanxiang GLM Backend with Ollama Protocol
 #
 # This configuration allows applications expecting Ollama protocol
-# to work with GLM (智谱AI) as the backend LLM provider.
+# to work with GLM models through Aliyun Wanxiang (OpenAI-compatible API).
 
 # Server configuration
 server:
@@ -9,11 +9,11 @@ server:
   port: 8080
   log_level: "info"
 
-# LLM backend configuration - Use GLM (智谱AI) as backend
+# LLM backend configuration - Use Aliyun Wanxiang GLM as backend
 llm_backend:
-  type: "Aliyun"  # GLM API is implemented through Aliyun backend type
-  api_key: "your-glm-api-key-here"  # Get this from https://open.bigmodel.cn/
-  model: "glm-4"  # Available models: glm-4, glm-4-plus, glm-3-turbo, glm-4-flash
+  type: "Aliyun"  # Aliyun Wanxiang API with OpenAI-compatible format
+  api_key: "your-aliyun-wanxiang-api-key-here"  # Get this from https://dashscope.console.aliyun.com/
+  model: "glm-4.6"  # Available models: glm-4.6, glm-4, glm-4-plus, glm-4-flash, glm-4-air, glm-4-long
 
 # API endpoint configurations
 # Enable only Ollama protocol interface
@@ -38,17 +38,20 @@ apis:
     path: "/anthropic"
 
 # Example usage:
-# 1. Replace "your-glm-api-key-here" with your actual GLM API key
+# 1. Replace "your-aliyun-wanxiang-api-key-here" with your actual Aliyun Wanxiang API key
 # 2. Start the service: `./target/release/llm-link -c config-glm-ollama.yaml`
 # 3. Your applications can now use Ollama protocol at http://localhost:8080/ollama
-# 4. All requests will be translated from Ollama format to GLM API format
+# 4. All requests will be translated from Ollama format to Aliyun Wanxiang (OpenAI-compatible) API format
 
 # Test with curl:
 # curl -X POST http://localhost:8080/ollama/api/chat \
 #   -H "Content-Type: application/json" \
 #   -d '{
-#     "model": "glm-4",
+#     "model": "glm-4.6",
 #     "messages": [
 #       {"role": "user", "content": "Hello, world!"}
 #     ]
 #   }'
+
+# API Flow:
+# Ollama Request → LLM Link → Aliyun Wanxiang (OpenAI-compatible) → GLM Model
