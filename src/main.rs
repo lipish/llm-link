@@ -1,3 +1,4 @@
+mod adapters;
 mod config;
 mod service;
 mod client;
@@ -102,10 +103,7 @@ async fn main() -> Result<()> {
     let llm_service = service::Service::from_config(&config.llm_backend)?;
     info!("✅ LLM service initialized successfully");
 
-    let app_state = AppState {
-        llm_service: std::sync::Arc::new(llm_service),
-        config: std::sync::Arc::new(config.clone()),
-    };
+    let app_state = AppState::new(llm_service, config.clone());
 
     // Build the application
     info!("🏗️ Building application routes...");
@@ -182,8 +180,8 @@ fn build_app(state: AppState, config: &Config) -> Router {
             info!("Enabling Ollama API on path: {}", ollama_config.path);
             app = app
                 .route(&format!("{}/api/generate", ollama_config.path), post(handlers::ollama_generate))
-                .route(&format!("{}/api/chat", ollama_config.path), post(handlers::ollama_chat))
-                .route(&format!("{}/api/tags", ollama_config.path), get(handlers::ollama_tags))
+                .route(&format!("{}/api/chat", ollama_config.path), post(handlers::ollama::chat))
+                .route(&format!("{}/api/tags", ollama_config.path), get(handlers::ollama::tags))
                 .route(&format!("{}/api/show", ollama_config.path), post(handlers::ollama_show))
                 .route(&format!("{}/api/version", ollama_config.path), get(|| async {
                     axum::Json(serde_json::json!({
@@ -200,9 +198,9 @@ fn build_app(state: AppState, config: &Config) -> Router {
         if openai_config.enabled {
             info!("Enabling OpenAI API on path: {}", openai_config.path);
             app = app
-                .route(&format!("{}/chat/completions", openai_config.path), post(handlers::openai_chat))
-                .route(&format!("{}/models", openai_config.path), get(handlers::openai_models))
-                .route(&format!("{}/models/:model", openai_config.path), get(handlers::openai_models));
+                .route(&format!("{}/chat/completions", openai_config.path), post(handlers::openai::chat_completions))
+                .route(&format!("{}/models", openai_config.path), get(handlers::openai::list_models))
+                .route(&format!("{}/models/:model", openai_config.path), get(handlers::openai::list_models));
         }
     }
 
