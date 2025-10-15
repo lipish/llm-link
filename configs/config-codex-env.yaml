@@ -1,7 +1,7 @@
 # LLM Link Configuration - Codex CLI with Environment Variables
 #
 # This configuration uses environment variables for secure API token management
-# Set LLM_LINK_API_KEY environment variable before starting
+# Set both ZHIPU_API_KEY and LLM_LINK_API_KEY environment variables before starting
 
 # Server configuration
 server:
@@ -13,20 +13,19 @@ server:
 llm_backend:
   type: "Zhipu"
   base_url: "https://open.bigmodel.cn/api/paas/v4"
-  api_key: "${ZHIPU_API_KEY}"  # Use environment variable for security
+  api_key: "${ZHIPU_API_KEY}"
   model: "glm-4-flash"
 
 # API endpoint configurations
 apis:
-  # OpenAI-compatible API with Bearer token authentication
+  # OpenAI-compatible API with Bearer token authentication (PRIMARY for Codex)
   openai:
     enabled: true
     path: "/v1"
-    # Use environment variable for API token
     api_key_header: "Authorization"
-    api_key: "${LLM_LINK_API_KEY}"  # Will be replaced with env var value
+    api_key: "${LLM_LINK_API_KEY}"
 
-  # Ollama-compatible API (no auth)
+  # Ollama-compatible API (SECONDARY for other tools)
   ollama:
     enabled: true
     path: "/ollama"
@@ -41,7 +40,7 @@ apis:
 # Client adapter configuration
 client_adapters:
   default_adapter: "standard"
-  
+
   zed:
     enabled: true
     force_images_field: true
