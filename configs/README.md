@@ -29,6 +29,10 @@ llm-link automatically searches for configuration files in the following order:
 - **`config-working.yaml`** - Working development configuration with client adapters
 - **`config-multi-provider.yaml`** - Multi-provider setup with examples for all supported LLM providers
 - **`config-env-vars.yaml`** - Configuration using environment variables
+- **`config-openai-codex.yaml`** - OpenAI API without authentication (for basic OpenAI CLI)
+- **`config-openai-standard-port.yaml`** - OpenAI API on port 8080
+- **`config-codex-with-auth.yaml`** - OpenAI API with fixed API token for Codex CLI
+- **`config-codex-env.yaml`** - OpenAI API with environment variable API token for Codex CLI
 
 ## Usage
 
@@ -89,9 +93,15 @@ See `llm-link.example.yaml` for a complete example with all available options in
 - Automatic client detection via User-Agent headers
 - Optimized streaming formats for different clients
 
+### For Codex CLI Integration
+- `config-codex-env.yaml` for secure API token authentication using environment variables
+- `config-codex-with-auth.yaml` for fixed API token authentication
+- Both provide OpenAI-compatible API with Bearer token authentication
+
 ### For Production
 - Copy `config-working.yaml` and modify for your production environment
 - Enable client adapters for better IDE compatibility
+- Use `config-codex-env.yaml` as a template for secure API authentication
 
 ## Client Adapter System
 

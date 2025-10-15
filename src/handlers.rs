@@ -519,6 +519,75 @@ fn enforce_api_key_for_ollama(headers: &HeaderMap, state: &AppState) -> Result<(
     Ok(())
 }
 
+// OpenAI API 认证函数
+fn enforce_api_key_for_openai(headers: &HeaderMap, state: &AppState) -> Result<(), StatusCode> {
+    debug!("🔐 Checking OpenAI API key authentication");
+
+    if let Some(cfg) = &state.config.apis.openai {
+        if cfg.enabled {
+            if let Some(expected_key) = cfg.api_key.as_ref() {
+                let header_name = cfg.api_key_header.as_deref().unwrap_or("authorization").to_ascii_lowercase();
+                debug!("🔍 Looking for OpenAI API key in header: {}", header_name);
+
+                let value_opt = if header_name == "authorization" {
+                    headers.get(axum::http::header::AUTHORIZATION)
+                } else {
+                    match HeaderName::from_bytes(header_name.as_bytes()) {
+                        Ok(name) => headers.get(name),
+                        Err(_) => None,
+                    }
+                };
+
+                let ok = if let Some(val) = value_opt {
+                    debug!("🔑 OpenAI API key header found, validating...");
+                    if header_name == "authorization" {
+                        match val.to_str() {
+                            Ok(s) => {
+                                let valid = s == format!("Bearer {}", expected_key) || s == expected_key;
+                                debug!("🔐 OpenAI Authorization header validation: {}", if valid { "✅ PASS" } else { "❌ FAIL" });
+                                valid
+                            },
+                            Err(_) => {
+                                debug!("❌ Failed to parse OpenAI authorization header");
+                                false
+                            }
+                        }
+                    } else {
+                        match val.to_str() {
+                            Ok(s) => {
+                                let valid = s == expected_key;
+                                debug!("🔐 OpenAI Custom header validation: {}", if valid { "✅ PASS" } else { "❌ FAIL" });
+                                valid
+                            },
+                            Err(_) => {
+                                debug!("❌ Failed to parse OpenAI custom header");
+                                false
+                            }
+                        }
+                    }
+                } else {
+                    warn!("❌ OpenAI API key header '{}' not found in request", header_name);
+                    false
+                };
+
+                if !ok {
+                    warn!("🚫 OpenAI API key authentication failed");
+                    return Err(StatusCode::UNAUTHORIZED);
+                }
+
+                info!("✅ OpenAI API key authentication successful");
+            } else {
+                debug!("🔓 No OpenAI API key configured, skipping authentication");
+            }
+        } else {
+            debug!("🔓 OpenAI API disabled, skipping authentication");
+        }
+    } else {
+        debug!("🔓 No OpenAI configuration found, skipping authentication");
+    }
+    Ok(())
+}
+
 // OpenAI API Handlers
 #[derive(Debug, Deserialize)]
 #[allow(unused)]
@@ -537,9 +606,12 @@ pub struct OpenAIModelsParams {
 }
 
 pub async fn openai_chat(
+    headers: HeaderMap,
     State(state): State<AppState>,
     Json(request): Json<OpenAIChatRequest>,
 ) -> Result<axum::response::Response, StatusCode> {
+    // API Key 校验（仅对 OpenAI 路由生效）
+    enforce_api_key_for_openai(&headers, &state)?;
     // Validate model if provided
     if !request.model.is_empty() {
         match state.llm_service.validate_model(&request.model).await {
@@ -576,9 +648,12 @@ pub async fn openai_chat(
 }
 
 pub async fn openai_models(
+    headers: HeaderMap,
     State(state): State<AppState>,
     Query(_params): Query<OpenAIModelsParams>,
 ) -> Result<impl IntoResponse, StatusCode> {
+    // API Key 校验（仅对 OpenAI 路由生效）
+    enforce_api_key_for_openai(&headers, &state)?;
     match state.llm_service.models().await {
         Ok(models) => {
             let response = json!({

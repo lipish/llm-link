@@ -482,6 +482,133 @@ LLM Link's flexible architecture supports integration with various IDEs and tool
 
 3. **Use AI features** within your JetBrains IDE
 
+### OpenAI Codex CLI
+
+1. **Start LLM Link with OpenAI API enabled**:
+```bash
+./target/release/llm-link --config configs/config-openai-codex.yaml
+```
+
+2. **Configure OpenAI CLI**:
+```bash
+# Set API base URL
+export OPENAI_API_BASE="http://localhost:11434/v1"
+export OPENAI_API_KEY="dummy-key"  # Not required but CLI may expect it
+
+# Use OpenAI CLI
+openai api chat_completions.create \
+  --model "glm-4-flash" \
+  --message "user:Write a Python function to sort a list"
+```
+
+3. **Alternative: Standard port configuration**:
+```bash
+# Use port 8080 for OpenAI API
+./target/release/llm-link --config configs/config-openai-standard-port.yaml
+
+# Then configure CLI
+export OPENAI_API_BASE="http://localhost:8080/v1"
+```
+
+### Codex CLI Integration
+
+Codex CLI is a powerful command-line tool for AI-assisted coding. LLM Link provides full compatibility with Codex through its OpenAI-compatible API with Bearer token authentication.
+
+#### **Setup Steps**
+
+1. **Configure LLM Link with API authentication**:
+
+   **Option A: Using environment variables (recommended)**
+   ```bash
+   # Set your API token
+   export LLM_LINK_API_KEY="your-secret-api-token"
+
+   # Start LLM Link with authentication enabled
+   ./target/release/llm-link --config configs/config-codex-env.yaml
+   ```
+
+   **Option B: Using configuration file**
+   ```bash
+   # Edit the config file to set your API token
+   nano configs/config-codex-with-auth.yaml
+   # Change: api_key: "your-codex-api-token"
+
+   # Start LLM Link
+   ./target/release/llm-link --config configs/config-codex-with-auth.yaml
+   ```
+
+2. **Configure Codex CLI**:
+
+   Create or edit your Codex configuration file (usually `~/.config/codex/config.toml`):
+
+   ```toml
+   [model_providers.llm_link]
+   # Name displayed in Codex UI
+   name = "LLM Link - GLM Models"
+   # Base URL for LLM Link's OpenAI-compatible API
+   base_url = "http://localhost:11434/v1"
+   # Environment variable containing the API token
+   env_key = "LLM_LINK_API_KEY"
+
+   [profiles.glm_4_flash]
+   model = "glm-4-flash"
+   model_provider = "llm_link"
+
+   [profiles.glm_4_plus]
+   model = "glm-4-plus"
+   model_provider = "llm_link"
+
+   [profiles.glm_4_long]
+   model = "glm-4-long"
+   model_provider = "llm_link"
+   ```
+
+3. **Set the API token environment variable**:
+   ```bash
+   # Set the same token that you configured in LLM Link
+   export LLM_LINK_API_KEY="your-secret-api-token"
+   ```
+
+4. **Use Codex with LLM Link**:
+   ```bash
+   # Use the fast model for quick code generation
+   codex --profile glm_4_flash "Write a Python function to calculate fibonacci numbers"
+
+   # Use the enhanced model for complex tasks
+   codex --profile glm_4_plus "Refactor this code to use async/await patterns"
+
+   # Use the long context model for large codebases
+   codex --profile glm_4_long "Analyze this entire codebase and suggest improvements"
+   ```
+
+#### **Available Models**
+
+- **`glm-4-flash`** - Fast model, ideal for quick code completion and simple tasks
+- **`glm-4-plus`** - Enhanced model with better reasoning for complex coding tasks
+- **`glm-4`** - Standard model, balanced performance and quality
+- **`glm-4-air`** - Lightweight model for basic tasks
+- **`glm-4-long`** - Long context model for analyzing large codebases
+
+#### **Authentication Flow**
+
+1. **Codex** reads the API token from `LLM_LINK_API_KEY` environment variable
+2. **Codex** sends requests to `http://localhost:11434/v1/chat/completions` with `Authorization: Bearer <token>` header
+3. **LLM Link** validates the Bearer token against the configured `api_key`
+4. **LLM Link** forwards the request to the GLM backend and returns the response
+
+#### **Security Notes**
+
+- ✅ **API tokens are validated** before processing requests
+- ✅ **Environment variables** keep tokens out of configuration files
+- ✅ **Bearer token authentication** follows OpenAI API standards
+- ✅ **401 Unauthorized** responses for invalid or missing tokens
+
+#### **Troubleshooting**
+
+- **401 Unauthorized**: Check that `LLM_LINK_API_KEY` matches the token in LLM Link config
+- **Connection refused**: Ensure LLM Link is running on the correct port (11434)
+- **Model not found**: Verify the model name in your Codex profile matches available models
+
 ### Neovim with AI Plugins
 
 For Neovim users with AI plugins like `ollama.nvim`:

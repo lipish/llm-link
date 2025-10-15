@@ -1,0 +1,50 @@
+# LLM Link Configuration - Codex CLI with API Token Authentication
+#
+# This configuration is optimized for Codex CLI with API token authentication
+# It provides OpenAI-compatible API with Bearer token authentication
+
+# Server configuration
+server:
+  host: "0.0.0.0"
+  port: 11434      # Standard port
+  log_level: "info"
+
+# LLM backend configuration
+llm_backend:
+  type: "Zhipu"
+  base_url: "https://open.bigmodel.cn/api/paas/v4"
+  api_key: "d2a0da2b02954b1f91a0a4ec16d4521b.GA2Tz9sF9kt4zVd3"
+  model: "glm-4-flash"  # Default model, can be overridden by requests
+
+# API endpoint configurations
+apis:
+  # OpenAI-compatible API with authentication
+  openai:
+    enabled: true
+    path: "/v1"  # This makes /v1/chat/completions available
+    # Enable API key authentication
+    api_key_header: "Authorization"  # Expect "Authorization: Bearer <token>"
+    api_key: "your-codex-api-token"  # Replace with your desired token
+
+  # Ollama-compatible API (secondary, no auth)
+  ollama:
+    enabled: true
+    path: "/ollama"
+    api_key_header: null
+    api_key: null
+
+  # Anthropic-compatible API (disabled)
+  anthropic:
+    enabled: false
+    path: "/anthropic"
+
+# Client adapter configuration
+client_adapters:
+  # Default to standard for OpenAI compatibility
+  default_adapter: "standard"
+  
+  # Zed.dev specific configuration (if using both)
+  zed:
+    enabled: true
+    force_images_field: true
+    preferred_format: "ndjson"

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -82,6 +83,7 @@ pub struct OpenAiApiConfig {
     pub enabled: bool,
     pub path: String,
     pub api_key_header: Option<String>,
+    pub api_key: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -114,6 +116,7 @@ impl Default for Config {
                     enabled: true,
                     path: "/v1".to_string(),
                     api_key_header: None,
+                    api_key: None,
                 }),
                 anthropic: Some(AnthropicApiConfig {
                     enabled: true,
@@ -129,7 +132,9 @@ impl Default for Config {
 impl Config {
     pub fn from_file<P: AsRef<std::path::Path>>(path: P) -> anyhow::Result<Self> {
         let content = std::fs::read_to_string(path)?;
-        let config: Config = serde_yaml::from_str(&content)?;
+        // 替换环境变量
+        let expanded_content = expand_env_vars(&content)?;
+        let config: Config = serde_yaml::from_str(&expanded_content)?;
         Ok(config)
     }
 
@@ -201,4 +206,30 @@ impl Config {
             Ok((config, "environment variables".to_string()))
         }
     }
+}
+
+/// 展开配置文件中的环境变量
+/// 支持 ${VAR_NAME} 格式
+fn expand_env_vars(content: &str) -> anyhow::Result<String> {
+    let mut result = content.to_string();
+
+    // 收集所有环境变量
+    let env_vars: HashMap<String, String> = std::env::vars().collect();
+
+    // 替换 ${VAR_NAME} 格式
+    let re_braces = regex::Regex::new(r"\$\{([A-Za-z_][A-Za-z0-9_]*)\}").unwrap();
+
+    // 使用 replace_all 的字符串版本来避免生命周期问题
+    for caps in re_braces.captures_iter(content) {
+        let full_match = &caps[0];
+        let var_name = &caps[1];
+
+        if let Some(env_value) = env_vars.get(var_name) {
+            result = result.replace(full_match, env_value);
+        } else {
+            eprintln!("Warning: Environment variable '{}' not found, keeping placeholder", var_name);
+        }
+    }
+
+    Ok(result)
 }
