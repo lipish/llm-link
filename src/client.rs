@@ -1,7 +1,7 @@
 use crate::config::LlmBackendConfig;
 use anyhow::{anyhow, Result};
 use tokio_stream::wrappers::UnboundedReceiverStream;
-use llm_connector::{LlmClient, ChatRequest, Message as LlmMessage};
+use llm_connector::{LlmClient, ChatRequest, Message as LlmMessage, StreamFormat, StreamingConfig, StreamingFormat};
 use futures_util::StreamExt;
 
 /// Unified LLM client that wraps llm-connector for all providers
@@ -40,12 +40,6 @@ pub struct Response {
 #[derive(Debug, Clone)]
 pub struct Model {
     pub id: String,
-    pub name: String,
-    pub size: Option<u64>,
-    pub digest: Option<String>,
-    pub families: Option<Vec<String>>,
-    pub created: Option<i64>,
-    pub owned_by: Option<String>,
 }
 
 impl Client {
@@ -113,8 +107,8 @@ impl Client {
         })
     }
 
-    /// Send a streaming chat request to the LLM
-    pub async fn chat_stream(&self, model: &str, messages: Vec<Message>) -> Result<UnboundedReceiverStream<String>> {
+    /// Send a streaming chat request to the LLM with specified format
+    pub async fn chat_stream_with_format(&self, model: &str, messages: Vec<Message>, format: StreamFormat) -> Result<UnboundedReceiverStream<String>> {
         // Convert messages to llm-connector format
         let chat_messages: Vec<LlmMessage> = messages.into_iter().map(|msg| {
             match msg.role {
@@ -124,33 +118,45 @@ impl Client {
             }
         }).collect();
 
-        let mut request = ChatRequest {
+        let request = ChatRequest {
             model: model.to_string(),
             messages: chat_messages,
+            stream: Some(true),
             ..Default::default()
         };
-        request.stream = Some(true);
 
-        // 🎉 使用新的 chat_stream_ollama 方法！
-        let stream = self.llm_client.chat_stream_ollama(&request).await
-            .map_err(|e| anyhow!("LLM connector Ollama streaming error: {}", e))?;
+        let config = StreamingConfig {
+            format: StreamingFormat::Ollama,
+            stream_format: format,
+            include_usage: true,
+            include_reasoning: false,
+        };
 
-        // 🎉 v0.3.12: chat_stream_ollama 现在直接返回纯 Ollama 格式！
+        // 🎉 使用新的 chat_stream_universal 方法！
+        let stream = self.llm_client.chat_stream_universal(&request, &config).await
+            .map_err(|e| anyhow!("LLM connector universal streaming error: {}", e))?;
+
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
 
         tokio::spawn(async move {
             let mut stream = stream;
             while let Some(chunk) = stream.next().await {
                 match chunk {
-                    Ok(ollama_chunk) => {
-                        // 直接序列化 OllamaStreamChunk 对象
-                        if let Ok(json_str) = serde_json::to_string(&ollama_chunk) {
-                            let _ = tx.send(json_str);
-                        }
+                    Ok(stream_chunk) => {
+                        // 🎉 v0.3.13: 使用新的格式转换方法
+                        let formatted_data = match format {
+                            StreamFormat::SSE => stream_chunk.to_sse(),
+                            StreamFormat::NDJSON => stream_chunk.to_ndjson(),
+                            StreamFormat::Json => stream_chunk.to_json(),
+                        };
 
-                        // 检查是否完成
-                        if ollama_chunk.done {
-                            break;
+                        let _ = tx.send(formatted_data);
+
+                        // 检查是否完成（从 data 中检查 done 字段）
+                        if let Some(done) = stream_chunk.data.get("done") {
+                            if done.as_bool().unwrap_or(false) {
+                                break;
+                            }
                         }
                     }
                     Err(_) => break,
@@ -159,6 +165,13 @@ impl Client {
         });
 
         Ok(UnboundedReceiverStream::new(rx))
+    }
+
+    /// Send a streaming chat request to the LLM (backward compatibility - returns JSON format)
+    pub async fn chat_stream(&self, model: &str, messages: Vec<Message>) -> Result<UnboundedReceiverStream<String>> {
+        // 默认使用 JSON 格式以保持向后兼容性
+        self.chat_stream_with_format(model, messages, StreamFormat::Json).await
+
     }
 
     /// List available models
@@ -170,46 +183,22 @@ impl Client {
                 Ok(vec![
                     Model {
                         id: "llama2".to_string(),
-                        name: "llama2".to_string(),
-                        size: Some(3800000000),
-                        digest: Some("sha256:0000000000000000000000000000000000000000000000000000000000000000".to_string()),
-                        families: Some(vec!["llama".to_string()]),
-                        created: Some(chrono::Utc::now().timestamp()),
-                        owned_by: Some("ollama".to_string()),
                     }
                 ])
             }
             LlmBackendConfig::OpenAI { .. } => {
                 Ok(vec![Model {
                     id: "gpt-3.5-turbo".to_string(),
-                    name: "gpt-3.5-turbo".to_string(),
-                    size: None,
-                    digest: None,
-                    families: Some(vec!["openai".to_string()]),
-                    created: None,
-                    owned_by: Some("openai".to_string()),
                 }])
             }
             LlmBackendConfig::Anthropic { model, .. } => {
                 Ok(vec![Model {
                     id: model.clone(),
-                    name: model.clone(),
-                    size: None,
-                    digest: None,
-                    families: Some(vec!["anthropic".to_string()]),
-                    created: None,
-                    owned_by: Some("anthropic".to_string()),
                 }])
             }
             LlmBackendConfig::Aliyun { model, .. } => {
                 Ok(vec![Model {
                     id: model.clone(),
-                    name: model.clone(),
-                    size: None,
-                    digest: None,
-                    families: Some(vec!["aliyun".to_string()]),
-                    created: None,
-                    owned_by: Some("aliyun".to_string()),
                 }])
             }
             LlmBackendConfig::Zhipu { .. } => {
@@ -218,12 +207,6 @@ impl Client {
                 ];
                 Ok(models.into_iter().map(|name| Model {
                     id: name.to_string(),
-                    name: name.to_string(),
-                    size: None,
-                    digest: None,
-                    families: Some(vec!["zhipu".to_string()]),
-                    created: None,
-                    owned_by: Some("zhipu".to_string()),
                 }).collect())
             }
         }

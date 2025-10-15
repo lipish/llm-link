@@ -5,6 +5,7 @@ pub struct Config {
     pub server: ServerConfig,
     pub llm_backend: LlmBackendConfig,
     pub apis: ApiConfigs,
+    pub client_adapters: Option<ClientAdapterConfigs>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -46,6 +47,26 @@ pub struct ApiConfigs {
     pub ollama: Option<OllamaApiConfig>,
     pub openai: Option<OpenAiApiConfig>,
     pub anthropic: Option<AnthropicApiConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ClientAdapterConfigs {
+    /// 默认客户端适配模式
+    pub default_adapter: Option<String>,
+    /// 强制客户端适配模式（忽略自动检测）
+    pub force_adapter: Option<String>,
+    /// Zed.dev 特定配置
+    pub zed: Option<ZedAdapterConfig>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ZedAdapterConfig {
+    /// 是否启用 Zed.dev 适配
+    pub enabled: bool,
+    /// 是否强制添加 images 字段
+    pub force_images_field: Option<bool>,
+    /// 首选响应格式
+    pub preferred_format: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -100,6 +121,7 @@ impl Default for Config {
                     api_key_header: None,
                 }),
             },
+            client_adapters: None,
         }
     }
 }
@@ -129,6 +151,7 @@ impl Config {
         Ok(config)
     }
 
+    #[allow(dead_code)]
     pub fn load() -> anyhow::Result<Self> {
         if let Ok(config_path) = std::env::var("LLM_LINK_CONFIG") {
             Self::from_file(config_path)

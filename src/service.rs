@@ -3,6 +3,7 @@ use crate::client::{Client, Message, Response, Role};
 use anyhow::Result;
 use serde_json::Value;
 use tokio_stream::wrappers::UnboundedReceiverStream;
+use llm_connector::StreamFormat;
 
 pub struct Service {
     client: Client,
@@ -32,6 +33,12 @@ impl Service {
     pub async fn chat_stream_with_model(&self, model: Option<&str>, messages: Vec<Message>) -> Result<UnboundedReceiverStream<String>> {
         let model_to_use = model.unwrap_or(&self.model);
         let stream = self.client.chat_stream(model_to_use, messages).await?;
+        Ok(stream)
+    }
+
+    pub async fn chat_stream_with_format(&self, model: Option<&str>, messages: Vec<Message>, format: StreamFormat) -> Result<UnboundedReceiverStream<String>> {
+        let model_to_use = model.unwrap_or(&self.model);
+        let stream = self.client.chat_stream_with_format(model_to_use, messages, format).await?;
         Ok(stream)
     }
 

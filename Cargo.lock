@@ -834,9 +834,9 @@ checksum = "241eaef5fd12c88705a01fc1066c48c4b36e0dd4377dcdc7ec3942cea7a69956"
 
 [[package]]
 name = "llm-connector"
-version = "0.3.12"
+version = "0.3.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dcda2107bb9024527c977c3cceeb6ce16f3b43d2caef954bf5449a306d040ef2"
+checksum = "dab7762ea27b8f4657f816327051da69afe6e16b3b0eb26f2ade622be9de7f14"
 dependencies = [
  "async-trait",
  "bytes",

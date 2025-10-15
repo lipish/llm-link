@@ -26,11 +26,9 @@ llm-link automatically searches for configuration files in the following order:
 - **`llm-link.example.yaml`** - Template configuration file
 
 ### Example Configurations
-- **`config-debug.yaml`** - Debug configuration with detailed logging
-- **`config-glm-ollama.yaml`** - Zhipu GLM with Ollama API compatibility (with authentication)
-- **`config-glm-ollama-noauth.yaml`** - Zhipu GLM with Ollama API compatibility (no authentication)
-- **`config-zed-final.yaml`** - Final Zed.dev configuration
+- **`config-working.yaml`** - Working development configuration with client adapters
 - **`config-multi-provider.yaml`** - Multi-provider setup with examples for all supported LLM providers
+- **`config-env-vars.yaml`** - Configuration using environment variables
 
 ## Usage
 
@@ -43,13 +41,13 @@ llm-link automatically searches for configuration files in the following order:
 ### Using Specific Configuration
 ```bash
 # Use a specific config file
-./llm-link -c configs/config-debug.yaml
+./llm-link -c configs/config-working.yaml
 ```
 
 ### Using Environment Variable
 ```bash
 # Set config path via environment variable
-export LLM_LINK_CONFIG=configs/config-debug.yaml
+export LLM_LINK_CONFIG=configs/config-working.yaml
 ./llm-link
 ```
 
@@ -79,18 +77,53 @@ See `llm-link.example.yaml` for a complete example with all available options in
 - **Backend Configuration**: LLM provider settings (OpenAI, Anthropic, Zhipu, Aliyun, Ollama)
 - **Authentication**: API key settings
 - **Model Configuration**: Available models and routing
+- **Client Adapters**: Smart client-specific optimizations (Zed.dev, etc.)
 
 ## Configuration Examples
 
 ### For Development
-- Use `config-debug.yaml` for development and troubleshooting with detailed logging
+- Use `config-working.yaml` for development with client adapters enabled
 
-### For Zed.dev Integration
-- Use `config-zed-final.yaml` for Zed.dev integration
+### For IDE Integration
+- `config-working.yaml` includes client adapter support for Zed.dev and other IDEs
+- Automatic client detection via User-Agent headers
+- Optimized streaming formats for different clients
 
 ### For Production
-- Use `config-glm-ollama.yaml` for production with authentication
-- Use `config-glm-ollama-noauth.yaml` for simple setups without authentication
+- Copy `config-working.yaml` and modify for your production environment
+- Enable client adapters for better IDE compatibility
+
+## Client Adapter System
+
+LLM Link features a two-layer architecture for enhanced IDE compatibility:
+
+### Layer 1: Standard Protocol Layer
+- **SSE (Server-Sent Events)**: `Accept: text/event-stream`
+- **NDJSON (Newline-Delimited JSON)**: `Accept: application/x-ndjson`
+- **JSON**: Default format
+
+### Layer 2: Client Adaptation Layer
+- **Standard Adapter**: Pure HTTP standard compliance
+- **Zed.dev Adapter**: Optimized for Zed editor with automatic `images` field injection
+
+### Configuration Example
+```yaml
+# Client adapter configuration
+client_adapters:
+  # Default adapter when client cannot be detected
+  default_adapter: "standard"
+
+  # Zed.dev specific configuration
+  zed:
+    enabled: true
+    force_images_field: true
+    preferred_format: "ndjson"
+```
+
+### Usage Methods
+1. **Explicit Client Header**: `X-LLM-Client: zed`
+2. **User-Agent Detection**: Automatic detection of `Zed/` User-Agent
+3. **Configuration Override**: Force specific adapter for all requests
 
 ## Security Tips
 

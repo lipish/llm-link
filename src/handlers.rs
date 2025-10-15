@@ -8,11 +8,153 @@ use axum::{
 use axum::response::sse::{Sse, Event};
 use std::convert::Infallible;
 use futures::StreamExt;
+use axum::body::Body;
+use axum::response::Response;
+
+use llm_connector::StreamFormat;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::sync::Arc;
 use crate::config::Config;
 use tracing::{info, debug, warn, error};
+
+/// 客户端适配器类型
+#[derive(Debug, Clone, PartialEq)]
+pub enum ClientAdapter {
+    /// 标准 Ollama 客户端（严格按照 HTTP 标准）
+    Standard,
+    /// Zed.dev 编辑器适配
+    ZedDev,
+    // 其他特定客户端适配（未来扩展）
+    // VsCode,
+    // Cursor,
+}
+
+impl ClientAdapter {
+    /// 从配置和请求头检测客户端类型
+    fn detect_from_config_and_headers(
+        config: &crate::config::Config,
+        headers: &HeaderMap
+    ) -> Self {
+        // 1. 检查配置中的强制适配模式
+        if let Some(ref adapters) = config.client_adapters {
+            if let Some(ref force_adapter) = adapters.force_adapter {
+                match force_adapter.to_lowercase().as_str() {
+                    "zed" | "zed.dev" => return ClientAdapter::ZedDev,
+                    "standard" => return ClientAdapter::Standard,
+                    _ => {}
+                }
+            }
+        }
+
+        // 2. 检查请求头中的显式客户端标识
+        if let Some(client_hint) = headers.get("x-llm-client") {
+            if let Ok(client_str) = client_hint.to_str() {
+                match client_str.to_lowercase().as_str() {
+                    "zed" | "zed.dev" => return ClientAdapter::ZedDev,
+                    "standard" => return ClientAdapter::Standard,
+                    _ => {}
+                }
+            }
+        }
+
+        // 3. 检查 User-Agent 自动检测
+        if let Some(user_agent) = headers.get("user-agent") {
+            if let Ok(ua_str) = user_agent.to_str() {
+                // 检测 Zed.dev 编辑器
+                if ua_str.starts_with("Zed/") {
+                    // 检查配置中是否启用了 Zed 适配
+                    if let Some(ref adapters) = config.client_adapters {
+                        if let Some(ref zed_config) = adapters.zed {
+                            if zed_config.enabled {
+                                return ClientAdapter::ZedDev;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // 4. 检查配置中的默认适配模式
+        if let Some(ref adapters) = config.client_adapters {
+            if let Some(ref default_adapter) = adapters.default_adapter {
+                match default_adapter.to_lowercase().as_str() {
+                    "zed" | "zed.dev" => return ClientAdapter::ZedDev,
+                    "standard" => return ClientAdapter::Standard,
+                    _ => {}
+                }
+            }
+        }
+
+        // 5. 默认使用标准模式
+        ClientAdapter::Standard
+    }
+
+    /// 获取该客户端的首选格式
+    fn preferred_format(&self) -> StreamFormat {
+        match self {
+            ClientAdapter::Standard => StreamFormat::NDJSON, // Ollama 标准
+            ClientAdapter::ZedDev => StreamFormat::NDJSON,   // Zed 偏好 NDJSON
+        }
+    }
+
+    /// 应用客户端特定的响应处理
+    fn apply_response_adaptations(
+        &self,
+        config: &crate::config::Config,
+        data: &mut serde_json::Value
+    ) {
+        match self {
+            ClientAdapter::Standard => {
+                // 标准模式：不做任何修改
+            }
+            ClientAdapter::ZedDev => {
+                // Zed.dev 特定适配
+                let should_add_images = if let Some(ref adapters) = config.client_adapters {
+                    if let Some(ref zed_config) = adapters.zed {
+                        zed_config.force_images_field.unwrap_or(true)
+                    } else {
+                        true // 默认启用
+                    }
+                } else {
+                    true // 默认启用
+                };
+
+                if should_add_images {
+                    if let Some(message) = data.get_mut("message") {
+                        if message.get("images").is_none() {
+                            message.as_object_mut().unwrap().insert(
+                                "images".to_string(),
+                                serde_json::Value::Null
+                            );
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+/// 标准协议层：根据 HTTP 标准确定响应格式
+fn determine_standard_format(headers: &HeaderMap) -> (StreamFormat, &'static str) {
+    // 严格按照 HTTP Accept header 确定格式
+    if let Some(accept) = headers.get("accept") {
+        if let Ok(accept_str) = accept.to_str() {
+            // 按优先级检查
+            if accept_str.contains("text/event-stream") {
+                return (StreamFormat::SSE, "text/event-stream");
+            }
+            if accept_str.contains("application/x-ndjson") || accept_str.contains("application/jsonlines") {
+                return (StreamFormat::NDJSON, "application/x-ndjson");
+            }
+        }
+    }
+
+    // 默认：NDJSON（Ollama 官方标准）
+    (StreamFormat::NDJSON, "application/x-ndjson")
+}
+
+
 
 #[derive(Debug, Deserialize)]
 #[allow(unused)]
@@ -149,12 +291,68 @@ pub async fn ollama_chat(
             info!("🚀 Processing chat request with model: {:?}", model);
 
             if request.stream.unwrap_or(false) {
-                info!("📡 Starting streaming response");
-                match state.llm_service.chat_stream_with_model(model, messages.clone()).await {
+                // 🎯 分层架构：检测客户端类型和格式偏好
+                let client_adapter = ClientAdapter::detect_from_config_and_headers(&state.config, &headers);
+                let (stream_format, _content_type) = determine_standard_format(&headers);
+
+                // 如果没有显式指定格式，使用客户端偏好
+                let final_format = if headers.get("accept").map_or(true, |v| v.to_str().unwrap_or("").contains("*/*")) {
+                    client_adapter.preferred_format()
+                } else {
+                    stream_format
+                };
+
+                let final_content_type = match final_format {
+                    StreamFormat::SSE => "text/event-stream",
+                    StreamFormat::NDJSON => "application/x-ndjson",
+                    StreamFormat::Json => "application/json",
+                };
+
+                info!("📡 Starting streaming response - Client: {:?}, Format: {:?} ({})",
+                      client_adapter, final_format, final_content_type);
+
+                match state.llm_service.chat_stream_with_format(model, messages.clone(), final_format).await {
                     Ok(rx) => {
                         info!("✅ Streaming response started successfully");
-                        let stream = rx.map(|data| Ok::<Event, Infallible>(Event::default().data(data)));
-                        Ok(Sse::new(stream).into_response())
+
+                        // 🎯 应用客户端特定的适配处理
+                        let adapter = client_adapter.clone();
+                        let config = state.config.clone();
+                        let adapted_stream = rx.map(move |data| {
+                            // 解析 JSON 数据
+                            if let Ok(mut json_data) = serde_json::from_str::<serde_json::Value>(&data) {
+                                // 应用客户端特定的适配
+                                adapter.apply_response_adaptations(&config, &mut json_data);
+
+                                // 重新序列化
+                                match final_format {
+                                    StreamFormat::SSE => {
+                                        format!("data: {}\n\n", json_data)
+                                    }
+                                    StreamFormat::NDJSON => {
+                                        format!("{}\n", json_data)
+                                    }
+                                    StreamFormat::Json => {
+                                        json_data.to_string()
+                                    }
+                                }
+                            } else {
+                                // 如果解析失败，返回原始数据
+                                data
+                            }
+                        });
+
+                        let body_stream = adapted_stream.map(|data| Ok::<_, Infallible>(data));
+                        let body = Body::from_stream(body_stream);
+
+                        let response = Response::builder()
+                            .status(200)
+                            .header("content-type", final_content_type)
+                            .header("cache-control", "no-cache")
+                            .body(body)
+                            .unwrap();
+
+                        Ok(response)
                     }
                     Err(e) => {
                         warn!("⚠️ Streaming not supported by backend, falling back to non-streaming: {:?}", e);
