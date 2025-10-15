@@ -148,7 +148,7 @@ async fn main() -> Result<()> {
 
     info!("🎉 LLM Link proxy is listening on {}", bind_addr);
     info!("📡 Ready to accept connections!");
-    info!("👀 Monitoring for ANY incoming requests from Zed.dev...");
+    info!("👀 Monitoring for incoming requests...");
 
     // Serve the app (axum 0.7) with concrete state applied
     axum::serve(listener, app).await?;
