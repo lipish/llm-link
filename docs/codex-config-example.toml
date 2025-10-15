@@ -1,0 +1,37 @@
+# Codex CLI Configuration Example for LLM Link
+# Save this as ~/.config/codex/config.toml or your Codex config location
+
+[model_providers.llm_link]
+# Name of the provider that will be displayed in the Codex UI
+name = "LLM Link - GLM Models"
+# The path `/chat/completions` will be amended to this URL to make the POST
+# request for the chat completions
+base_url = "http://localhost:11434/v1"
+# Environment variable containing the API token
+env_key = "LLM_LINK_API_KEY"
+
+# Model profiles for different use cases
+[profiles.glm_4_flash]
+model = "glm-4-flash"
+model_provider = "llm_link"
+
+[profiles.glm_4_plus]
+model = "glm-4-plus"
+model_provider = "llm_link"
+
+[profiles.glm_4]
+model = "glm-4"
+model_provider = "llm_link"
+
+[profiles.glm_4_air]
+model = "glm-4-air"
+model_provider = "llm_link"
+
+[profiles.glm_4_long]
+model = "glm-4-long"
+model_provider = "llm_link"
+
+# Usage examples:
+# codex --profile glm_4_flash "Write a Python function to sort a list"
+# codex --profile glm_4_plus "Refactor this code to use async/await"
+# codex --profile glm_4_long "Analyze this entire codebase"

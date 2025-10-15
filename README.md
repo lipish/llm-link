@@ -531,22 +531,23 @@ Codex CLI is a powerful command-line tool for AI-assisted coding. LLM Link provi
 
 2. **Configure LLM Link with API authentication**:
 
-   **Option A: Standard HTTP port (recommended for Codex CLI)**
+   **Option A: Dual API support on port 11434 (recommended)**
    ```bash
-   # Start LLM Link on port 8080 with pure OpenAI API
+   # Start LLM Link with both OpenAI and Ollama APIs
+   # This matches the standard Ollama port and provides maximum compatibility
+   ./target/release/llm-link --config configs/config-codex-env.yaml
+   ```
+
+   **Option B: Pure OpenAI API on standard HTTP port**
+   ```bash
+   # Start LLM Link on port 8080 with only OpenAI API
    ./target/release/llm-link --config configs/config-codex-standard.yaml
    ```
 
-   **Option B: HTTPS port (for tools expecting standard HTTPS)**
+   **Option C: Pure OpenAI API on HTTPS port**
    ```bash
    # Start LLM Link on port 443 (requires sudo)
    sudo ./target/release/llm-link --config configs/config-codex-https-port.yaml
-   ```
-
-   **Option C: Dual API support (OpenAI + Ollama on port 11434)**
-   ```bash
-   # Start LLM Link with both APIs enabled
-   ./target/release/llm-link --config configs/config-codex-env.yaml
    ```
 
 2. **Configure Codex CLI**:
@@ -558,13 +559,13 @@ Codex CLI is a powerful command-line tool for AI-assisted coding. LLM Link provi
    # Name displayed in Codex UI
    name = "LLM Link - GLM Models"
    # Base URL for LLM Link's OpenAI-compatible API
-   base_url = "http://localhost:8080/v1"  # Standard HTTP port
+   base_url = "http://localhost:11434/v1"  # Standard Ollama port (recommended)
    # Environment variable containing the API token
    env_key = "LLM_LINK_API_KEY"
 
    # Alternative configurations:
-   # For HTTPS port: base_url = "http://localhost:443/v1"
-   # For dual API:   base_url = "http://localhost:11434/v1"
+   # For pure OpenAI (HTTP): base_url = "http://localhost:8080/v1"
+   # For pure OpenAI (HTTPS): base_url = "http://localhost:443/v1"
 
    [profiles.glm_4_flash]
    model = "glm-4-flash"
