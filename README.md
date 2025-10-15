@@ -514,22 +514,32 @@ export OPENAI_API_BASE="http://localhost:8080/v1"
 
 Codex CLI is a powerful command-line tool for AI-assisted coding. LLM Link provides full compatibility with Codex through its OpenAI-compatible API with Bearer token authentication.
 
+#### **⚠️ Security Warning**
+
+**NEVER commit real API keys to version control!** All configuration files use environment variables for security.
+
 #### **Setup Steps**
 
-1. **Configure LLM Link with API authentication**:
+1. **Set up environment variables first**:
+   ```bash
+   # Set your GLM API key (required for backend)
+   export ZHIPU_API_KEY="your-real-zhipu-api-key"
+
+   # Set your LLM Link API token (for Codex authentication)
+   export LLM_LINK_API_KEY="your-secret-api-token"
+   ```
+
+2. **Configure LLM Link with API authentication**:
 
    **Option A: Using environment variables (recommended)**
    ```bash
-   # Set your API token
-   export LLM_LINK_API_KEY="your-secret-api-token"
-
    # Start LLM Link with authentication enabled
    ./target/release/llm-link --config configs/config-codex-env.yaml
    ```
 
-   **Option B: Using configuration file**
+   **Option B: Using configuration file (not recommended for production)**
    ```bash
-   # Edit the config file to set your API token
+   # Only for testing - edit the config file to set your API token
    nano configs/config-codex-with-auth.yaml
    # Change: api_key: "your-codex-api-token"
 

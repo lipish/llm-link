@@ -13,7 +13,7 @@ server:
 llm_backend:
   type: "Zhipu"
   base_url: "https://open.bigmodel.cn/api/paas/v4"
-  api_key: "d2a0da2b02954b1f91a0a4ec16d4521b.GA2Tz9sF9kt4zVd3"
+  api_key: "${ZHIPU_API_KEY}"  # Use environment variable for security
   model: "glm-4-flash"  # Default model, can be overridden by requests
 
 # API endpoint configurations
