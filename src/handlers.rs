@@ -626,12 +626,84 @@ pub async fn openai_chat(
             let model = if request.model.is_empty() { None } else { Some(request.model.as_str()) };
 
             if request.stream.unwrap_or(false) {
-                match state.llm_service.chat_stream_with_model(model, messages).await {
+                // 🎯 使用与 Ollama API 相同的高级流式处理
+                let client_adapter = ClientAdapter::detect_from_config_and_headers(&state.config, &headers);
+                let (stream_format, _content_type) = determine_standard_format(&headers);
+
+                // 如果没有显式指定格式，使用客户端偏好
+                let final_format = if headers.get("accept").map_or(true, |v| v.to_str().unwrap_or("").contains("*/*")) {
+                    client_adapter.preferred_format()
+                } else {
+                    stream_format
+                };
+
+                let final_content_type = match final_format {
+                    StreamFormat::SSE => "text/event-stream",
+                    StreamFormat::NDJSON => "application/x-ndjson",
+                    StreamFormat::Json => "application/json",
+                };
+
+                info!("📡 Starting OpenAI streaming response - Client: {:?}, Format: {:?} ({})",
+                      client_adapter, final_format, final_content_type);
+
+                match state.llm_service.chat_stream_with_format(model, messages.clone(), final_format).await {
                     Ok(rx) => {
-                        let stream = rx.map(|data| Ok::<Event, Infallible>(Event::default().data(data)));
-                        Ok(Sse::new(stream).into_response())
+                        info!("✅ OpenAI streaming response started successfully");
+
+                        // 🎯 应用客户端特定的适配处理
+                        let adapter = client_adapter.clone();
+                        let config = state.config.clone();
+                        let adapted_stream = rx.map(move |data| {
+                            // 解析 JSON 数据
+                            if let Ok(mut json_data) = serde_json::from_str::<serde_json::Value>(&data) {
+                                // 应用客户端特定的适配
+                                adapter.apply_response_adaptations(&config, &mut json_data);
+
+                                // 重新序列化
+                                match final_format {
+                                    StreamFormat::SSE => {
+                                        format!("data: {}\n\n", json_data)
+                                    }
+                                    StreamFormat::NDJSON => {
+                                        format!("{}\n", json_data)
+                                    }
+                                    StreamFormat::Json => {
+                                        json_data.to_string()
+                                    }
+                                }
+                            } else {
+                                // 如果解析失败，返回原始数据
+                                data
+                            }
+                        });
+
+                        let body_stream = adapted_stream.map(|data| Ok::<_, Infallible>(data));
+                        let body = Body::from_stream(body_stream);
+
+                        let response = Response::builder()
+                            .status(200)
+                            .header("content-type", final_content_type)
+                            .header("cache-control", "no-cache")
+                            .body(body)
+                            .unwrap();
+
+                        Ok(response)
                     }
-                    Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+                    Err(e) => {
+                        warn!("⚠️ OpenAI streaming not supported by backend, falling back to non-streaming: {:?}", e);
+                        // Fallback to non-streaming response
+                        match state.llm_service.chat_with_model(model, messages).await {
+                            Ok(response) => {
+                                info!("✅ OpenAI fallback non-streaming chat completed successfully");
+                                let openai_response = crate::service::convert_response_to_openai(response);
+                                Ok(Json(openai_response).into_response())
+                            }
+                            Err(e) => {
+                                error!("❌ OpenAI fallback chat request failed: {:?}", e);
+                                Err(StatusCode::INTERNAL_SERVER_ERROR)
+                            },
+                        }
+                    },
                 }
             } else {
                 match state.llm_service.chat_with_model(model, messages).await {
