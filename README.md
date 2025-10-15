@@ -531,20 +531,22 @@ Codex CLI is a powerful command-line tool for AI-assisted coding. LLM Link provi
 
 2. **Configure LLM Link with API authentication**:
 
-   **Option A: Using environment variables (recommended)**
+   **Option A: Standard HTTP port (recommended for Codex CLI)**
    ```bash
-   # Start LLM Link with authentication enabled
-   ./target/release/llm-link --config configs/config-codex-env.yaml
+   # Start LLM Link on port 8080 with pure OpenAI API
+   ./target/release/llm-link --config configs/config-codex-standard.yaml
    ```
 
-   **Option B: Using configuration file (not recommended for production)**
+   **Option B: HTTPS port (for tools expecting standard HTTPS)**
    ```bash
-   # Only for testing - edit the config file to set your API token
-   nano configs/config-codex-with-auth.yaml
-   # Change: api_key: "your-codex-api-token"
+   # Start LLM Link on port 443 (requires sudo)
+   sudo ./target/release/llm-link --config configs/config-codex-https-port.yaml
+   ```
 
-   # Start LLM Link
-   ./target/release/llm-link --config configs/config-codex-with-auth.yaml
+   **Option C: Dual API support (OpenAI + Ollama on port 11434)**
+   ```bash
+   # Start LLM Link with both APIs enabled
+   ./target/release/llm-link --config configs/config-codex-env.yaml
    ```
 
 2. **Configure Codex CLI**:
@@ -556,9 +558,13 @@ Codex CLI is a powerful command-line tool for AI-assisted coding. LLM Link provi
    # Name displayed in Codex UI
    name = "LLM Link - GLM Models"
    # Base URL for LLM Link's OpenAI-compatible API
-   base_url = "http://localhost:11434/v1"
+   base_url = "http://localhost:8080/v1"  # Standard HTTP port
    # Environment variable containing the API token
    env_key = "LLM_LINK_API_KEY"
+
+   # Alternative configurations:
+   # For HTTPS port: base_url = "http://localhost:443/v1"
+   # For dual API:   base_url = "http://localhost:11434/v1"
 
    [profiles.glm_4_flash]
    model = "glm-4-flash"
