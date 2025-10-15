@@ -531,22 +531,26 @@ Codex CLI is a powerful command-line tool for AI-assisted coding. LLM Link provi
 
 2. **Configure LLM Link with API authentication**:
 
-   **Option A: Dual API support on port 11434 (recommended)**
+   **Option A: Pure OpenAI API on port 11434 (recommended for Codex)**
+   ```bash
+   # Start LLM Link with ONLY OpenAI API (no Ollama protocol)
+   # Pure OpenAI standard compliance for maximum Codex compatibility
+   ./target/release/llm-link --config configs/config-codex-pure-openai.yaml
+   ```
+
+   **Option B: Dual API support on port 11434**
    ```bash
    # Start LLM Link with both OpenAI and Ollama APIs
-   # This matches the standard Ollama port and provides maximum compatibility
+   # Use this if you also need Ollama compatibility for other tools
    ./target/release/llm-link --config configs/config-codex-env.yaml
    ```
 
-   **Option B: Pure OpenAI API on standard HTTP port**
+   **Option C: Pure OpenAI API on alternative ports**
    ```bash
-   # Start LLM Link on port 8080 with only OpenAI API
+   # Port 8080
    ./target/release/llm-link --config configs/config-codex-standard.yaml
-   ```
 
-   **Option C: Pure OpenAI API on HTTPS port**
-   ```bash
-   # Start LLM Link on port 443 (requires sudo)
+   # Port 443 (requires sudo)
    sudo ./target/release/llm-link --config configs/config-codex-https-port.yaml
    ```
 

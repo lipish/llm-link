@@ -8,10 +8,10 @@ name = "z.ai - GLM Coding Plan"
 base_url = "https://open.bigmodel.cn/api/paas/v4/"
 env_key = "Z_AI_API_KEY"
 
-# Option 2: Connection through LLM Link proxy
+# Option 2: Connection through LLM Link proxy (PURE OpenAI API)
 [model_providers.llm_link]
 name = "LLM Link - GLM Models"
-# Connection through LLM Link proxy (with additional features)
+# Connection through LLM Link proxy (pure OpenAI protocol, no Ollama)
 base_url = "http://localhost:11434/v1"
 env_key = "LLM_LINK_API_KEY"
 

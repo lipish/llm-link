@@ -19,8 +19,17 @@ export ZHIPU_API_KEY="your-zhipu-api-key"
 
 ## Start LLM Link
 
+Choose the configuration that best fits your needs:
+
+### Option 1: Pure OpenAI API (Recommended for Codex)
 ```bash
-# Start LLM Link with dual API support
+# Start LLM Link with ONLY OpenAI API (no Ollama protocol)
+./target/release/llm-link --config configs/config-codex-pure-openai.yaml
+```
+
+### Option 2: Dual API Support
+```bash
+# Start LLM Link with both OpenAI and Ollama APIs
 ./target/release/llm-link --config configs/config-codex-env.yaml
 ```
 
@@ -80,10 +89,10 @@ codex --profile glm_4_plus "Refactor this code to use async/await patterns"
 
 ### LLM Link Proxy (llm_link provider)
 - ✅ Additional logging and monitoring
-- ✅ Client adapter optimizations
 - ✅ Bearer token authentication
-- ✅ Dual API support (can also use with other tools)
+- ✅ Pure OpenAI protocol compliance (no Ollama interference)
 - ✅ Request/response transformation capabilities
+- ✅ Optimized for Codex CLI usage
 
 ## Troubleshooting
 
