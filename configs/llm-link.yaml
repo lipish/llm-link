@@ -1,0 +1,33 @@
+# LLM Link Configuration - Debug Version
+
+# Server configuration - Use standard Ollama port
+server:
+  host: "localhost"
+  port: 11434 # Standard Ollama port for Zed.dev compatibility
+  log_level: "debug"
+
+# LLM backend configuration - Use Zhipu GLM as backend
+llm_backend:
+  type: "Zhipu" # Zhipu BigModel API with OpenAI-compatible format
+  base_url: "https://open.bigmodel.cn/api/paas/v4"
+  api_key: "sk-your-zhipu-api-key-here" # Replace with your Zhipu API key from https://open.bigmodel.cn/
+  model: "glm-4.6" # Use the GLM-4.6 model
+
+# API endpoint configurations
+apis:
+  # Ollama-compatible API (for Zed.dev compatibility)
+  ollama:
+    enabled: true
+    path: "" # Use empty path so routes become "/api/*" (standard Ollama)
+    # Disable API key authentication for Zed.dev compatibility
+    api_key_header: null
+    api_key: null
+
+  # Disable other APIs
+  openai:
+    enabled: false
+    path: "/v1"
+
+  anthropic:
+    enabled: false
+    path: "/anthropic"

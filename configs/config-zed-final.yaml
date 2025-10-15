@@ -1,0 +1,61 @@
+# LLM Link Configuration - Final Zed.dev Compatible Configuration
+#
+# This configuration is optimized for perfect compatibility with Zed.dev's ollama crate
+# It uses the standard Ollama port 11434 and provides all expected endpoints
+
+# Server configuration - Use standard Ollama port
+server:
+  host: "127.0.0.1"
+  port: 11434          # Use port 11434 (standard Ollama port for Zed.dev)
+  log_level: "info"
+
+# LLM backend configuration - Use Zhipu GLM as backend
+llm_backend:
+  type: "Zhipu"  # Zhipu BigModel API with OpenAI-compatible format
+  base_url: "https://open.bigmodel.cn/api/paas/v4"
+  api_key: "sk-your-zhipu-api-key-here"  # Replace with your Zhipu API key from https://open.bigmodel.cn/
+  model: "glm-4.6"  # Use the GLM-4.6 model
+
+# API endpoint configurations
+apis:
+  # Ollama-compatible API (for Zed.dev compatibility)
+  ollama:
+    enabled: true
+    path: ""  # Use empty path so routes become "/api/*" (standard Ollama)
+    # Disable API key authentication for Zed.dev compatibility
+    api_key_header: null
+    api_key: null
+    # This creates the standard Ollama endpoints:
+    # - POST http://127.0.0.1:11434/api/generate
+    # - POST http://127.0.0.1:11434/api/chat
+    # - GET  http://127.0.0.1:11434/api/tags
+    # - GET  http://127.0.0.1:11434/api/show/:model
+    # - GET  http://127.0.0.1:11434/api/version
+
+  # Disable other APIs
+  openai:
+    enabled: false
+    path: "/v1"
+
+  anthropic:
+    enabled: false
+    path: "/anthropic"
+
+# Usage with Zed.dev:
+# 1. Start this service: `./target/release/llm-link -c config-zed-final.yaml`
+# 2. In Zed.dev settings, configure ollama to use: http://127.0.0.1:11434
+# 3. Zed.dev will connect to your GLM-4.6 model through the Ollama protocol
+# 4. No additional configuration needed - Zed.dev will detect the models automatically
+
+# Test the service manually:
+# curl -X POST http://127.0.0.1:11434/api/chat \
+#   -H "Content-Type: application/json" \
+#   -d '{
+#     "model": "glm-4.6",
+#     "messages": [
+#       {"role": "user", "content": "Hello, Zed.dev!"}
+#     ]
+#   }'
+
+# API Flow:
+# Zed.dev Ollama Request → LLM Link → Zhipu BigModel (OpenAI-compatible) → GLM Model

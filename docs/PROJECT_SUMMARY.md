@@ -36,15 +36,21 @@ llm-link/
 ├── src/
 │   ├── main.rs              # Application entry point
 │   ├── config.rs            # Configuration structures and loading
-│   ├── llm_connector.rs     # Custom LLM client implementation
-│   ├── llm_service.rs       # LLM service abstraction layer
+│   ├── client.rs            # LLM client abstraction layer
+│   ├── service.rs           # LLM service layer
 │   └── handlers.rs          # HTTP API endpoint handlers
+├── configs/
+│   ├── README.md                    # Configuration documentation
+│   ├── llm-link.yaml               # Main configuration file
+│   ├── llm-link.example.yaml       # Template configuration file
+│   ├── config-debug.yaml           # Debug configuration
+│   ├── config-glm-ollama.yaml      # GLM with auth
+│   ├── config-glm-ollama-noauth.yaml # GLM without auth
+│   └── config-zed-final.yaml       # Zed.dev configuration
 ├── Cargo.toml               # Dependencies and project config
-├── llm-link.yaml            # Configuration file (example)
-├── llm-link.example.yaml    # Template configuration file
 ├── README.md                # Documentation
 ├── test_api.sh              # API testing script
-└── PROJECT_SUMMARY.md       # This summary
+└── docs/PROJECT_SUMMARY.md  # This summary
 ```
 
 ## API Endpoints

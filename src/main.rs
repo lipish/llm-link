@@ -1,25 +1,27 @@
 mod config;
-mod llm_service;
-mod llm_connector;
+mod service;
+mod client;
 mod handlers;
 
 use anyhow::Result;
 use axum::{
-    http::HeaderValue,
-    middleware,
     routing::{get, post},
     Router,
+    extract::Request,
+    response::Response,
 };
 use clap::Parser;
 use config::Config;
 use handlers::{AppState, health_check};
-use std::net::SocketAddr;
+// use std::net::SocketAddr;
 use tower::ServiceBuilder;
 use tower_http::{
     cors::{Any, CorsLayer},
     trace::TraceLayer,
+    classify::ServerErrorsFailureClass,
 };
-use tracing::{info, Level};
+use tracing::{info, error, Span};
+use std::time::Duration;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 #[derive(Parser, Debug)]
@@ -30,12 +32,12 @@ struct Args {
     #[arg(short, long)]
     config: Option<String>,
 
-    /// Host to bind to
-    #[arg(long, default_value = "127.0.0.1")]
+    /// Host to bind to (if provided overrides config)
+    #[arg(long)]
     host: Option<String>,
 
-    /// Port to bind to
-    #[arg(short, long, default_value = "8080")]
+    /// Port to bind to (if provided overrides config)
+    #[arg(short, long)]
     port: Option<u16>,
 
     /// Log level
@@ -61,10 +63,11 @@ async fn main() -> Result<()> {
         .init();
 
     // Load configuration
-    let mut config = if let Some(config_path) = args.config {
-        Config::from_file(config_path)?
+    let (mut config, config_source) = if let Some(config_path) = args.config {
+        let config = Config::from_file(&config_path)?;
+        (config, config_path)
     } else {
-        Config::load()?
+        Config::load_with_source()?
     };
 
     // Override with command line arguments
@@ -78,39 +81,100 @@ async fn main() -> Result<()> {
         config.server.log_level = log_level;
     }
 
-    info!("Starting LLM Link proxy service");
-    info!("Server will bind to {}:{}", config.server.host, config.server.port);
+    info!("🚀 Starting LLM Link proxy service");
+    info!("🌐 Server will bind to {}:{}", config.server.host, config.server.port);
+    info!("📋 Configuration loaded from: {}", config_source);
+
+    // Log enabled APIs
+    if let Some(ollama_config) = &config.apis.ollama {
+        if ollama_config.enabled {
+            info!("🦙 Ollama API enabled on path: {}", ollama_config.path);
+            if ollama_config.api_key.is_some() {
+                info!("🔐 Ollama API key authentication: ENABLED");
+            } else {
+                info!("🔓 Ollama API key authentication: DISABLED");
+            }
+        }
+    }
 
     // Initialize LLM service
-    let llm_service = llm_service::LlmService::from_config(&config.llm_backend)?;
+    info!("🔧 Initializing LLM service...");
+    let llm_service = service::Service::from_config(&config.llm_backend)?;
+    info!("✅ LLM service initialized successfully");
+
     let app_state = AppState {
         llm_service: std::sync::Arc::new(llm_service),
+        config: std::sync::Arc::new(config.clone()),
     };
 
     // Build the application
-    let app = build_app(app_state, &config);
+    info!("🏗️ Building application routes...");
+    let app = build_app(app_state, &config)
+        .layer(
+            TraceLayer::new_for_http()
+                .make_span_with(|request: &Request<_>| {
+                    info!("🌐 ======================================");
+                    info!("🌐 Incoming request: {} {}", request.method(), request.uri());
+                    info!("📋 Full URI: {}", request.uri());
+                    info!("📋 Headers: {:?}", request.headers());
+                    info!("📋 User-Agent: {:?}", request.headers().get("user-agent"));
+                    info!("📋 Host: {:?}", request.headers().get("host"));
+                    info!("📋 Accept: {:?}", request.headers().get("accept"));
+                    info!("📋 Content-Type: {:?}", request.headers().get("content-type"));
+                    info!("📋 Content-Length: {:?}", request.headers().get("content-length"));
+                    info!("======================================");
+                    tracing::info_span!(
+                        "http_request",
+                        method = %request.method(),
+                        uri = %request.uri(),
+                        version = ?request.version(),
+                    )
+                })
+                .on_request(|_request: &Request<_>, _span: &Span| {
+                    info!("🚀 Processing request...");
+                })
+                .on_response(|response: &Response<_>, latency: Duration, _span: &Span| {
+                    info!("✅ Response: {} (took {:?})", response.status(), latency);
+                })
+                .on_failure(|error: ServerErrorsFailureClass, latency: Duration, _span: &Span| {
+                    error!("❌ Request failed: {:?} (took {:?})", error, latency);
+                })
+        );
 
     // Start the server
     let bind_addr = format!("{}:{}", config.server.host, config.server.port);
+    info!("🔌 Binding to address: {}", bind_addr);
     let listener = tokio::net::TcpListener::bind(&bind_addr).await?;
 
-    info!("LLM Link proxy is listening on {}", bind_addr);
+    info!("🎉 LLM Link proxy is listening on {}", bind_addr);
+    info!("📡 Ready to accept connections!");
+    info!("👀 Monitoring for ANY incoming requests from Zed.dev...");
 
-    // For now, just test if we can build successfully
-    println!("Server setup completed successfully!");
+    // Serve the app (axum 0.7) with concrete state applied
+    axum::serve(listener, app).await?;
 
     Ok(())
 }
 
-fn build_app(state: AppState, config: &Config) -> Router<AppState> {
+fn build_app(state: AppState, config: &Config) -> Router {
     let mut app = Router::new()
-        .route("/health", get(health_check))
+        .route("/", get(|| {
+            info!("🏠 Root endpoint accessed");
+            async { "Ollama is running" }
+        }))
+        .route("/health", get(|| {
+            info!("🏥 Health check endpoint accessed");
+            async { health_check().await }
+        }))
+        .route("/debug", get(|| {
+            info!("🐛 Debug endpoint accessed");
+            async { handlers::debug_test().await }
+        }))
         .layer(
             ServiceBuilder::new()
                 .layer(TraceLayer::new_for_http())
                 .layer(CorsLayer::new().allow_origin(Any).allow_methods(Any).allow_headers(Any)),
-        )
-        .with_state(state);
+        );
 
     // Add Ollama API endpoints
     if let Some(ollama_config) = &config.apis.ollama {
@@ -120,13 +184,14 @@ fn build_app(state: AppState, config: &Config) -> Router<AppState> {
                 .route(&format!("{}/api/generate", ollama_config.path), post(handlers::ollama_generate))
                 .route(&format!("{}/api/chat", ollama_config.path), post(handlers::ollama_chat))
                 .route(&format!("{}/api/tags", ollama_config.path), get(handlers::ollama_tags))
-                .route(&format!("{}/api/show", ollama_config.path), get(handlers::ollama_show))
+                .route(&format!("{}/api/show", ollama_config.path), post(handlers::ollama_show))
                 .route(&format!("{}/api/version", ollama_config.path), get(|| async {
                     axum::Json(serde_json::json!({
                         "version": "0.1.0",
                         "build": "llm-link"
                     }))
-                }));
+                }))
+                .route(&format!("{}/api/ps", ollama_config.path), get(handlers::ollama_ps));
         }
     }
 
@@ -151,5 +216,23 @@ fn build_app(state: AppState, config: &Config) -> Router<AppState> {
         }
     }
 
-    app
+    // Add catch-all route for debugging
+    app = app.fallback(|request: axum::extract::Request| async move {
+        error!("🚫 ======================================");
+        error!("🚫 UNMATCHED ROUTE ACCESSED!");
+        error!("🚫 Method: {}", request.method());
+        error!("🚫 URI: {}", request.uri());
+        error!("🚫 Full URI: {}", request.uri());
+        error!("🚫 Headers: {:?}", request.headers());
+        error!("🚫 User-Agent: {:?}", request.headers().get("user-agent"));
+        error!("🚫 Host: {:?}", request.headers().get("host"));
+        error!("🚫 Accept: {:?}", request.headers().get("accept"));
+        error!("🚫 Content-Type: {:?}", request.headers().get("content-type"));
+        error!("🚫 Content-Length: {:?}", request.headers().get("content-length"));
+        error!("🚫 ======================================");
+        axum::http::StatusCode::NOT_FOUND
+    });
+
+    // Apply concrete state at the end so the resulting type is Router<()>
+    app.with_state(state)
 }

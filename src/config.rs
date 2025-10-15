@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+// removed unused import
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Config {
@@ -35,6 +35,11 @@ pub enum LlmBackendConfig {
         api_key: String,
         model: String,
     },
+    Zhipu {
+        api_key: String,
+        base_url: Option<String>,
+        model: String,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -48,6 +53,8 @@ pub struct ApiConfigs {
 pub struct OllamaApiConfig {
     pub enabled: bool,
     pub path: String,
+    pub api_key_header: Option<String>,
+    pub api_key: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -55,6 +62,7 @@ pub struct OpenAiApiConfig {
     pub enabled: bool,
     pub path: String,
     pub api_key_header: Option<String>,
+    pub api_key: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -62,6 +70,7 @@ pub struct AnthropicApiConfig {
     pub enabled: bool,
     pub path: String,
     pub api_key_header: Option<String>,
+    pub api_key: Option<String>,
 }
 
 impl Default for Config {
@@ -80,16 +89,20 @@ impl Default for Config {
                 ollama: Some(OllamaApiConfig {
                     enabled: true,
                     path: "/ollama".to_string(),
+                    api_key_header: None,
+                    api_key: None,
                 }),
                 openai: Some(OpenAiApiConfig {
                     enabled: true,
                     path: "/v1".to_string(),
                     api_key_header: None,
+                    api_key: None,
                 }),
                 anthropic: Some(AnthropicApiConfig {
                     enabled: true,
                     path: "/anthropic".to_string(),
                     api_key_header: None,
+                    api_key: None,
                 }),
             },
         }
@@ -125,8 +138,13 @@ impl Config {
         if let Ok(config_path) = std::env::var("LLM_LINK_CONFIG") {
             Self::from_file(config_path)
         } else {
-            // Try default config locations
+            // Try default config locations (now in configs directory)
             let default_paths = [
+                "./configs/llm-link.yaml",
+                "./configs/config.yaml",
+                "./configs/llm-link.yml",
+                "./configs/config.yml",
+                // Fallback to old locations for backward compatibility
                 "./llm-link.yaml",
                 "./config.yaml",
                 "./llm-link.yml",
@@ -141,6 +159,38 @@ impl Config {
 
             // Fallback to environment variables or defaults
             Self::from_env()
+        }
+    }
+
+    /// Load configuration and return both config and source path
+    pub fn load_with_source() -> anyhow::Result<(Self, String)> {
+        if let Ok(config_path) = std::env::var("LLM_LINK_CONFIG") {
+            let config = Self::from_file(&config_path)?;
+            Ok((config, format!("environment variable: {}", config_path)))
+        } else {
+            // Try default config locations (now in configs directory)
+            let default_paths = [
+                "./configs/llm-link.yaml",
+                "./configs/config.yaml",
+                "./configs/llm-link.yml",
+                "./configs/config.yml",
+                // Fallback to old locations for backward compatibility
+                "./llm-link.yaml",
+                "./config.yaml",
+                "./llm-link.yml",
+                "./config.yml",
+            ];
+
+            for path in default_paths.iter() {
+                if std::path::Path::new(path).exists() {
+                    let config = Self::from_file(path)?;
+                    return Ok((config, path.to_string()));
+                }
+            }
+
+            // Fallback to environment variables or defaults
+            let config = Self::from_env()?;
+            Ok((config, "environment variables/defaults".to_string()))
         }
     }
 }

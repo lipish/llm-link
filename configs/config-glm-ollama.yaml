@@ -1,19 +1,20 @@
-# LLM Link Configuration - Aliyun Wanxiang GLM Backend with Ollama Protocol
+# LLM Link Configuration - Zhipu GLM Backend with Ollama Protocol
 #
 # This configuration allows applications expecting Ollama protocol
-# to work with GLM models through Aliyun Wanxiang (OpenAI-compatible API).
+# to work with GLM models through Zhipu BigModel (OpenAI-compatible API).
 
 # Server configuration
 server:
-  host: "127.0.0.1"
-  port: 8080
+  host: "localhost"
+  port: 11434
   log_level: "info"
 
-# LLM backend configuration - Use Aliyun Wanxiang GLM as backend
+# LLM backend configuration - Use Zhipu GLM as backend
 llm_backend:
-  type: "Aliyun"  # Aliyun Wanxiang API with OpenAI-compatible format
-  api_key: "your-aliyun-wanxiang-api-key-here"  # Get this from https://dashscope.console.aliyun.com/
-  model: "glm-4.6"  # Available models: glm-4.6, glm-4, glm-4-plus, glm-4-flash, glm-4-air, glm-4-long
+  type: "Zhipu" # Zhipu BigModel API with OpenAI-compatible format
+  base_url: "https://open.bigmodel.cn/api/paas/v4"
+  api_key: "sk-your-zhipu-api-key-here" # Replace with your Zhipu API key from https://open.bigmodel.cn/
+  model: "glm-4.6" # Available models: glm-4.6, glm-4, glm-4-plus, glm-4-flash, glm-4-air, glm-4-long
 
 # API endpoint configurations
 # Enable only Ollama protocol interface
@@ -21,7 +22,12 @@ apis:
   # Ollama-compatible API (for applications expecting Ollama)
   ollama:
     enabled: true
-    path: "/ollama"
+    path: ""
+    # 为对外 API 增加密钥校验（示例）。
+    # header 名可选："authorization"（Bearer <key>）或自定义如 "x-api-key"。
+    api_key_header: "authorization"
+    # 将此值替换为你自己的服务端密钥
+    api_key: "your-service-api-key-here"  # Replace with your service API key
     # Applications will use these endpoints:
     # - POST http://localhost:8080/ollama/api/generate
     # - POST http://localhost:8080/ollama/api/chat
@@ -36,12 +42,11 @@ apis:
   anthropic:
     enabled: false
     path: "/anthropic"
-
 # Example usage:
-# 1. Replace "your-aliyun-wanxiang-api-key-here" with your actual Aliyun Wanxiang API key
+# 1. Replace "your-zhipu-api-key-here" with your actual Zhipu BigModel API key
 # 2. Start the service: `./target/release/llm-link -c config-glm-ollama.yaml`
 # 3. Your applications can now use Ollama protocol at http://localhost:8080/ollama
-# 4. All requests will be translated from Ollama format to Aliyun Wanxiang (OpenAI-compatible) API format
+# 4. All requests will be translated from Ollama format to Zhipu BigModel (OpenAI-compatible) API format
 
 # Test with curl:
 # curl -X POST http://localhost:8080/ollama/api/chat \
@@ -54,4 +59,4 @@ apis:
 #   }'
 
 # API Flow:
-# Ollama Request → LLM Link → Aliyun Wanxiang (OpenAI-compatible) → GLM Model
+# Ollama Request → LLM Link → Zhipu BigModel (OpenAI-compatible) → GLM Model

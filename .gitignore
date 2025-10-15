@@ -1,3 +1,37 @@
+# Build artifacts
 /target
+
+# IDE and editor files
 /.claude
-llm-link.yaml
+/.augment
+.vscode/
+.idea/
+
+# Environment variables (contains sensitive API keys)
+.env
+.env.local
+.env.production
+
+# Configuration files with real API keys
+# (Keep example configs in repo, but ignore files with real keys)
+**/config-local.yaml
+**/config-production.yaml
+**/config-personal.yaml
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Logs
+*.log
+logs/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db

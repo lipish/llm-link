@@ -47,10 +47,12 @@ cargo build --release
 Copy the example configuration file:
 
 ```bash
-cp llm-link.yaml.example llm-link.yaml
+cp configs/llm-link.example.yaml configs/llm-link.yaml
 ```
 
-Edit `llm-link.yaml` to configure your backend and API preferences:
+⚠️ **Security Note**: Replace all placeholder API keys (like `sk-your-zhipu-api-key-here`) with your actual API keys.
+
+Edit `configs/llm-link.yaml` to configure your backend and API preferences:
 
 ```yaml
 # Choose ONE LLM backend
@@ -78,7 +80,7 @@ apis:
 
 Start with configuration file:
 ```bash
-./target/release/llm-link -c llm-link.yaml
+./target/release/llm-link -c configs/llm-link.yaml
 ```
 
 Or use environment variables:
@@ -268,6 +270,21 @@ cargo test
 # Build for production
 cargo build --release
 ```
+
+## Testing
+
+Test the API endpoints with the provided script:
+
+```bash
+./test_api.sh
+```
+
+This script tests:
+- Model list endpoint (`GET /api/tags`)
+- Non-streaming chat (`POST /api/chat` with `stream: false`)
+- Streaming chat (`POST /api/chat` with `stream: true`)
+
+Make sure llm-link is running before executing the test script.
 
 ## License
 
