@@ -126,7 +126,67 @@ impl Client {
         };
 
         let config = StreamingConfig {
-            format: StreamingFormat::Ollama,
+            format: StreamingFormat::OpenAI,  // 🎯 使用 OpenAI 格式而不是 Ollama
+            stream_format: format,
+            include_usage: true,
+            include_reasoning: false,
+        };
+
+        // 🎉 使用新的 chat_stream_universal 方法！
+        let stream = self.llm_client.chat_stream_universal(&request, &config).await
+            .map_err(|e| anyhow!("LLM connector universal streaming error: {}", e))?;
+
+        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+
+        tokio::spawn(async move {
+            let mut stream = stream;
+            while let Some(chunk) = stream.next().await {
+                match chunk {
+                    Ok(stream_chunk) => {
+                        // 🎉 v0.3.13: 使用新的格式转换方法
+                        let formatted_data = match format {
+                            StreamFormat::SSE => stream_chunk.to_sse(),
+                            StreamFormat::NDJSON => stream_chunk.to_ndjson(),
+                            StreamFormat::Json => stream_chunk.to_json(),
+                        };
+
+                        let _ = tx.send(formatted_data);
+
+                        // 检查是否完成（从 data 中检查 done 字段）
+                        if let Some(done) = stream_chunk.data.get("done") {
+                            if done.as_bool().unwrap_or(false) {
+                                break;
+                            }
+                        }
+                    }
+                    Err(_) => break,
+                }
+            }
+        });
+
+        Ok(UnboundedReceiverStream::new(rx))
+    }
+
+    /// Send a streaming chat request to the LLM for OpenAI API (uses OpenAI format)
+    pub async fn chat_stream_openai(&self, model: &str, messages: Vec<Message>, format: StreamFormat) -> Result<UnboundedReceiverStream<String>> {
+        // Convert messages to llm-connector format
+        let chat_messages: Vec<LlmMessage> = messages.into_iter().map(|msg| {
+            match msg.role {
+                Role::System => LlmMessage::system(&msg.content),
+                Role::User => LlmMessage::user(&msg.content),
+                Role::Assistant => LlmMessage::assistant(&msg.content),
+            }
+        }).collect();
+
+        let request = ChatRequest {
+            model: model.to_string(),
+            messages: chat_messages,
+            stream: Some(true),
+            ..Default::default()
+        };
+
+        let config = StreamingConfig {
+            format: StreamingFormat::OpenAI,  // 🎯 明确使用 OpenAI 格式
             stream_format: format,
             include_usage: true,
             include_reasoning: false,

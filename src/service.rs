@@ -42,6 +42,12 @@ impl Service {
         Ok(stream)
     }
 
+    pub async fn chat_stream_openai(&self, model: Option<&str>, messages: Vec<Message>, format: StreamFormat) -> Result<UnboundedReceiverStream<String>> {
+        let model_to_use = model.unwrap_or(&self.model);
+        let stream = self.client.chat_stream_openai(model_to_use, messages, format).await?;
+        Ok(stream)
+    }
+
     pub async fn models(&self) -> Result<Vec<Value>> {
         // Get available models from the backend
         let models = self.client.list_models().await?;

@@ -646,7 +646,7 @@ pub async fn openai_chat(
                 info!("📡 Starting OpenAI streaming response - Client: {:?}, Format: {:?} ({})",
                       client_adapter, final_format, final_content_type);
 
-                match state.llm_service.chat_stream_with_format(model, messages.clone(), final_format).await {
+                match state.llm_service.chat_stream_openai(model, messages.clone(), final_format).await {
                     Ok(rx) => {
                         info!("✅ OpenAI streaming response started successfully");
 
