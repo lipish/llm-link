@@ -25,6 +25,8 @@ pub enum ClientAdapter {
     Standard,
     /// Zed.dev 编辑器适配
     ZedDev,
+    /// OpenAI API 客户端适配（包括 Codex CLI）
+    OpenAI,
     // 其他特定客户端适配（未来扩展）
     // VsCode,
     // Cursor,
@@ -41,6 +43,7 @@ impl ClientAdapter {
             if let Some(ref force_adapter) = adapters.force_adapter {
                 match force_adapter.to_lowercase().as_str() {
                     "zed" | "zed.dev" => return ClientAdapter::ZedDev,
+                    "openai" | "codex" => return ClientAdapter::OpenAI,
                     "standard" => return ClientAdapter::Standard,
                     _ => {}
                 }
@@ -52,6 +55,7 @@ impl ClientAdapter {
             if let Ok(client_str) = client_hint.to_str() {
                 match client_str.to_lowercase().as_str() {
                     "zed" | "zed.dev" => return ClientAdapter::ZedDev,
+                    "openai" | "codex" => return ClientAdapter::OpenAI,
                     "standard" => return ClientAdapter::Standard,
                     _ => {}
                 }
@@ -61,6 +65,13 @@ impl ClientAdapter {
         // 3. 检查 User-Agent 自动检测
         if let Some(user_agent) = headers.get("user-agent") {
             if let Ok(ua_str) = user_agent.to_str() {
+                let ua_lower = ua_str.to_lowercase();
+
+                // 检测 Codex CLI
+                if ua_lower.contains("codex") {
+                    return ClientAdapter::OpenAI;
+                }
+
                 // 检测 Zed.dev 编辑器
                 if ua_str.starts_with("Zed/") {
                     // 检查配置中是否启用了 Zed 适配
@@ -80,6 +91,7 @@ impl ClientAdapter {
             if let Some(ref default_adapter) = adapters.default_adapter {
                 match default_adapter.to_lowercase().as_str() {
                     "zed" | "zed.dev" => return ClientAdapter::ZedDev,
+                    "openai" | "codex" => return ClientAdapter::OpenAI,
                     "standard" => return ClientAdapter::Standard,
                     _ => {}
                 }
@@ -95,6 +107,7 @@ impl ClientAdapter {
         match self {
             ClientAdapter::Standard => StreamFormat::NDJSON, // Ollama 标准
             ClientAdapter::ZedDev => StreamFormat::NDJSON,   // Zed 偏好 NDJSON
+            ClientAdapter::OpenAI => StreamFormat::SSE,      // OpenAI/Codex 偏好 SSE
         }
     }
 
@@ -130,6 +143,11 @@ impl ClientAdapter {
                         }
                     }
                 }
+            }
+            ClientAdapter::OpenAI => {
+                // OpenAI/Codex 特定适配
+                // 确保响应格式符合 OpenAI API 标准
+                // 目前不需要特殊处理，因为我们使用的是 OpenAI 格式
             }
         }
     }
@@ -626,8 +644,8 @@ pub async fn openai_chat(
             let model = if request.model.is_empty() { None } else { Some(request.model.as_str()) };
 
             if request.stream.unwrap_or(false) {
-                // 🎯 使用与 Ollama API 相同的高级流式处理
-                let client_adapter = ClientAdapter::detect_from_config_and_headers(&state.config, &headers);
+                // 🎯 OpenAI API 强制使用 OpenAI 适配器
+                let client_adapter = ClientAdapter::OpenAI;  // 强制使用 OpenAI 适配器
                 let (stream_format, _content_type) = determine_standard_format(&headers);
 
                 // 如果没有显式指定格式，使用客户端偏好

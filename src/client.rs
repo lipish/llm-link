@@ -126,7 +126,7 @@ impl Client {
         };
 
         let config = StreamingConfig {
-            format: StreamingFormat::OpenAI,  // 🎯 使用 OpenAI 格式而不是 Ollama
+            format: StreamingFormat::Ollama,  // 🎯 恢复 Ollama 格式用于 Ollama API
             stream_format: format,
             include_usage: true,
             include_reasoning: false,
