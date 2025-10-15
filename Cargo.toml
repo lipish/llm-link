@@ -13,8 +13,8 @@ tokio = { version = "1.0", features = ["full"] }
 tower = "0.4"
 tower-http = { version = "0.5", features = ["cors", "trace"] }
 
-# LLM connector with reasoning support - latest version
-llm-connector = { version = "0.3.10", features = ["streaming"] }
+# LLM connector
+llm-connector = { version = "0.3.12", features = ["streaming"] }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
@@ -37,8 +37,8 @@ clap = { version = "4.0", features = ["derive"] }
 uuid = { version = "1.0", features = ["v4"] }
 chrono = { version = "0.4", features = ["serde"] }
 futures = "0.3"
-futures-util = "0.3"
 tokio-stream = "0.1"
+futures-util = "0.3"
 
 [dev-dependencies]
 tempfile = "3.0"

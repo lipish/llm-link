@@ -131,45 +131,26 @@ impl Client {
         };
         request.stream = Some(true);
 
-        let stream = self.llm_client.chat_stream(&request).await
-            .map_err(|e| anyhow!("LLM connector streaming error: {}", e))?;
+        // 🎉 使用新的 chat_stream_ollama 方法！
+        let stream = self.llm_client.chat_stream_ollama(&request).await
+            .map_err(|e| anyhow!("LLM connector Ollama streaming error: {}", e))?;
 
-        // Convert ChatStream to UnboundedReceiverStream<String>
+        // 🎉 v0.3.12: chat_stream_ollama 现在直接返回纯 Ollama 格式！
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-        
+
         tokio::spawn(async move {
             let mut stream = stream;
             while let Some(chunk) = stream.next().await {
                 match chunk {
-                    Ok(response) => {
-                        // Only send chunks that have content
-                        if let Some(content) = response.get_content() {
-                            // Convert streaming response to Ollama format
-                            let ollama_chunk = serde_json::json!({
-                                "id": response.id,
-                                "created": response.created,
-                                "model": response.model,
-                                "choices": [{
-                                    "index": 0,
-                                    "delta": {
-                                        "role": "assistant",
-                                        "content": content,
-                                        "reasoning_content": response.choices.first()
-                                            .and_then(|choice| choice.delta.reasoning_any())
-                                            .unwrap_or("")
-                                    }
-                                }]
-                            });
-                            let _ = tx.send(ollama_chunk.to_string());
+                    Ok(ollama_chunk) => {
+                        // 直接序列化 OllamaStreamChunk 对象
+                        if let Ok(json_str) = serde_json::to_string(&ollama_chunk) {
+                            let _ = tx.send(json_str);
                         }
-                        
-                        // Check if streaming is finished
-                        if let Some(finish_reason) = response.choices.first()
-                            .and_then(|choice| choice.finish_reason.as_deref()) 
-                        {
-                            if finish_reason == "stop" {
-                                break;
-                            }
+
+                        // 检查是否完成
+                        if ollama_chunk.done {
+                            break;
                         }
                     }
                     Err(_) => break,
