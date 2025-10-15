@@ -21,16 +21,10 @@ export ZHIPU_API_KEY="your-zhipu-api-key"
 
 Choose the configuration that best fits your needs:
 
-### Option 1: Pure OpenAI API (Recommended for Codex)
+### Pure OpenAI API for Codex CLI
 ```bash
-# Start LLM Link with ONLY OpenAI API (no Ollama protocol)
-./target/release/llm-link --config configs/config-codex-pure-openai.yaml
-```
-
-### Option 2: Dual API Support
-```bash
-# Start LLM Link with both OpenAI and Ollama APIs
-./target/release/llm-link --config configs/config-codex-env.yaml
+# Start LLM Link with ONLY OpenAI API on port 8088
+./target/release/llm-link --config configs/config-codex.yaml
 ```
 
 ## Your Current Codex Configuration
@@ -53,7 +47,7 @@ model_provider = "z_ai"
 ```toml
 [model_providers.llm_link]
 name = "LLM Link"
-base_url = "http://localhost:11434/v1"
+base_url = "http://localhost:8088/v1"
 env_key = "LLM_LINK_API_KEY"
 
 [profiles.glm_4_flash]

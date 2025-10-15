@@ -531,27 +531,9 @@ Codex CLI is a powerful command-line tool for AI-assisted coding. LLM Link provi
 
 2. **Configure LLM Link with API authentication**:
 
-   **Option A: Pure OpenAI API on port 11434 (recommended for Codex)**
    ```bash
-   # Start LLM Link with ONLY OpenAI API (no Ollama protocol)
-   # Pure OpenAI standard compliance for maximum Codex compatibility
-   ./target/release/llm-link --config configs/config-codex-pure-openai.yaml
-   ```
-
-   **Option B: Dual API support on port 11434**
-   ```bash
-   # Start LLM Link with both OpenAI and Ollama APIs
-   # Use this if you also need Ollama compatibility for other tools
-   ./target/release/llm-link --config configs/config-codex-env.yaml
-   ```
-
-   **Option C: Pure OpenAI API on alternative ports**
-   ```bash
-   # Port 8080
-   ./target/release/llm-link --config configs/config-codex-standard.yaml
-
-   # Port 443 (requires sudo)
-   sudo ./target/release/llm-link --config configs/config-codex-https-port.yaml
+   # Start LLM Link with pure OpenAI API on port 8088
+   ./target/release/llm-link --config configs/config-codex.yaml
    ```
 
 2. **Configure Codex CLI**:
@@ -563,13 +545,9 @@ Codex CLI is a powerful command-line tool for AI-assisted coding. LLM Link provi
    # Name displayed in Codex UI
    name = "LLM Link - GLM Models"
    # Base URL for LLM Link's OpenAI-compatible API
-   base_url = "http://localhost:11434/v1"  # Standard Ollama port (recommended)
+   base_url = "http://localhost:8088/v1"
    # Environment variable containing the API token
    env_key = "LLM_LINK_API_KEY"
-
-   # Alternative configurations:
-   # For pure OpenAI (HTTP): base_url = "http://localhost:8080/v1"
-   # For pure OpenAI (HTTPS): base_url = "http://localhost:443/v1"
 
    [profiles.glm_4_flash]
    model = "glm-4-flash"

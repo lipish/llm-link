@@ -12,7 +12,7 @@ env_key = "Z_AI_API_KEY"
 [model_providers.llm_link]
 name = "LLM Link - GLM Models"
 # Connection through LLM Link proxy (pure OpenAI protocol, no Ollama)
-base_url = "http://localhost:11434/v1"
+base_url = "http://localhost:8088/v1"
 env_key = "LLM_LINK_API_KEY"
 
 # Profiles using direct connection (z_ai provider)

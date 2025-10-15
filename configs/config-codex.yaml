@@ -1,12 +1,12 @@
-# LLM Link Configuration - Pure OpenAI API for Codex CLI
+# LLM Link Configuration - Codex CLI Pure OpenAI API
 #
 # This configuration provides ONLY OpenAI-compatible API for Codex CLI
-# No Ollama protocol - pure OpenAI standard compliance
+# Pure OpenAI standard compliance on port 8088
 
 # Server configuration
 server:
   host: "0.0.0.0"
-  port: 11434  # Keep same port as your Codex config
+  port: 8088
   log_level: "info"
 
 # LLM backend configuration
