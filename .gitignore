@@ -17,6 +17,7 @@
 **/config-local.yaml
 **/config-production.yaml
 **/config-personal.yaml
+**/config-working.yaml
 
 # Backup files
 *.bak
