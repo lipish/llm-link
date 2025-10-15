@@ -1,0 +1,69 @@
+# LLM Link Configuration - Multi-Provider Setup
+# This configuration shows how to set up multiple LLM providers
+# 
+# ⚠️ SECURITY: Replace all placeholder API keys with your real keys
+# Use environment variables: api_key: "${PROVIDER_API_KEY}"
+
+# Server configuration
+server:
+  host: "localhost"
+  port: 11434
+  log_level: "info"
+
+# LLM backend configuration - Choose ONE provider
+llm_backend:
+  # Option 1: Zhipu GLM (智谱AI)
+  type: "Zhipu"
+  base_url: "https://open.bigmodel.cn/api/paas/v4"
+  api_key: "${ZHIPU_API_KEY}"  # Use environment variable
+  model: "glm-4-flash"  # Available: glm-4.6, glm-4, glm-4-plus, glm-4-flash, glm-4-air, glm-4-long
+
+  # Option 2: DeepSeek
+  # type: "OpenAI"  # DeepSeek uses OpenAI-compatible API
+  # base_url: "https://api.deepseek.com"
+  # api_key: "${DEEPSEEK_API_KEY}"
+  # model: "deepseek-chat"
+
+  # Option 3: Aliyun DashScope
+  # type: "OpenAI"  # Aliyun uses OpenAI-compatible API
+  # base_url: "https://dashscope.aliyuncs.com/compatible-mode/v1"
+  # api_key: "${ALIYUN_API_KEY}"
+  # model: "qwen-turbo"
+
+  # Option 4: VolcEngine
+  # type: "OpenAI"  # VolcEngine uses OpenAI-compatible API
+  # base_url: "https://ark.cn-beijing.volces.com/api/v3"
+  # api_key: "${VOLCENGINE_API_KEY}"
+  # model: "ep-20241015000000-xxxxx"  # Replace with your endpoint ID
+
+  # Option 5: Moonshot
+  # type: "OpenAI"  # Moonshot uses OpenAI-compatible API
+  # base_url: "https://api.moonshot.cn/v1"
+  # api_key: "${MOONSHOT_API_KEY}"
+  # model: "moonshot-v1-8k"
+
+  # Option 6: OpenAI
+  # type: "OpenAI"
+  # base_url: "https://api.openai.com/v1"
+  # api_key: "${OPENAI_API_KEY}"
+  # model: "gpt-3.5-turbo"
+
+# API endpoint configurations
+apis:
+  # Ollama-compatible API (for Zed.dev and other Ollama clients)
+  ollama:
+    enabled: true
+    path: ""
+    # Optional: Add authentication for your service
+    # api_key_header: "authorization"
+    # api_key: "${SERVICE_API_KEY}"
+
+  # OpenAI-compatible API (disabled in this config)
+  openai:
+    enabled: false
+    path: "/v1"
+
+  # Anthropic-compatible API (disabled in this config)
+  anthropic:
+    enabled: false
+    path: "/anthropic"

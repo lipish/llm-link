@@ -30,6 +30,7 @@ llm-link automatically searches for configuration files in the following order:
 - **`config-glm-ollama.yaml`** - Zhipu GLM with Ollama API compatibility (with authentication)
 - **`config-glm-ollama-noauth.yaml`** - Zhipu GLM with Ollama API compatibility (no authentication)
 - **`config-zed-final.yaml`** - Final Zed.dev configuration
+- **`config-multi-provider.yaml`** - Multi-provider setup with examples for all supported LLM providers
 
 ## Usage
 
