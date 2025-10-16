@@ -47,19 +47,28 @@ pub struct AppConfigGenerator;
 
 impl AppConfigGenerator {
     /// 为指定应用生成配置
-    pub fn generate_config(app: &SupportedApp) -> Config {
+    pub fn generate_config(app: &SupportedApp, cli_api_key: Option<&str>) -> Config {
         match app {
-            SupportedApp::CodexCLI => Self::codex_cli_config(),
-            SupportedApp::ClaudeCode => Self::claude_code_config(),
-            SupportedApp::ZedDev => Self::zed_dev_config(),
-            SupportedApp::Dual => Self::dual_protocol_config(),
+            SupportedApp::CodexCLI => Self::codex_cli_config(cli_api_key),
+            SupportedApp::ClaudeCode => Self::claude_code_config(cli_api_key),
+            SupportedApp::ZedDev => Self::zed_dev_config(cli_api_key),
+            SupportedApp::Dual => Self::dual_protocol_config(cli_api_key),
         }
     }
 
-    /// 解析环境变量模板
-    fn resolve_env_var(template: &str) -> String {
+    /// 解析环境变量模板，支持 CLI 参数覆盖
+    fn resolve_env_var(template: &str, cli_api_key: Option<&str>) -> String {
         if template.starts_with("${") && template.ends_with("}") {
             let var_name = &template[2..template.len()-1];
+
+            // 如果是 LLM_LINK_API_KEY 且提供了 CLI 参数，优先使用 CLI 参数
+            if var_name == "LLM_LINK_API_KEY" {
+                if let Some(cli_key) = cli_api_key {
+                    return cli_key.to_string();
+                }
+            }
+
+            // 否则尝试从环境变量获取
             std::env::var(var_name).unwrap_or_else(|_| {
                 eprintln!("Warning: Environment variable '{}' not found, using placeholder", var_name);
                 template.to_string()
@@ -70,7 +79,7 @@ impl AppConfigGenerator {
     }
 
     /// Codex CLI 配置
-    fn codex_cli_config() -> Config {
+    fn codex_cli_config(cli_api_key: Option<&str>) -> Config {
         Config {
             server: ServerConfig {
                 host: "0.0.0.0".to_string(),
@@ -78,7 +87,7 @@ impl AppConfigGenerator {
                 log_level: "info".to_string(),
             },
             llm_backend: LlmBackendConfig::Zhipu {
-                api_key: Self::resolve_env_var("${ZHIPU_API_KEY}"),
+                api_key: Self::resolve_env_var("${ZHIPU_API_KEY}", cli_api_key),
                 base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
                 model: "glm-4-flash".to_string(),
             },
@@ -87,7 +96,7 @@ impl AppConfigGenerator {
                     enabled: true,
                     path: "/v1".to_string(),
                     api_key_header: Some("Authorization".to_string()),
-                    api_key: Some(Self::resolve_env_var("${LLM_LINK_API_KEY}")),
+                    api_key: Some(Self::resolve_env_var("${LLM_LINK_API_KEY}", cli_api_key)),
                 }),
                 ollama: Some(OllamaApiConfig {
                     enabled: false,
@@ -114,7 +123,7 @@ impl AppConfigGenerator {
     }
 
     /// Zed.dev 配置
-    fn zed_dev_config() -> Config {
+    fn zed_dev_config(cli_api_key: Option<&str>) -> Config {
         Config {
             server: ServerConfig {
                 host: "0.0.0.0".to_string(),
@@ -122,7 +131,7 @@ impl AppConfigGenerator {
                 log_level: "info".to_string(),
             },
             llm_backend: LlmBackendConfig::Zhipu {
-                api_key: Self::resolve_env_var("${ZHIPU_API_KEY}"),
+                api_key: Self::resolve_env_var("${ZHIPU_API_KEY}", cli_api_key),
                 base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
                 model: "glm-4-flash".to_string(),
             },
@@ -158,7 +167,7 @@ impl AppConfigGenerator {
     }
 
     /// Claude Code 配置
-    fn claude_code_config() -> Config {
+    fn claude_code_config(cli_api_key: Option<&str>) -> Config {
         Config {
             server: ServerConfig {
                 host: "0.0.0.0".to_string(),
@@ -166,7 +175,7 @@ impl AppConfigGenerator {
                 log_level: "info".to_string(),
             },
             llm_backend: LlmBackendConfig::Zhipu {
-                api_key: Self::resolve_env_var("${ZHIPU_API_KEY}"),
+                api_key: Self::resolve_env_var("${ZHIPU_API_KEY}", cli_api_key),
                 base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
                 model: "glm-4-plus".to_string(),
             },
@@ -202,7 +211,7 @@ impl AppConfigGenerator {
     }
 
     /// 双协议配置
-    fn dual_protocol_config() -> Config {
+    fn dual_protocol_config(cli_api_key: Option<&str>) -> Config {
         Config {
             server: ServerConfig {
                 host: "0.0.0.0".to_string(),
@@ -210,7 +219,7 @@ impl AppConfigGenerator {
                 log_level: "info".to_string(),
             },
             llm_backend: LlmBackendConfig::Zhipu {
-                api_key: Self::resolve_env_var("${ZHIPU_API_KEY}"),
+                api_key: Self::resolve_env_var("${ZHIPU_API_KEY}", cli_api_key),
                 base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
                 model: "glm-4-flash".to_string(),
             },
@@ -219,7 +228,7 @@ impl AppConfigGenerator {
                     enabled: true,
                     path: "/v1".to_string(),
                     api_key_header: Some("Authorization".to_string()),
-                    api_key: Some(Self::resolve_env_var("${LLM_LINK_API_KEY}")),
+                    api_key: Some(Self::resolve_env_var("${LLM_LINK_API_KEY}", cli_api_key)),
                 }),
                 ollama: Some(OllamaApiConfig {
                     enabled: true,
@@ -328,8 +337,8 @@ pub struct AppInfo {
 pub struct EnvChecker;
 
 impl EnvChecker {
-    /// 检查应用所需的环境变量
-    pub fn check_env_vars(app: &SupportedApp) -> Result<(), Vec<String>> {
+    /// 检查应用所需的环境变量，考虑 CLI 参数
+    pub fn check_env_vars(app: &SupportedApp, cli_api_key: Option<&str>) -> Result<(), Vec<String>> {
         let mut missing_vars = Vec::new();
 
         // 所有应用都需要 ZHIPU_API_KEY
@@ -340,7 +349,8 @@ impl EnvChecker {
         // 检查应用特定的环境变量
         match app {
             SupportedApp::CodexCLI | SupportedApp::Dual => {
-                if std::env::var("LLM_LINK_API_KEY").is_err() {
+                // 如果没有 CLI API key 且没有环境变量，则报错
+                if cli_api_key.is_none() && std::env::var("LLM_LINK_API_KEY").is_err() {
                     missing_vars.push("LLM_LINK_API_KEY".to_string());
                 }
             },
@@ -371,6 +381,9 @@ impl EnvChecker {
                 println!("export ZHIPU_API_KEY=\"your-zhipu-api-key\"");
                 println!("export LLM_LINK_API_KEY=\"your-auth-token\"");
                 println!();
+                println!("💡 Alternative: Use CLI parameter instead of environment variable:");
+                println!("   ./target/release/llm-link --app codex-cli --api-key \"your-auth-token\"");
+                println!();
                 println!("💡 The LLM_LINK_API_KEY can be any string you choose for authentication.");
             },
             SupportedApp::ZedDev => {
@@ -387,6 +400,9 @@ impl EnvChecker {
             SupportedApp::Dual => {
                 println!("export ZHIPU_API_KEY=\"your-zhipu-api-key\"");
                 println!("export LLM_LINK_API_KEY=\"your-auth-token\"");
+                println!();
+                println!("💡 Alternative: Use CLI parameter instead of environment variable:");
+                println!("   ./target/release/llm-link --app dual --api-key \"your-auth-token\"");
                 println!();
                 println!("💡 Dual mode supports both OpenAI and Ollama protocols.");
             },

@@ -47,6 +47,10 @@ struct Args {
     #[arg(long)]
     app_info: Option<String>,
 
+    /// API key for LLM Link authentication (overrides LLM_LINK_API_KEY env var)
+    #[arg(long)]
+    api_key: Option<String>,
+
     /// Host to bind to (if provided overrides config)
     #[arg(long)]
     host: Option<String>,
@@ -99,7 +103,7 @@ async fn main() -> Result<()> {
         info!("🚀 Starting in {} mode", app.name());
 
         // Check environment variables
-        if let Err(missing_vars) = EnvChecker::check_env_vars(&app) {
+        if let Err(missing_vars) = EnvChecker::check_env_vars(&app, args.api_key.as_deref()) {
             error!("❌ Missing required environment variables:");
             for var in &missing_vars {
                 error!("   - {}", var);
@@ -109,7 +113,7 @@ async fn main() -> Result<()> {
             return Err(anyhow::anyhow!("Missing required environment variables"));
         }
 
-        let config = AppConfigGenerator::generate_config(&app);
+        let config = AppConfigGenerator::generate_config(&app, args.api_key.as_deref());
         (config, format!("built-in: {}", app.name()))
     } else if let Some(config_path) = args.config {
         let config = Config::from_file(&config_path)?;
