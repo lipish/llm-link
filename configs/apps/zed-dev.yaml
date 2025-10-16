@@ -33,9 +33,11 @@ apis:
   
   openai:
     enabled: false
-  
+    path: "/v1"
+
   anthropic:
     enabled: false
+    path: "/anthropic"
 
 # Client adapter - Force Zed adapter with optimizations
 client_adapters:

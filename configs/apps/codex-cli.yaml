@@ -33,9 +33,11 @@ apis:
   
   ollama:
     enabled: false
-  
+    path: "/ollama"
+
   anthropic:
     enabled: false
+    path: "/anthropic"
 
 # Client adapter - Force OpenAI adapter
 client_adapters:
