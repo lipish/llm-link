@@ -1,0 +1,55 @@
+# LLM Link Configuration - Optimized for Codex CLI
+#
+# This configuration is specifically optimized for GitHub Codex CLI
+# Provides pure OpenAI API with optimal settings for code generation
+
+# Application metadata
+app:
+  name: "Codex CLI"
+  description: "GitHub Codex CLI tool for AI-powered coding assistance"
+  version: "1.0"
+  documentation: "https://github.com/your-repo/llm-link/docs/apps/codex-cli.md"
+
+# Server configuration - Standard HTTP port for Codex
+server:
+  host: "0.0.0.0"
+  port: 8088
+  log_level: "info"
+
+# LLM backend configuration
+llm_backend:
+  type: "Zhipu"
+  base_url: "https://open.bigmodel.cn/api/paas/v4"
+  api_key: "${ZHIPU_API_KEY}"
+  model: "glm-4-flash"
+
+# API configuration - Pure OpenAI API only
+apis:
+  openai:
+    enabled: true
+    path: "/v1"
+    api_key_header: "Authorization"
+    api_key: "${LLM_LINK_API_KEY}"
+  
+  ollama:
+    enabled: false
+  
+  anthropic:
+    enabled: false
+
+# Client adapter - Force OpenAI adapter
+client_adapters:
+  default_adapter: "openai"
+  force_adapter: "openai"
+  
+  zed:
+    enabled: false
+
+# Codex CLI specific optimizations
+codex_optimizations:
+  # Enable streaming for better user experience
+  enable_streaming: true
+  # Optimize for code generation
+  code_generation_mode: true
+  # Response format optimizations
+  response_format: "openai_standard"

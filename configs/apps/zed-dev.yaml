@@ -1,0 +1,59 @@
+# LLM Link Configuration - Optimized for Zed.dev
+#
+# This configuration is specifically optimized for Zed.dev editor
+# Provides pure Ollama API with Zed-specific adaptations
+
+# Application metadata
+app:
+  name: "Zed.dev"
+  description: "Zed editor with AI assistant integration"
+  version: "1.0"
+  documentation: "https://github.com/your-repo/llm-link/docs/apps/zed-dev.md"
+
+# Server configuration - Standard Ollama port
+server:
+  host: "0.0.0.0"
+  port: 11434
+  log_level: "info"
+
+# LLM backend configuration
+llm_backend:
+  type: "Zhipu"
+  base_url: "https://open.bigmodel.cn/api/paas/v4"
+  api_key: "${ZHIPU_API_KEY}"
+  model: "glm-4-flash"
+
+# API configuration - Pure Ollama API only
+apis:
+  ollama:
+    enabled: true
+    path: "/api"
+    api_key_header: null
+    api_key: null
+  
+  openai:
+    enabled: false
+  
+  anthropic:
+    enabled: false
+
+# Client adapter - Force Zed adapter with optimizations
+client_adapters:
+  default_adapter: "zed"
+  force_adapter: "zed"
+  
+  zed:
+    enabled: true
+    force_images_field: true
+    preferred_format: "ndjson"
+
+# Zed.dev specific optimizations
+zed_optimizations:
+  # Enable NDJSON streaming for better Zed compatibility
+  streaming_format: "ndjson"
+  # Add images field to all responses (Zed requirement)
+  force_images_field: true
+  # Optimize for code completion
+  code_completion_mode: true
+  # Response timing optimizations
+  response_timeout: 30
