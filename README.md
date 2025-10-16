@@ -1,664 +1,372 @@
 # LLM Link
 
-A configurable LLM proxy service that provides unified access to multiple LLM providers through different API interfaces (Ollama, OpenAI-compatible, and Anthropic).
+🚀 **A user-friendly LLM proxy service with built-in support for popular AI coding tools**
 
-## Architecture
+LLM Link provides zero-configuration access to LLM providers through multiple API formats, with optimized built-in support for Codex CLI, Zed.dev, Claude Code, and more.
 
-```
-┌─────────────────┐
-│   Ollama        │  ← Choose ONE backend
-│   OpenAI        │
-│   Anthropic     │
-│   Aliyun        │
-└─────────────────┘
-          │
-          ▼
-┌─────────────────┐
-│   LLM Link      │  ← Proxy Service
-└─────────────────┘
-          │
-    ┌─────┼─────┐
-    ▼     ▼     ▼
-┌─────┐ ┌─────┐ ┌─────┐
-│ /v1 │ │/oll │ │/anth│  ← Multiple API formats
-└─────┘ └─────┘ └─────┘
-```
+## ✨ Key Features
 
-## Features
+- **🎯 Application-Oriented**: Built-in configurations for popular AI coding tools
+- **⚡ Zero Configuration**: One-command startup for common use cases
+- **🔄 Multi-Protocol**: Simultaneous OpenAI, Ollama, and Anthropic API support
+- **🛠️ CLI-First**: Simple command-line interface with helpful guidance
+- **🔧 Smart Adaptation**: Automatic client detection and optimization
+- **🚀 Production Ready**: Built with Rust for performance and reliability
 
-- **Single Backend, Multiple APIs**: Connect to ONE LLM provider (OpenAI, Anthropic, Ollama, or Aliyun) and expose it through multiple API formats simultaneously
-- **API Format Compatibility**: Support for OpenAI-compatible, Ollama-compatible, and Anthropic-compatible API interfaces
-- **Smart Client Adaptation**: Two-layer architecture with standard protocol support and client-specific optimizations
-- **Flexible Streaming Formats**: Support for SSE, NDJSON, and JSON streaming formats with intelligent content negotiation
-- **Zed.dev Integration**: Optimized compatibility with Zed editor and other modern development tools
-- **Flexible Configuration**: YAML-based configuration with environment variable overrides
-- **Unified Access**: Use any application that supports these API standards with your preferred LLM provider
-- **Built with Rust**: Fast, memory-efficient, and production-ready
+## 🎯 Supported Applications
 
-## Quick Start
+| Application | Protocol | Port | Authentication | Status |
+|-------------|----------|------|----------------|---------|
+| **Codex CLI** | OpenAI API | 8088 | Bearer Token | ✅ Ready |
+| **Zed.dev** | Ollama API | 11434 | None | ✅ Ready |
+| **Claude Code** | Anthropic API | 8089 | API Key | ✅ Ready |
+| **Dual Mode** | OpenAI + Ollama | 11434 | Mixed | ✅ Ready |
+
+## 🚀 Quick Start
 
 ### Installation
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/your-repo/llm-link.git
 cd llm-link
 cargo build --release
 ```
 
-### Configuration
+### 🎯 Application Mode (Recommended)
 
-Copy the example configuration file:
+**Step 1: Set up environment variables**
+```bash
+# Required for all applications
+export ZHIPU_API_KEY="your-zhipu-api-key"
+
+# Required for Codex CLI and Dual mode (choose one method)
+export LLM_LINK_API_KEY="your-auth-token"
+# OR use CLI parameter: --api-key "your-auth-token"
+```
+
+**Step 2: Start for your application**
+```bash
+# For Codex CLI
+./target/release/llm-link --app codex-cli --api-key "your-auth-token"
+
+# For Zed.dev
+./target/release/llm-link --app zed-dev
+
+# For Claude Code
+export ANTHROPIC_API_KEY="your-anthropic-key"
+./target/release/llm-link --app claude-code
+
+# For maximum compatibility (both OpenAI and Ollama)
+./target/release/llm-link --app dual --api-key "your-auth-token"
+```
+
+### 📋 Get Help and Information
 
 ```bash
-cp configs/llm-link.example.yaml configs/llm-link.yaml
+# List all supported applications
+./target/release/llm-link --list-apps
+
+# Get detailed setup guide for specific application
+./target/release/llm-link --app-info codex-cli
+./target/release/llm-link --app-info zed-dev
+./target/release/llm-link --app-info claude-code
+
+# Show all CLI options
+./target/release/llm-link --help
 ```
 
-⚠️ **Security Note**: Replace all placeholder API keys (like `sk-your-zhipu-api-key-here`) with your actual API keys.
+### 🔧 Traditional Configuration (Advanced)
 
-Edit `configs/llm-link.yaml` to configure your backend and API preferences:
-
-```yaml
-# Choose ONE LLM backend
-llm_backend:
-  type: "OpenAI"  # OR "Anthropic", "Ollama", "Aliyun"
-  api_key: "your-openai-api-key-here"
-  model: "gpt-3.5-turbo"
-
-# Enable multiple API interfaces (all point to the same backend)
-apis:
-  ollama:
-    enabled: true
-    path: "/ollama"      # Ollama-compatible API
-  openai:
-    enabled: true
-    path: "/v1"          # OpenAI-compatible API
-  anthropic:
-    enabled: true
-    path: "/anthropic"   # Anthropic-compatible API
-```
-
-**Note**: All enabled API endpoints will proxy to the same backend provider configured above.
-
-### Running the Service
-
-Start with configuration file:
-```bash
-./target/release/llm-link -c configs/llm-link.yaml
-```
-
-Or use environment variables:
-```bash
-LLM_LINK_HOST=0.0.0.0
-LLM_LINK_PORT=8080
-LLM_LINK_LOG_LEVEL=info
-./target/release/llm-link
-```
-
-## Client Adaptation Architecture
-
-LLM Link features a two-layer architecture that provides both standard protocol support and client-specific optimizations:
-
-### Layer 1: Standard Protocol Layer
-Strict HTTP standard compliance with support for:
-- **SSE (Server-Sent Events)**: `Accept: text/event-stream`
-- **NDJSON (Newline-Delimited JSON)**: `Accept: application/x-ndjson`
-- **JSON**: Default format
-
-### Layer 2: Client Adaptation Layer
-Optimized compatibility for specific clients:
-
-#### Standard Adapter
-- Pure HTTP standard compliance
-- No client-specific modifications
-- Default for all requests
-
-#### Zed.dev Adapter
-- Automatic `images` field injection for compatibility
-- NDJSON format preference
-- Optimized for Zed editor integration
-
-### Configuration
-
-Add client adapter configuration to your YAML file:
-
-```yaml
-# Client adapter configuration
-client_adapters:
-  # Default adapter when client cannot be detected
-  default_adapter: "standard"
-
-  # Force specific adapter (overrides detection)
-  # force_adapter: "zed"
-
-  # Zed.dev specific configuration
-  zed:
-    enabled: true
-    force_images_field: true
-    preferred_format: "ndjson"
-```
-
-### Usage
-
-#### Method 1: Explicit Client Header
-```bash
-# Use standard mode
-curl -H "X-LLM-Client: standard" ...
-
-# Use Zed.dev adaptation
-curl -H "X-LLM-Client: zed" ...
-```
-
-#### Method 2: Content Negotiation
-```bash
-# Request SSE format
-curl -H "Accept: text/event-stream" ...
-
-# Request NDJSON format
-curl -H "Accept: application/x-ndjson" ...
-```
-
-#### Method 3: Configuration Override
-Set `force_adapter: "zed"` in config to force Zed.dev mode for all requests.
-
-## API Endpoints
-
-### Ollama-compatible API
-
-When enabled at `/ollama`:
-
-- `POST /ollama/api/generate` - Generate completion
-- `POST /ollama/api/chat` - Chat completion
-- `GET /ollama/api/tags` - List available models
-- `GET /ollama/api/show/:model` - Get model details
-
-### OpenAI-compatible API
-
-When enabled at `/v1`:
-
-- `POST /v1/chat/completions` - Chat completion
-- `GET /v1/models` - List available models
-
-### Anthropic-compatible API
-
-When enabled at `/anthropic`:
-
-- `POST /anthropic/v1/messages` - Send messages
-- `GET /anthropic/v1/models` - List available models
-
-## Configuration Options
-
-### Server Configuration
-
-```yaml
-server:
-  host: "127.0.0.1"     # Bind address
-  port: 8080            # Port number
-  log_level: "info"     # Log level (trace, debug, info, warn, error)
-```
-
-### LLM Backend Configuration
-
-#### OpenAI
-```yaml
-llm_backend:
-  type: "OpenAI"
-  api_key: "sk-..."
-  base_url: "https://api.openai.com/v1"  # Optional
-  model: "gpt-3.5-turbo"
-```
-
-#### Anthropic
-```yaml
-llm_backend:
-  type: "Anthropic"
-  api_key: "sk-ant-..."
-  model: "claude-3-sonnet-20240229"
-```
-
-#### Ollama
-```yaml
-llm_backend:
-  type: "Ollama"
-  base_url: "http://localhost:11434"  # Optional
-  model: "llama2"
-```
-
-#### Aliyun
-```yaml
-llm_backend:
-  type: "Aliyun"
-  api_key: "sk-..."
-  model: "qwen-turbo"
-```
-
-### API Configuration
-
-```yaml
-apis:
-  ollama:
-    enabled: true
-    path: "/ollama"
-  openai:
-    enabled: true
-    path: "/v1"
-    api_key_header: null  # Optional custom header
-  anthropic:
-    enabled: true
-    path: "/anthropic"
-    api_key_header: null  # Optional custom header
-```
-
-## Usage Examples
-
-### Example: Ollama Backend with Multiple API Formats
-
-Configure Ollama as the backend:
-
-```yaml
-llm_backend:
-  type: "Ollama"
-  base_url: "http://localhost:11434"
-  model: "llama2"
-
-apis:
-  ollama:
-    enabled: true
-    path: "/ollama"
-  openai:
-    enabled: true
-    path: "/v1"
-  anthropic:
-    enabled: true
-    path: "/anthropic"
-```
-
-Now all three API formats work with the same Ollama instance:
-
-#### Using with OpenAI-compatible clients
-```bash
-curl -X POST http://localhost:8080/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "llama2",
-    "messages": [
-      {"role": "user", "content": "Hello, world!"}
-    ]
-  }'
-```
-
-#### Using with Ollama clients
-```bash
-curl -X POST http://localhost:8080/ollama/api/chat \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "llama2",
-    "messages": [
-      {"role": "user", "content": "Hello, world!"}
-    ]
-  }'
-```
-
-#### Using with Anthropic clients
-```bash
-curl -X POST http://localhost:8080/anthropic/v1/messages \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "llama2",
-    "max_tokens": 1024,
-    "messages": [
-      {"role": "user", "content": "Hello, world!"}
-    ]
-  }'
-```
-
-**Result**: All three requests use different API formats but are processed by the same Ollama backend!
-
-## Environment Variables
-
-- `LLM_LINK_CONFIG` - Path to configuration file
-- `LLM_LINK_HOST` - Override server host
-- `LLM_LINK_PORT` - Override server port
-- `LLM_LINK_LOG_LEVEL` - Override log level
-
-## Health Check
-
-Check service status:
-```bash
-curl http://localhost:8080/health
-```
-
-## Development
+For custom setups, you can still use configuration files:
 
 ```bash
-# Run in development mode
-cargo run
+# Use existing configuration files
+./target/release/llm-link --config configs/codex-cli.yaml
+./target/release/llm-link --config configs/zed-dev.yaml
+./target/release/llm-link --config configs/config-dual-protocol.yaml
+```
 
-# Run tests
-cargo test
+## 🎯 Application Setup Guides
+
+### Codex CLI Integration
+
+1. **Start LLM Link**:
+   ```bash
+   export ZHIPU_API_KEY="your-zhipu-api-key"
+   ./target/release/llm-link --app codex-cli --api-key "your-auth-token"
+   ```
+
+2. **Configure Codex CLI** (`~/.config/codex/config.toml`):
+   ```toml
+   [model_providers.llm_link]
+   name = "LLM Link - GLM Models"
+   base_url = "http://localhost:8088/v1"
+   env_key = "LLM_LINK_API_KEY"
+
+   [profiles.glm_4_flash]
+   model = "glm-4-flash"
+   model_provider = "llm_link"
+   ```
+
+3. **Use Codex CLI**:
+   ```bash
+   export LLM_LINK_API_KEY="your-auth-token"
+   codex --profile glm_4_flash "Write a Python function"
+   ```
+
+### Zed.dev Integration
+
+1. **Start LLM Link**:
+   ```bash
+   export ZHIPU_API_KEY="your-zhipu-api-key"
+   ./target/release/llm-link --app zed-dev
+   ```
+
+2. **Configure Zed.dev** (`~/.config/zed/settings.json`):
+   ```json
+   {
+     "language_models": {
+       "llm-link": {
+         "api_url": "http://localhost:11434"
+       }
+     }
+   }
+   ```
+
+3. **Use in Zed**: Open Zed and use the AI assistant features
+
+## 🔧 Advanced Usage
+
+### Multiple Applications Simultaneously
+
+You can run multiple LLM Link instances for different applications:
+
+```bash
+# Terminal 1: Codex CLI (port 8088)
+./target/release/llm-link --app codex-cli --api-key "token1"
+
+# Terminal 2: Zed.dev (port 11434)
+./target/release/llm-link --app zed-dev
+
+# Terminal 3: Claude Code (port 8089)
+./target/release/llm-link --app claude-code
+```
+
+### API Endpoints by Application
+
+| Application | Base URL | Key Endpoints |
+|-------------|----------|---------------|
+| **Codex CLI** | `http://localhost:8088` | `/v1/chat/completions`, `/v1/models` |
+| **Zed.dev** | `http://localhost:11434` | `/api/chat`, `/api/tags` |
+| **Claude Code** | `http://localhost:8089` | `/anthropic/messages`, `/anthropic/models` |
+| **Dual Mode** | `http://localhost:11434` | All OpenAI + Ollama endpoints |
+
+### Environment Variables
+
+| Variable | Required For | Description |
+|----------|--------------|-------------|
+| `ZHIPU_API_KEY` | All applications | Your Zhipu GLM API key |
+| `LLM_LINK_API_KEY` | Codex CLI, Dual mode | Authentication token (or use `--api-key`) |
+| `ANTHROPIC_API_KEY` | Claude Code | Your Anthropic API key |
+
+## 🛠️ CLI Reference
+
+### Application Commands
+
+```bash
+# List all supported applications
+./target/release/llm-link --list-apps
+
+# Get application setup guide
+./target/release/llm-link --app-info <app-name>
+
+# Start in application mode
+./target/release/llm-link --app <app-name> [options]
+```
+
+### CLI Options
+
+```bash
+./target/release/llm-link [OPTIONS]
+
+Options:
+  -a, --app <APP>              Application mode (codex-cli, zed-dev, claude-code, dual)
+      --list-apps              List all supported applications
+      --app-info <APP>         Show application information and setup guide
+      --api-key <API_KEY>      API key for authentication (overrides env var)
+  -c, --config <CONFIG>        Configuration file path
+      --host <HOST>            Host to bind to
+  -p, --port <PORT>            Port to bind to
+      --log-level <LEVEL>      Log level [default: info]
+  -h, --help                   Print help
+```
+
+### Configuration Files (Advanced)
+
+For custom setups, configuration files are available in `configs/`:
+
+- `codex-cli.yaml` - Codex CLI configuration
+- `zed-dev.yaml` - Zed.dev configuration
+- `claude-code.yaml` - Claude Code configuration
+- `config-dual-protocol.yaml` - Dual protocol configuration
+
+## 🧪 Testing Your Setup
+
+### Quick API Tests
+
+```bash
+# Test Codex CLI setup
+curl -H "Authorization: Bearer your-token" \
+     http://localhost:8088/v1/models
+
+# Test Zed.dev setup
+curl http://localhost:11434/api/tags
+
+# Test dual protocol setup
+curl -H "Authorization: Bearer your-token" \
+     http://localhost:11434/v1/models
+curl http://localhost:11434/ollama/api/tags
+```
+
+### Health Check
+
+```bash
+# Check service status
+curl http://localhost:8088/health  # Codex CLI
+curl http://localhost:11434/health # Zed.dev / Dual
+curl http://localhost:8089/health  # Claude Code
+```
+
+## 🔍 Troubleshooting
+
+### Common Issues
+
+1. **Missing Environment Variables**
+   ```bash
+   # Check what's required for your app
+   ./target/release/llm-link --app-info codex-cli
+   ```
+
+2. **Port Already in Use**
+   ```bash
+   # Find what's using the port
+   lsof -i :8088
+   # Kill the process
+   kill -9 <PID>
+   ```
+
+3. **Authentication Errors**
+   ```bash
+   # Verify your API keys are set correctly
+   echo $ZHIPU_API_KEY
+   echo $LLM_LINK_API_KEY
+   ```
+
+## 🚀 Development
+
+### Building from Source
+
+```bash
+# Clone the repository
+git clone https://github.com/your-repo/llm-link.git
+cd llm-link
+
+# Build for development
+cargo build
 
 # Build for production
 cargo build --release
+
+# Run tests
+cargo test
 ```
 
-## Testing
+### Contributing
 
-Test the API endpoints with the provided script:
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
 
-```bash
-./test_api.sh
-```
+## 🌟 Features
 
-This script tests:
-- Model list endpoint (`GET /api/tags`)
-- Non-streaming chat (`POST /api/chat` with `stream: false`)
-- Streaming chat (`POST /api/chat` with `stream: true`)
+### Smart Client Detection
+- Automatic detection of Codex CLI, Zed.dev, and other clients
+- Protocol-specific optimizations for each application
+- Seamless compatibility without manual configuration
 
-Make sure llm-link is running before executing the test script.
+### Multiple Protocol Support
+- **OpenAI API**: Compatible with ChatGPT, Codex CLI, and OpenAI SDK
+- **Ollama API**: Compatible with Zed.dev, Ollama CLI, and Ollama ecosystem
+- **Anthropic API**: Compatible with Claude Code and Anthropic clients
 
-## Zed.dev Integration
+### Built-in Security
+- Bearer token authentication for OpenAI API
+- Environment variable support for secure key management
+- CLI parameter override for flexible deployment
 
-LLM Link provides optimized support for the Zed editor with automatic compatibility handling.
+### Production Ready
+- Built with Rust for performance and reliability
+- Comprehensive error handling and logging
+- Health check endpoints for monitoring
 
-### Setup for Zed.dev
+## 🔗 Other IDE Integration
 
-1. **Configure LLM Link with Zed adapter**:
-```yaml
-# configs/zed-config.yaml
-server:
-  host: "0.0.0.0"
-  port: 11434
-
-llm_backend:
-  type: "YourProvider"  # OpenAI, Anthropic, Zhipu, etc.
-  api_key: "${YOUR_API_KEY}"
-  model: "your-model"
-
-apis:
-  ollama:
-    enabled: true
-    path: ""
-
-client_adapters:
-  default_adapter: "zed"  # Use Zed adapter by default
-  zed:
-    enabled: true
-    force_images_field: true
-    preferred_format: "ndjson"
-```
-
-2. **Start LLM Link**:
-```bash
-./target/release/llm-link --config configs/zed-config.yaml
-```
-
-3. **Configure Zed editor**:
-In your Zed settings, set the Ollama endpoint to:
-```json
-{
-  "language_models": {
-    "ollama": {
-      "api_url": "http://localhost:11434"
-    }
-  }
-}
-```
-
-### Features for Zed.dev
-
-- **Automatic Compatibility**: Ensures all responses include required fields
-- **NDJSON Streaming**: Uses the preferred format for real-time responses
-- **Error Handling**: Graceful fallback for unsupported operations
-- **Performance Optimized**: Minimal overhead for fast responses
-
-### Troubleshooting
-
-If Zed.dev shows connection issues:
-
-1. **Check LLM Link logs** for client detection:
-```bash
-# Look for these log messages
-📡 Starting streaming response - Client: ZedDev, Format: NDJSON
-```
-
-2. **Force Zed adapter** if auto-detection fails:
-```yaml
-client_adapters:
-  force_adapter: "zed"
-```
-
-3. **Test manually** with curl:
-```bash
-curl -H "X-LLM-Client: zed" \
-     -H "Content-Type: application/json" \
-     -d '{"model": "your-model", "messages": [{"role": "user", "content": "test"}], "stream": true}' \
-     http://localhost:11434/api/chat
-```
-
-## Other IDE Integration
-
-LLM Link's flexible architecture supports integration with various IDEs and tools that support Ollama-compatible APIs.
+LLM Link works with any tool that supports OpenAI or Ollama APIs:
 
 ### VS Code with Continue
-
-1. **Install Continue extension** from VS Code marketplace
-
-2. **Configure Continue** in `~/.continue/config.json`:
 ```json
 {
   "models": [
     {
       "title": "LLM Link",
       "provider": "ollama",
-      "model": "your-model-name",
+      "model": "glm-4-flash",
       "apiBase": "http://localhost:11434"
     }
   ]
 }
 ```
 
-3. **Start LLM Link**:
-```bash
-./target/release/llm-link --config configs/config-working.yaml
-```
-
 ### Cursor IDE
+- Set API URL: `http://localhost:11434`
+- Use any GLM model name
 
-1. **Open Cursor settings**
+### JetBrains IDEs
+- Install Ollama plugin
+- Configure endpoint: `http://localhost:11434`
 
-2. **Configure Ollama integration**:
-   - Go to Settings → AI → Ollama
-   - Set API URL: `http://localhost:11434`
-   - Set Model: `your-model-name`
-
-3. **Test the integration** using Cursor's AI features
-
-### JetBrains IDEs (IntelliJ, PyCharm, etc.)
-
-1. **Install AI Assistant plugin** or compatible Ollama plugin
-
-2. **Configure the plugin**:
-   - API Endpoint: `http://localhost:11434`
-   - Model: `your-model-name`
-
-3. **Use AI features** within your JetBrains IDE
-
-### OpenAI Codex CLI
-
-1. **Start LLM Link with OpenAI API enabled**:
-```bash
-./target/release/llm-link --config configs/config-openai-codex.yaml
-```
-
-2. **Configure OpenAI CLI**:
-```bash
-# Set API base URL
-export OPENAI_API_BASE="http://localhost:11434/v1"
-export OPENAI_API_KEY="dummy-key"  # Not required but CLI may expect it
-
-# Use OpenAI CLI
-openai api chat_completions.create \
-  --model "glm-4-flash" \
-  --message "user:Write a Python function to sort a list"
-```
-
-3. **Alternative: Standard port configuration**:
-```bash
-# Use port 8080 for OpenAI API
-./target/release/llm-link --config configs/config-openai-standard-port.yaml
-
-# Then configure CLI
-export OPENAI_API_BASE="http://localhost:8080/v1"
-```
-
-### Codex CLI Integration
-
-Codex CLI is a powerful command-line tool for AI-assisted coding. LLM Link provides full compatibility with Codex through its OpenAI-compatible API with Bearer token authentication.
-
-#### **⚠️ Security Warning**
-
-**NEVER commit real API keys to version control!** All configuration files use environment variables for security.
-
-#### **Setup Steps**
-
-1. **Set up environment variables first**:
-   ```bash
-   # Set your GLM API key (required for backend)
-   export ZHIPU_API_KEY="your-real-zhipu-api-key"
-
-   # Set your LLM Link API token (for Codex authentication)
-   export LLM_LINK_API_KEY="your-secret-api-token"
-   ```
-
-2. **Configure LLM Link with API authentication**:
-
-   ```bash
-   # Start LLM Link with pure OpenAI API on port 8088
-   ./target/release/llm-link --config configs/config-codex.yaml
-   ```
-
-2. **Configure Codex CLI**:
-
-   Create or edit your Codex configuration file (usually `~/.config/codex/config.toml`):
-
-   ```toml
-   [model_providers.llm_link]
-   # Name displayed in Codex UI
-   name = "LLM Link - GLM Models"
-   # Base URL for LLM Link's OpenAI-compatible API
-   base_url = "http://localhost:8088/v1"
-   # Environment variable containing the API token
-   env_key = "LLM_LINK_API_KEY"
-
-   [profiles.glm_4_flash]
-   model = "glm-4-flash"
-   model_provider = "llm_link"
-
-   [profiles.glm_4_plus]
-   model = "glm-4-plus"
-   model_provider = "llm_link"
-
-   [profiles.glm_4_long]
-   model = "glm-4-long"
-   model_provider = "llm_link"
-   ```
-
-3. **Set the API token environment variable**:
-   ```bash
-   # Set the same token that you configured in LLM Link
-   export LLM_LINK_API_KEY="your-secret-api-token"
-   ```
-
-4. **Use Codex with LLM Link**:
-   ```bash
-   # Use the fast model for quick code generation
-   codex --profile glm_4_flash "Write a Python function to calculate fibonacci numbers"
-
-   # Use the enhanced model for complex tasks
-   codex --profile glm_4_plus "Refactor this code to use async/await patterns"
-
-   # Use the long context model for large codebases
-   codex --profile glm_4_long "Analyze this entire codebase and suggest improvements"
-   ```
-
-#### **Available Models**
-
-- **`glm-4-flash`** - Fast model, ideal for quick code completion and simple tasks
-- **`glm-4-plus`** - Enhanced model with better reasoning for complex coding tasks
-- **`glm-4`** - Standard model, balanced performance and quality
-- **`glm-4-air`** - Lightweight model for basic tasks
-- **`glm-4-long`** - Long context model for analyzing large codebases
-
-#### **Authentication Flow**
-
-1. **Codex** reads the API token from `LLM_LINK_API_KEY` environment variable
-2. **Codex** sends requests to `http://localhost:11434/v1/chat/completions` with `Authorization: Bearer <token>` header
-3. **LLM Link** validates the Bearer token against the configured `api_key`
-4. **LLM Link** forwards the request to the GLM backend and returns the response
-
-#### **Security Notes**
-
-- ✅ **API tokens are validated** before processing requests
-- ✅ **Environment variables** keep tokens out of configuration files
-- ✅ **Bearer token authentication** follows OpenAI API standards
-- ✅ **401 Unauthorized** responses for invalid or missing tokens
-
-#### **Troubleshooting**
-
-- **401 Unauthorized**: Check that `LLM_LINK_API_KEY` matches the token in LLM Link config
-- **Connection refused**: Ensure LLM Link is running on the correct port (11434)
-- **Model not found**: Verify the model name in your Codex profile matches available models
-
-### Neovim with AI Plugins
-
-For Neovim users with AI plugins like `ollama.nvim`:
-
+### Neovim
 ```lua
--- In your Neovim config
 require('ollama').setup({
-  model = "your-model-name",
+  model = "glm-4-flash",
   url = "http://localhost:11434",
 })
 ```
 
-### Generic Ollama-Compatible Tools
+## 📚 Available Models
 
-Any tool that supports Ollama's API can work with LLM Link:
+| Model | Description | Best For |
+|-------|-------------|----------|
+| `glm-4-flash` | Fast model | Quick code completion |
+| `glm-4-plus` | Enhanced model | Complex coding tasks |
+| `glm-4` | Standard model | Balanced performance |
+| `glm-4-air` | Lightweight model | Basic tasks |
+| `glm-4-long` | Long context model | Large codebases |
 
-1. **Set the API endpoint** to `http://localhost:11434`
-2. **Use any model name** configured in your LLM Link backend
-3. **Enable streaming** for real-time responses
-
-### Client Detection and Optimization
-
-LLM Link automatically detects different clients and optimizes responses:
-
-- **Automatic User-Agent detection** for known clients
-- **Content negotiation** based on Accept headers
-- **Streaming format optimization** (SSE, NDJSON, JSON)
-- **Client-specific field injection** for compatibility
-
-### Testing Your IDE Integration
-
-1. **Check LLM Link logs** for client detection:
-```bash
-# Look for these log messages
-📡 Starting streaming response - Client: [ClientType], Format: [Format]
-```
-
-2. **Test with curl** to verify functionality:
-```bash
-curl -H "User-Agent: YourIDE/1.0" \
-     -H "Content-Type: application/json" \
-     -d '{"model": "your-model", "messages": [{"role": "user", "content": "test"}]}' \
-     http://localhost:11434/api/chat
-```
-
-3. **Enable debug logging** for troubleshooting:
-```yaml
-server:
-  log_level: "debug"
-```
-
-## License
+## 📄 License
 
 MIT License
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+## ⭐ Support
+
+If you find LLM Link helpful, please consider giving it a star on GitHub!
+
+---
+
+**Made with ❤️ for the AI coding community**
