@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use crate::config::{Config, ServerConfig, LlmBackendConfig, ApiConfigs, OpenAiApiConfig, OllamaApiConfig, AnthropicApiConfig, ClientAdapterConfigs, ZedAdapterConfig};
 
 /// 支持的应用类型
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -9,12 +10,227 @@ pub enum SupportedApp {
     ClaudeCode,
     /// Zed.dev - Ollama API 客户端
     ZedDev,
-    /// 通用 OpenAI 客户端
-    OpenAI,
-    /// 通用 Ollama 客户端
-    Ollama,
-    /// 自定义配置
-    Custom,
+    /// 双协议支持
+    Dual,
+}
+
+impl SupportedApp {
+    /// 从字符串解析应用类型
+    pub fn from_str(s: &str) -> Option<Self> {
+        match s.to_lowercase().as_str() {
+            "codex-cli" | "codex" => Some(Self::CodexCLI),
+            "claude-code" | "claude" => Some(Self::ClaudeCode),
+            "zed-dev" | "zed" => Some(Self::ZedDev),
+            "dual" => Some(Self::Dual),
+            _ => None,
+        }
+    }
+
+    /// 获取应用名称
+    pub fn name(&self) -> &'static str {
+        match self {
+            Self::CodexCLI => "codex-cli",
+            Self::ClaudeCode => "claude-code",
+            Self::ZedDev => "zed-dev",
+            Self::Dual => "dual",
+        }
+    }
+
+    /// 列出所有支持的应用
+    pub fn all() -> Vec<Self> {
+        vec![Self::CodexCLI, Self::ClaudeCode, Self::ZedDev, Self::Dual]
+    }
+}
+
+/// 应用配置生成器
+pub struct AppConfigGenerator;
+
+impl AppConfigGenerator {
+    /// 为指定应用生成配置
+    pub fn generate_config(app: &SupportedApp) -> Config {
+        match app {
+            SupportedApp::CodexCLI => Self::codex_cli_config(),
+            SupportedApp::ClaudeCode => Self::claude_code_config(),
+            SupportedApp::ZedDev => Self::zed_dev_config(),
+            SupportedApp::Dual => Self::dual_protocol_config(),
+        }
+    }
+
+    /// Codex CLI 配置
+    fn codex_cli_config() -> Config {
+        Config {
+            server: ServerConfig {
+                host: "0.0.0.0".to_string(),
+                port: 8088,
+                log_level: "info".to_string(),
+            },
+            llm_backend: LlmBackendConfig::Zhipu {
+                api_key: "${ZHIPU_API_KEY}".to_string(),
+                base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
+                model: "glm-4-flash".to_string(),
+            },
+            apis: ApiConfigs {
+                openai: Some(OpenAiApiConfig {
+                    enabled: true,
+                    path: "/v1".to_string(),
+                    api_key_header: Some("Authorization".to_string()),
+                    api_key: Some("${LLM_LINK_API_KEY}".to_string()),
+                }),
+                ollama: Some(OllamaApiConfig {
+                    enabled: false,
+                    path: "/ollama".to_string(),
+                    api_key_header: None,
+                    api_key: None,
+                }),
+                anthropic: Some(AnthropicApiConfig {
+                    enabled: false,
+                    path: "/anthropic".to_string(),
+                    api_key_header: None,
+                }),
+            },
+            client_adapters: Some(ClientAdapterConfigs {
+                default_adapter: Some("openai".to_string()),
+                force_adapter: Some("openai".to_string()),
+                zed: Some(ZedAdapterConfig {
+                    enabled: false,
+                    force_images_field: Some(false),
+                    preferred_format: Some("json".to_string()),
+                }),
+            }),
+        }
+    }
+
+    /// Zed.dev 配置
+    fn zed_dev_config() -> Config {
+        Config {
+            server: ServerConfig {
+                host: "0.0.0.0".to_string(),
+                port: 11434,
+                log_level: "info".to_string(),
+            },
+            llm_backend: LlmBackendConfig::Zhipu {
+                api_key: "${ZHIPU_API_KEY}".to_string(),
+                base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
+                model: "glm-4-flash".to_string(),
+            },
+            apis: ApiConfigs {
+                openai: Some(OpenAiApiConfig {
+                    enabled: false,
+                    path: "/v1".to_string(),
+                    api_key_header: None,
+                    api_key: None,
+                }),
+                ollama: Some(OllamaApiConfig {
+                    enabled: true,
+                    path: "/api".to_string(),
+                    api_key_header: None,
+                    api_key: None,
+                }),
+                anthropic: Some(AnthropicApiConfig {
+                    enabled: false,
+                    path: "/anthropic".to_string(),
+                    api_key_header: None,
+                }),
+            },
+            client_adapters: Some(ClientAdapterConfigs {
+                default_adapter: Some("zed".to_string()),
+                force_adapter: Some("zed".to_string()),
+                zed: Some(ZedAdapterConfig {
+                    enabled: true,
+                    force_images_field: Some(true),
+                    preferred_format: Some("ndjson".to_string()),
+                }),
+            }),
+        }
+    }
+
+    /// Claude Code 配置
+    fn claude_code_config() -> Config {
+        Config {
+            server: ServerConfig {
+                host: "0.0.0.0".to_string(),
+                port: 8089,
+                log_level: "info".to_string(),
+            },
+            llm_backend: LlmBackendConfig::Zhipu {
+                api_key: "${ZHIPU_API_KEY}".to_string(),
+                base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
+                model: "glm-4-plus".to_string(),
+            },
+            apis: ApiConfigs {
+                openai: Some(OpenAiApiConfig {
+                    enabled: false,
+                    path: "/v1".to_string(),
+                    api_key_header: None,
+                    api_key: None,
+                }),
+                ollama: Some(OllamaApiConfig {
+                    enabled: false,
+                    path: "/ollama".to_string(),
+                    api_key_header: None,
+                    api_key: None,
+                }),
+                anthropic: Some(AnthropicApiConfig {
+                    enabled: true,
+                    path: "/anthropic".to_string(),
+                    api_key_header: Some("x-api-key".to_string()),
+                }),
+            },
+            client_adapters: Some(ClientAdapterConfigs {
+                default_adapter: Some("standard".to_string()),
+                force_adapter: None,
+                zed: Some(ZedAdapterConfig {
+                    enabled: false,
+                    force_images_field: Some(false),
+                    preferred_format: Some("json".to_string()),
+                }),
+            }),
+        }
+    }
+
+    /// 双协议配置
+    fn dual_protocol_config() -> Config {
+        Config {
+            server: ServerConfig {
+                host: "0.0.0.0".to_string(),
+                port: 11434,
+                log_level: "info".to_string(),
+            },
+            llm_backend: LlmBackendConfig::Zhipu {
+                api_key: "${ZHIPU_API_KEY}".to_string(),
+                base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
+                model: "glm-4-flash".to_string(),
+            },
+            apis: ApiConfigs {
+                openai: Some(OpenAiApiConfig {
+                    enabled: true,
+                    path: "/v1".to_string(),
+                    api_key_header: Some("Authorization".to_string()),
+                    api_key: Some("${LLM_LINK_API_KEY}".to_string()),
+                }),
+                ollama: Some(OllamaApiConfig {
+                    enabled: true,
+                    path: "/ollama".to_string(),
+                    api_key_header: None,
+                    api_key: None,
+                }),
+                anthropic: Some(AnthropicApiConfig {
+                    enabled: false,
+                    path: "/anthropic".to_string(),
+                    api_key_header: None,
+                }),
+            },
+            client_adapters: Some(ClientAdapterConfigs {
+                default_adapter: Some("auto".to_string()),
+                force_adapter: None,
+                zed: Some(ZedAdapterConfig {
+                    enabled: true,
+                    force_images_field: Some(true),
+                    preferred_format: Some("ndjson".to_string()),
+                }),
+            }),
+        }
+    }
 }
 
 /// 应用信息提供器
@@ -63,41 +279,20 @@ impl AppInfoProvider {
                 env_vars: vec!["ZHIPU_API_KEY".to_string()],
                 example_usage: "Configure in Zed settings: \"api_url\": \"http://localhost:11434\"".to_string(),
             },
-            SupportedApp::OpenAI => AppInfo {
-                name: "OpenAI Compatible".to_string(),
-                description: "Any OpenAI API compatible client".to_string(),
-                port: 8080,
-                protocol: "OpenAI API".to_string(),
+            SupportedApp::Dual => AppInfo {
+                name: "Dual Protocol".to_string(),
+                description: "Both OpenAI and Ollama APIs enabled".to_string(),
+                port: 11434,
+                protocol: "OpenAI + Ollama".to_string(),
                 endpoints: vec![
                     "POST /v1/chat/completions".to_string(),
                     "GET /v1/models".to_string(),
+                    "POST /ollama/api/chat".to_string(),
+                    "GET /ollama/api/tags".to_string(),
                 ],
                 auth_required: true,
                 env_vars: vec!["ZHIPU_API_KEY".to_string(), "LLM_LINK_API_KEY".to_string()],
-                example_usage: "curl -H \"Authorization: Bearer $LLM_LINK_API_KEY\" http://localhost:8080/v1/models".to_string(),
-            },
-            SupportedApp::Ollama => AppInfo {
-                name: "Ollama Compatible".to_string(),
-                description: "Any Ollama API compatible client".to_string(),
-                port: 11434,
-                protocol: "Ollama API".to_string(),
-                endpoints: vec![
-                    "POST /api/chat".to_string(),
-                    "GET /api/tags".to_string(),
-                ],
-                auth_required: false,
-                env_vars: vec!["ZHIPU_API_KEY".to_string()],
-                example_usage: "curl http://localhost:11434/api/tags".to_string(),
-            },
-            SupportedApp::Custom => AppInfo {
-                name: "Custom Configuration".to_string(),
-                description: "User-defined custom configuration".to_string(),
-                port: 11434,
-                protocol: "Multiple".to_string(),
-                endpoints: vec!["User-defined".to_string()],
-                auth_required: false,
-                env_vars: vec!["User-defined".to_string()],
-                example_usage: "Custom usage based on configuration".to_string(),
+                example_usage: "Supports both OpenAI and Ollama clients simultaneously".to_string(),
             },
         }
     }
@@ -114,4 +309,74 @@ pub struct AppInfo {
     pub auth_required: bool,
     pub env_vars: Vec<String>,
     pub example_usage: String,
+}
+
+/// 环境变量检查器
+pub struct EnvChecker;
+
+impl EnvChecker {
+    /// 检查应用所需的环境变量
+    pub fn check_env_vars(app: &SupportedApp) -> Result<(), Vec<String>> {
+        let mut missing_vars = Vec::new();
+
+        // 所有应用都需要 ZHIPU_API_KEY
+        if std::env::var("ZHIPU_API_KEY").is_err() {
+            missing_vars.push("ZHIPU_API_KEY".to_string());
+        }
+
+        // 检查应用特定的环境变量
+        match app {
+            SupportedApp::CodexCLI | SupportedApp::Dual => {
+                if std::env::var("LLM_LINK_API_KEY").is_err() {
+                    missing_vars.push("LLM_LINK_API_KEY".to_string());
+                }
+            },
+            SupportedApp::ClaudeCode => {
+                if std::env::var("ANTHROPIC_API_KEY").is_err() {
+                    missing_vars.push("ANTHROPIC_API_KEY".to_string());
+                }
+            },
+            SupportedApp::ZedDev => {
+                // Zed.dev 只需要 ZHIPU_API_KEY
+            },
+        }
+
+        if missing_vars.is_empty() {
+            Ok(())
+        } else {
+            Err(missing_vars)
+        }
+    }
+
+    /// 显示环境变量设置指南
+    pub fn show_env_guide(app: &SupportedApp) {
+        println!("🔧 Environment Variables Required for {}:", app.name());
+        println!();
+
+        match app {
+            SupportedApp::CodexCLI => {
+                println!("export ZHIPU_API_KEY=\"your-zhipu-api-key\"");
+                println!("export LLM_LINK_API_KEY=\"your-auth-token\"");
+                println!();
+                println!("💡 The LLM_LINK_API_KEY can be any string you choose for authentication.");
+            },
+            SupportedApp::ZedDev => {
+                println!("export ZHIPU_API_KEY=\"your-zhipu-api-key\"");
+                println!();
+                println!("💡 Zed.dev doesn't require additional authentication tokens.");
+            },
+            SupportedApp::ClaudeCode => {
+                println!("export ZHIPU_API_KEY=\"your-zhipu-api-key\"");
+                println!("export ANTHROPIC_API_KEY=\"your-anthropic-api-key\"");
+                println!();
+                println!("💡 You need both Zhipu and Anthropic API keys for Claude Code mode.");
+            },
+            SupportedApp::Dual => {
+                println!("export ZHIPU_API_KEY=\"your-zhipu-api-key\"");
+                println!("export LLM_LINK_API_KEY=\"your-auth-token\"");
+                println!();
+                println!("💡 Dual mode supports both OpenAI and Ollama protocols.");
+            },
+        }
+    }
 }

@@ -25,6 +25,7 @@ use tower_http::{
 use tracing::{info, error, Span};
 use std::time::Duration;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
+use apps::{SupportedApp, AppInfoProvider};
 
 #[derive(Parser, Debug)]
 #[command(name = "llm-link")]
@@ -33,6 +34,18 @@ struct Args {
     /// Configuration file path
     #[arg(short, long)]
     config: Option<String>,
+
+    /// Application mode (codex-cli, zed-dev, claude-code, dual)
+    #[arg(short, long)]
+    app: Option<String>,
+
+    /// List available applications
+    #[arg(long)]
+    list_apps: bool,
+
+    /// Show application information
+    #[arg(long)]
+    app_info: Option<String>,
 
     /// Host to bind to (if provided overrides config)
     #[arg(long)]
@@ -64,8 +77,41 @@ async fn main() -> Result<()> {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
+    // Handle special CLI modes first
+    if args.list_apps {
+        list_applications();
+        return Ok(());
+    }
+
+    if let Some(app_name) = args.app_info {
+        show_application_info(&app_name);
+        return Ok(());
+    }
+
     // Load configuration
-    let (mut config, config_source) = if let Some(config_path) = args.config {
+    let (mut config, config_source) = if let Some(app_name) = args.app {
+        // Application mode
+        use apps::{SupportedApp, AppConfigGenerator, EnvChecker};
+
+        let app = SupportedApp::from_str(&app_name)
+            .ok_or_else(|| anyhow::anyhow!("Unknown application: {}. Use --list-apps to see available applications.", app_name))?;
+
+        info!("🚀 Starting in {} mode", app.name());
+
+        // Check environment variables
+        if let Err(missing_vars) = EnvChecker::check_env_vars(&app) {
+            error!("❌ Missing required environment variables:");
+            for var in &missing_vars {
+                error!("   - {}", var);
+            }
+            error!("");
+            EnvChecker::show_env_guide(&app);
+            return Err(anyhow::anyhow!("Missing required environment variables"));
+        }
+
+        let config = AppConfigGenerator::generate_config(&app);
+        (config, format!("built-in: {}", app.name()))
+    } else if let Some(config_path) = args.config {
         let config = Config::from_file(&config_path)?;
         (config, config_path)
     } else {
@@ -155,6 +201,64 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
+/// 列出所有支持的应用
+fn list_applications() {
+    println!("🚀 LLM Link - Supported Applications");
+    println!();
+
+    for app in SupportedApp::all() {
+        let info = AppInfoProvider::get_app_info(&app);
+        println!("📱 {}", info.name);
+        println!("   Description: {}", info.description);
+        println!("   Port: {}", info.port);
+        println!("   Protocol: {}", info.protocol);
+        println!("   Auth Required: {}", if info.auth_required { "Yes" } else { "No" });
+        println!("   Usage: ./target/release/llm-link --app {}", app.name());
+        println!();
+    }
+
+    println!("💡 Examples:");
+    println!("   ./target/release/llm-link --app codex-cli");
+    println!("   ./target/release/llm-link --app zed-dev");
+    println!("   ./target/release/llm-link --app claude-code");
+    println!("   ./target/release/llm-link --app dual");
+    println!();
+    println!("🔧 For environment variable requirements:");
+    println!("   ./target/release/llm-link --app-info <app-name>");
+}
+
+/// 显示特定应用的信息
+fn show_application_info(app_name: &str) {
+    if let Some(app) = SupportedApp::from_str(app_name) {
+        let info = AppInfoProvider::get_app_info(&app);
+
+        println!("📱 {} Configuration", info.name);
+        println!("   Description: {}", info.description);
+        println!("   Port: {}", info.port);
+        println!("   Protocol: {}", info.protocol);
+        println!("   Endpoints: {}", info.endpoints.join(", "));
+        println!("   Auth Required: {}", if info.auth_required { "Yes" } else { "No" });
+        println!();
+
+        use apps::EnvChecker;
+        EnvChecker::show_env_guide(&app);
+
+        println!();
+        println!("🚀 Start command:");
+        println!("   ./target/release/llm-link --app {}", app.name());
+        println!();
+        println!("📖 Example usage:");
+        println!("   {}", info.example_usage);
+    } else {
+        error!("❌ Unknown application: {}", app_name);
+        println!();
+        println!("Available applications:");
+        for app in SupportedApp::all() {
+            println!("  - {}", app.name());
+        }
+    }
+}
+
 fn build_app(state: AppState, config: &Config) -> Router {
     let mut app = Router::new()
         .route("/", get(|| {
@@ -235,3 +339,5 @@ fn build_app(state: AppState, config: &Config) -> Router {
     // Apply concrete state at the end so the resulting type is Router<()>
     app.with_state(state)
 }
+
+
