@@ -246,13 +246,6 @@ fn show_application_info(app_name: &str) {
 
         use apps::EnvChecker;
         EnvChecker::show_env_guide(&app);
-
-        println!();
-        println!("🚀 Start command:");
-        println!("   ./target/release/llm-link --app {}", app.name());
-        println!();
-        println!("📖 Example usage:");
-        println!("   {}", info.example_usage);
     } else {
         error!("❌ Unknown application: {}", app_name);
         println!();
