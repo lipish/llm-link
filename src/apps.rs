@@ -56,6 +56,19 @@ impl AppConfigGenerator {
         }
     }
 
+    /// 解析环境变量模板
+    fn resolve_env_var(template: &str) -> String {
+        if template.starts_with("${") && template.ends_with("}") {
+            let var_name = &template[2..template.len()-1];
+            std::env::var(var_name).unwrap_or_else(|_| {
+                eprintln!("Warning: Environment variable '{}' not found, using placeholder", var_name);
+                template.to_string()
+            })
+        } else {
+            template.to_string()
+        }
+    }
+
     /// Codex CLI 配置
     fn codex_cli_config() -> Config {
         Config {
@@ -65,7 +78,7 @@ impl AppConfigGenerator {
                 log_level: "info".to_string(),
             },
             llm_backend: LlmBackendConfig::Zhipu {
-                api_key: "${ZHIPU_API_KEY}".to_string(),
+                api_key: Self::resolve_env_var("${ZHIPU_API_KEY}"),
                 base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
                 model: "glm-4-flash".to_string(),
             },
@@ -74,7 +87,7 @@ impl AppConfigGenerator {
                     enabled: true,
                     path: "/v1".to_string(),
                     api_key_header: Some("Authorization".to_string()),
-                    api_key: Some("${LLM_LINK_API_KEY}".to_string()),
+                    api_key: Some(Self::resolve_env_var("${LLM_LINK_API_KEY}")),
                 }),
                 ollama: Some(OllamaApiConfig {
                     enabled: false,
@@ -109,7 +122,7 @@ impl AppConfigGenerator {
                 log_level: "info".to_string(),
             },
             llm_backend: LlmBackendConfig::Zhipu {
-                api_key: "${ZHIPU_API_KEY}".to_string(),
+                api_key: Self::resolve_env_var("${ZHIPU_API_KEY}"),
                 base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
                 model: "glm-4-flash".to_string(),
             },
@@ -153,7 +166,7 @@ impl AppConfigGenerator {
                 log_level: "info".to_string(),
             },
             llm_backend: LlmBackendConfig::Zhipu {
-                api_key: "${ZHIPU_API_KEY}".to_string(),
+                api_key: Self::resolve_env_var("${ZHIPU_API_KEY}"),
                 base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
                 model: "glm-4-plus".to_string(),
             },
@@ -197,7 +210,7 @@ impl AppConfigGenerator {
                 log_level: "info".to_string(),
             },
             llm_backend: LlmBackendConfig::Zhipu {
-                api_key: "${ZHIPU_API_KEY}".to_string(),
+                api_key: Self::resolve_env_var("${ZHIPU_API_KEY}"),
                 base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
                 model: "glm-4-flash".to_string(),
             },
@@ -206,7 +219,7 @@ impl AppConfigGenerator {
                     enabled: true,
                     path: "/v1".to_string(),
                     api_key_header: Some("Authorization".to_string()),
-                    api_key: Some("${LLM_LINK_API_KEY}".to_string()),
+                    api_key: Some(Self::resolve_env_var("${LLM_LINK_API_KEY}")),
                 }),
                 ollama: Some(OllamaApiConfig {
                     enabled: true,
