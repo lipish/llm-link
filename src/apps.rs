@@ -10,8 +10,6 @@ pub enum SupportedApp {
     ClaudeCode,
     /// Zed.dev - Ollama API 客户端
     ZedDev,
-    /// 双协议支持
-    Dual,
 }
 
 impl SupportedApp {
@@ -21,7 +19,6 @@ impl SupportedApp {
             "codex-cli" | "codex" => Some(Self::CodexCLI),
             "claude-code" | "claude" => Some(Self::ClaudeCode),
             "zed-dev" | "zed" => Some(Self::ZedDev),
-            "dual" => Some(Self::Dual),
             _ => None,
         }
     }
@@ -32,13 +29,16 @@ impl SupportedApp {
             Self::CodexCLI => "codex-cli",
             Self::ClaudeCode => "claude-code",
             Self::ZedDev => "zed-dev",
-            Self::Dual => "dual",
         }
     }
 
-    /// 列出所有支持的应用
+    /// 获取所有支持的应用
     pub fn all() -> Vec<Self> {
-        vec![Self::CodexCLI, Self::ClaudeCode, Self::ZedDev, Self::Dual]
+        vec![
+            Self::CodexCLI,
+            Self::ClaudeCode,
+            Self::ZedDev,
+        ]
     }
 }
 
@@ -52,7 +52,6 @@ impl AppConfigGenerator {
             SupportedApp::CodexCLI => Self::codex_cli_config(cli_api_key),
             SupportedApp::ClaudeCode => Self::claude_code_config(cli_api_key),
             SupportedApp::ZedDev => Self::zed_dev_config(cli_api_key),
-            SupportedApp::Dual => Self::dual_protocol_config(cli_api_key),
         }
     }
 
@@ -210,8 +209,45 @@ impl AppConfigGenerator {
         }
     }
 
-    /// 双协议配置
-    fn dual_protocol_config(cli_api_key: Option<&str>) -> Config {
+
+    /// 生成多协议配置
+    pub fn generate_protocol_config(protocols: &[String], cli_api_key: Option<&str>) -> Config {
+        let mut openai_config = None;
+        let mut ollama_config = None;
+        let mut anthropic_config = None;
+
+        // 根据协议列表启用相应的 API
+        for protocol in protocols {
+            match protocol.to_lowercase().as_str() {
+                "openai" => {
+                    openai_config = Some(OpenAiApiConfig {
+                        enabled: true,
+                        path: "/v1".to_string(),
+                        api_key_header: Some("Authorization".to_string()),
+                        api_key: Some(Self::resolve_env_var("${LLM_LINK_API_KEY}", cli_api_key)),
+                    });
+                },
+                "ollama" => {
+                    ollama_config = Some(OllamaApiConfig {
+                        enabled: true,
+                        path: "/ollama".to_string(),
+                        api_key_header: None,
+                        api_key: None,
+                    });
+                },
+                "anthropic" => {
+                    anthropic_config = Some(AnthropicApiConfig {
+                        enabled: true,
+                        path: "/anthropic".to_string(),
+                        api_key_header: Some("x-api-key".to_string()),
+                    });
+                },
+                _ => {
+                    eprintln!("Warning: Unknown protocol '{}', ignoring", protocol);
+                }
+            }
+        }
+
         Config {
             server: ServerConfig {
                 host: "0.0.0.0".to_string(),
@@ -224,23 +260,9 @@ impl AppConfigGenerator {
                 model: "glm-4-flash".to_string(),
             },
             apis: ApiConfigs {
-                openai: Some(OpenAiApiConfig {
-                    enabled: true,
-                    path: "/v1".to_string(),
-                    api_key_header: Some("Authorization".to_string()),
-                    api_key: Some(Self::resolve_env_var("${LLM_LINK_API_KEY}", cli_api_key)),
-                }),
-                ollama: Some(OllamaApiConfig {
-                    enabled: true,
-                    path: "/ollama".to_string(),
-                    api_key_header: None,
-                    api_key: None,
-                }),
-                anthropic: Some(AnthropicApiConfig {
-                    enabled: false,
-                    path: "/anthropic".to_string(),
-                    api_key_header: None,
-                }),
+                openai: openai_config,
+                ollama: ollama_config,
+                anthropic: anthropic_config,
             },
             client_adapters: Some(ClientAdapterConfigs {
                 default_adapter: Some("auto".to_string()),
@@ -300,21 +322,6 @@ impl AppInfoProvider {
                 auth_required: false,
                 env_vars: vec!["ZHIPU_API_KEY".to_string()],
                 example_usage: "Configure in Zed settings: \"api_url\": \"http://localhost:11434\"".to_string(),
-            },
-            SupportedApp::Dual => AppInfo {
-                name: "Dual Protocol".to_string(),
-                description: "Both OpenAI and Ollama APIs enabled".to_string(),
-                port: 11434,
-                protocol: "OpenAI + Ollama".to_string(),
-                endpoints: vec![
-                    "POST /v1/chat/completions".to_string(),
-                    "GET /v1/models".to_string(),
-                    "POST /ollama/api/chat".to_string(),
-                    "GET /ollama/api/tags".to_string(),
-                ],
-                auth_required: true,
-                env_vars: vec!["ZHIPU_API_KEY".to_string(), "LLM_LINK_API_KEY".to_string()],
-                example_usage: "Supports both OpenAI and Ollama clients simultaneously".to_string(),
             },
         }
     }
@@ -393,12 +400,6 @@ impl EnvChecker {
             },
             SupportedApp::ClaudeCode => {
                 println!("💡 You need both Zhipu and Anthropic API keys for Claude Code mode.");
-            },
-            SupportedApp::Dual => {
-                println!("💡 Alternative: Use CLI parameter instead of environment variable:");
-                println!("   ./target/release/llm-link --app dual --api-key \"your-auth-token\"");
-                println!();
-                println!("💡 Dual mode supports both OpenAI and Ollama protocols.");
             },
         }
 

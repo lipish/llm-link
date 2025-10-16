@@ -35,9 +35,13 @@ struct Args {
     #[arg(short, long)]
     config: Option<String>,
 
-    /// Application mode (codex-cli, zed-dev, claude-code, dual)
+    /// Application mode (codex-cli, zed-dev, claude-code)
     #[arg(short, long)]
     app: Option<String>,
+
+    /// Enable multiple protocols (comma-separated: openai,ollama,anthropic)
+    #[arg(long)]
+    protocols: Option<String>,
 
     /// List available applications
     #[arg(long)]
@@ -115,6 +119,74 @@ async fn main() -> Result<()> {
 
         let config = AppConfigGenerator::generate_config(&app, args.api_key.as_deref());
         (config, format!("built-in: {}", app.name()))
+    } else if let Some(protocols_str) = args.protocols {
+        // Protocol combination mode
+        use apps::AppConfigGenerator;
+
+        let protocols: Vec<String> = protocols_str
+            .split(',')
+            .map(|s| s.trim().to_string())
+            .collect();
+
+        if protocols.is_empty() {
+            return Err(anyhow::anyhow!("No protocols specified. Use --protocols openai,ollama,anthropic"));
+        }
+
+        info!("🚀 Starting with protocols: {}", protocols.join(", "));
+
+        // Check environment variables for protocol combination
+        let mut missing_vars = Vec::new();
+
+        // Always need ZHIPU_API_KEY
+        if std::env::var("ZHIPU_API_KEY").is_err() {
+            missing_vars.push("ZHIPU_API_KEY".to_string());
+        }
+
+        // Check protocol-specific requirements
+        for protocol in &protocols {
+            match protocol.to_lowercase().as_str() {
+                "openai" => {
+                    if args.api_key.is_none() && std::env::var("LLM_LINK_API_KEY").is_err() {
+                        missing_vars.push("LLM_LINK_API_KEY".to_string());
+                    }
+                },
+                "anthropic" => {
+                    if std::env::var("ANTHROPIC_API_KEY").is_err() {
+                        missing_vars.push("ANTHROPIC_API_KEY".to_string());
+                    }
+                },
+                "ollama" => {
+                    // Ollama doesn't require additional env vars
+                },
+                _ => {
+                    return Err(anyhow::anyhow!("Unknown protocol: {}. Supported: openai, ollama, anthropic", protocol));
+                }
+            }
+        }
+
+        if !missing_vars.is_empty() {
+            error!("❌ Missing required environment variables for protocols:");
+            for var in &missing_vars {
+                error!("   - {}", var);
+            }
+            error!("");
+            println!("🔧 Set the required environment variables:");
+            for var in &missing_vars {
+                match var.as_str() {
+                    "ZHIPU_API_KEY" => println!("export ZHIPU_API_KEY=\"your-zhipu-api-key\""),
+                    "LLM_LINK_API_KEY" => {
+                        println!("export LLM_LINK_API_KEY=\"your-auth-token\"");
+                        println!("# OR use: --api-key \"your-auth-token\"");
+                    },
+                    "ANTHROPIC_API_KEY" => println!("export ANTHROPIC_API_KEY=\"your-anthropic-api-key\""),
+                    _ => println!("export {}=\"your-{}-here\"", var, var.to_lowercase().replace('_', "-")),
+                }
+            }
+            return Err(anyhow::anyhow!("Missing required environment variables"));
+        }
+
+        let config = AppConfigGenerator::generate_protocol_config(&protocols, args.api_key.as_deref());
+        (config, format!("protocols: {}", protocols.join(", ")))
     } else if let Some(config_path) = args.config {
         let config = Config::from_file(&config_path)?;
         (config, config_path)
@@ -221,11 +293,17 @@ fn list_applications() {
         println!();
     }
 
+    println!("🔗 Protocol Combinations:");
+    println!("   ./target/release/llm-link --protocols openai,ollama");
+    println!("   ./target/release/llm-link --protocols openai,anthropic");
+    println!("   ./target/release/llm-link --protocols openai,ollama,anthropic");
+    println!();
+
     println!("💡 Examples:");
     println!("   ./target/release/llm-link --app codex-cli");
     println!("   ./target/release/llm-link --app zed-dev");
     println!("   ./target/release/llm-link --app claude-code");
-    println!("   ./target/release/llm-link --app dual");
+    println!("   ./target/release/llm-link --protocols openai,ollama");
     println!();
     println!("🔧 For environment variable requirements:");
     println!("   ./target/release/llm-link --app-info <app-name>");
