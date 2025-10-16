@@ -43,8 +43,6 @@ show_usage() {
     echo "  codex-cli    - GitHub Codex CLI (port 8088)"
     echo "  zed-dev      - Zed.dev editor (port 11434)"
     echo "  claude-code  - Claude Code (port 8089)"
-    echo "  openai       - Generic OpenAI client (port 8080)"
-    echo "  ollama       - Generic Ollama client (port 11434)"
     echo "  dual         - Both OpenAI and Ollama (port 11434)"
     echo ""
     echo "Options:"
@@ -103,22 +101,6 @@ show_app_info() {
             echo "   Usage example:"
             echo "   claude-code --model claude-3 \"Analyze this code\""
             ;;
-        "openai")
-            echo "🔗 Generic OpenAI Configuration"
-            echo "   Description: Any OpenAI API compatible client"
-            echo "   Port: 8080"
-            echo "   Protocol: OpenAI API"
-            echo "   Auth: Required (Bearer Token)"
-            echo "   Env Vars: ZHIPU_API_KEY, LLM_LINK_API_KEY"
-            ;;
-        "ollama")
-            echo "🦙 Generic Ollama Configuration"
-            echo "   Description: Any Ollama API compatible client"
-            echo "   Port: 11434"
-            echo "   Protocol: Ollama API"
-            echo "   Auth: Not required"
-            echo "   Env Vars: ZHIPU_API_KEY"
-            ;;
         "dual")
             echo "🔄 Dual Protocol Configuration"
             echo "   Description: Both OpenAI and Ollama APIs"
@@ -146,7 +128,7 @@ check_env_vars() {
     
     # Check app-specific vars
     case $app in
-        "codex-cli"|"openai"|"dual")
+        "codex-cli"|"dual")
             if [[ -z "${LLM_LINK_API_KEY}" ]]; then
                 missing_vars+=("LLM_LINK_API_KEY")
             fi
@@ -178,19 +160,13 @@ get_config_file() {
     
     case $app in
         "codex-cli")
-            echo "$PROJECT_ROOT/configs/apps/codex-cli.yaml"
+            echo "$PROJECT_ROOT/configs/codex-cli.yaml"
             ;;
         "zed-dev")
-            echo "$PROJECT_ROOT/configs/apps/zed-dev.yaml"
+            echo "$PROJECT_ROOT/configs/zed-dev.yaml"
             ;;
         "claude-code")
-            echo "$PROJECT_ROOT/configs/apps/claude-code.yaml"
-            ;;
-        "openai")
-            echo "$PROJECT_ROOT/configs/config-openai-only.yaml"
-            ;;
-        "ollama")
-            echo "$PROJECT_ROOT/configs/config-ollama-only.yaml"
+            echo "$PROJECT_ROOT/configs/claude-code.yaml"
             ;;
         "dual")
             echo "$PROJECT_ROOT/configs/config-dual-protocol.yaml"

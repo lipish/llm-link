@@ -27,17 +27,13 @@ llm-link automatically searches for configuration files in the following order:
 
 ### Available Configurations
 
-#### **Core Configurations**
-- **`config-working.yaml`** - Development environment configuration with client adapters
-- **`config-multi-provider.yaml`** - Multi-provider setup with examples for all supported LLM providers
+#### **Application-Specific Configurations**
+- **`codex-cli.yaml`** - GitHub Codex CLI optimized (pure OpenAI API on port 8088)
+- **`zed-dev.yaml`** - Zed.dev editor optimized (pure Ollama API on port 11434)
+- **`claude-code.yaml`** - Claude Code optimized (pure Anthropic API on port 8089)
 
-#### **Protocol-Specific Configurations**
+#### **Multi-Protocol Configuration**
 - **`config-dual-protocol.yaml`** - Both OpenAI and Ollama APIs enabled (maximum compatibility)
-- **`config-openai-only.yaml`** - Pure OpenAI API only (for OpenAI-compatible clients)
-- **`config-ollama-only.yaml`** - Pure Ollama API only (for Ollama-compatible clients)
-
-#### **Client-Specific Configurations**
-- **`config-codex.yaml`** - Optimized for Codex CLI (pure OpenAI API on port 8088)
 
 ## Usage
 
@@ -100,33 +96,31 @@ See `llm-link.example.yaml` for a complete example with all available options in
 
 ### Quick Start Guide
 
-#### **For Maximum Compatibility (Recommended)**
+#### **For Specific Applications**
+```bash
+# GitHub Codex CLI
+./scripts/start-app.sh codex-cli
+# or: ./target/release/llm-link --config configs/codex-cli.yaml
+
+# Zed.dev editor
+./scripts/start-app.sh zed-dev
+# or: ./target/release/llm-link --config configs/zed-dev.yaml
+
+# Claude Code
+./scripts/start-app.sh claude-code
+# or: ./target/release/llm-link --config configs/claude-code.yaml
+```
+
+#### **For Maximum Compatibility**
 ```bash
 # Supports both OpenAI and Ollama clients
-./target/release/llm-link --config configs/config-dual-protocol.yaml
-```
-
-#### **For OpenAI Clients Only**
-```bash
-# Codex CLI, ChatGPT clients, OpenAI SDK
-./target/release/llm-link --config configs/config-openai-only.yaml
-```
-
-#### **For Ollama Clients Only**
-```bash
-# Zed.dev, Ollama CLI, Ollama ecosystem tools
-./target/release/llm-link --config configs/config-ollama-only.yaml
-```
-
-#### **For Codex CLI Specifically**
-```bash
-# Optimized configuration for Codex CLI
-./target/release/llm-link --config configs/config-codex.yaml
+./scripts/start-app.sh dual
+# or: ./target/release/llm-link --config configs/config-dual-protocol.yaml
 ```
 
 ### For Production
+- Use application-specific configurations for optimal performance
 - Start with `config-dual-protocol.yaml` for maximum compatibility
-- Use `config-working.yaml` for development with enhanced logging
 - Customize based on your specific client requirements
 
 ## Client Adapter System

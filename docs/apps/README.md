@@ -21,9 +21,9 @@ LLM Link provides optimized configurations for popular AI coding tools and edito
 
 ```bash
 # Use application-specific config files
-./target/release/llm-link --config configs/apps/codex-cli.yaml
-./target/release/llm-link --config configs/apps/zed-dev.yaml
-./target/release/llm-link --config configs/apps/claude-code.yaml
+./target/release/llm-link --config configs/codex-cli.yaml
+./target/release/llm-link --config configs/zed-dev.yaml
+./target/release/llm-link --config configs/claude-code.yaml
 ```
 
 ## 📱 Supported Applications
@@ -33,7 +33,7 @@ LLM Link provides optimized configurations for popular AI coding tools and edito
 - **Port**: 8088
 - **Protocol**: OpenAI API
 - **Authentication**: Bearer Token required
-- **Configuration**: `configs/apps/codex-cli.yaml`
+- **Configuration**: `configs/codex-cli.yaml`
 
 **Setup:**
 ```bash
@@ -57,7 +57,7 @@ env_key = "LLM_LINK_API_KEY"
 - **Port**: 11434
 - **Protocol**: Ollama API
 - **Authentication**: Not required
-- **Configuration**: `configs/apps/zed-dev.yaml`
+- **Configuration**: `configs/zed-dev.yaml`
 
 **Setup:**
 ```bash
@@ -83,7 +83,7 @@ export ZHIPU_API_KEY="your-zhipu-api-key"
 - **Port**: 8089
 - **Protocol**: Anthropic API
 - **Authentication**: API Key required
-- **Configuration**: `configs/apps/claude-code.yaml`
+- **Configuration**: `configs/claude-code.yaml`
 
 **Setup:**
 ```bash
