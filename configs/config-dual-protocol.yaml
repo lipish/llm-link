@@ -1,0 +1,48 @@
+# LLM Link Configuration - Dual Protocol Support
+#
+# This configuration exposes BOTH OpenAI and Ollama API endpoints
+# Maximum compatibility - supports all types of clients
+
+# Server configuration
+server:
+  host: "0.0.0.0"
+  port: 11434                    # Use Ollama standard port
+  log_level: "info"
+
+# LLM backend configuration
+llm_backend:
+  type: "Zhipu"
+  base_url: "https://open.bigmodel.cn/api/paas/v4"
+  api_key: "${ZHIPU_API_KEY}"
+  model: "glm-4-flash"
+
+# API endpoint configurations - BOTH APIs ENABLED
+apis:
+  # OpenAI-compatible API (ENABLED)
+  openai:
+    enabled: true
+    path: "/v1"                  # OpenAI endpoints: /v1/chat/completions, /v1/models
+    api_key_header: "Authorization"
+    api_key: "${LLM_LINK_API_KEY}"
+
+  # Ollama API (ENABLED)
+  ollama:
+    enabled: true
+    path: "/ollama"              # Ollama endpoints: /ollama/api/chat, /ollama/api/tags, /ollama/api/generate
+    api_key_header: null
+    api_key: null
+
+  # Anthropic API (DISABLED)
+  anthropic:
+    enabled: false
+    path: "/anthropic"
+
+# Client adapter configuration
+client_adapters:
+  default_adapter: "standard"   # Default to Ollama standard
+  
+  # Enable Zed.dev specific adaptations for Ollama API
+  zed:
+    enabled: true
+    force_images_field: true
+    preferred_format: "ndjson"

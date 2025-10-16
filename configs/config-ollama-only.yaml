@@ -1,0 +1,48 @@
+# LLM Link Configuration - Pure Ollama Protocol
+#
+# This configuration exposes ONLY Ollama-compatible API endpoints
+# Perfect for tools that expect Ollama API (like Zed.dev, Ollama clients, etc.)
+
+# Server configuration
+server:
+  host: "0.0.0.0"
+  port: 11434                    # Standard Ollama port
+  log_level: "info"
+
+# LLM backend configuration
+llm_backend:
+  type: "Zhipu"
+  base_url: "https://open.bigmodel.cn/api/paas/v4"
+  api_key: "${ZHIPU_API_KEY}"
+  model: "glm-4-flash"
+
+# API endpoint configurations - ONLY Ollama API
+apis:
+  # OpenAI-compatible API (DISABLED)
+  openai:
+    enabled: false
+    path: "/v1"
+    api_key_header: "Authorization"
+    api_key: null
+
+  # Ollama API (ENABLED)
+  ollama:
+    enabled: true
+    path: "/api"                 # Standard Ollama path: /api/chat, /api/tags, /api/generate
+    api_key_header: null         # Ollama typically doesn't use API keys
+    api_key: null
+
+  # Anthropic API (DISABLED)
+  anthropic:
+    enabled: false
+    path: "/anthropic"
+
+# Client adapter configuration
+client_adapters:
+  default_adapter: "standard"   # Use standard Ollama adapter
+  
+  # Enable Zed.dev specific adaptations
+  zed:
+    enabled: true
+    force_images_field: true     # Zed.dev expects images field
+    preferred_format: "ndjson"

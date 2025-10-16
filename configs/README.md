@@ -25,11 +25,19 @@ llm-link automatically searches for configuration files in the following order:
 - **`llm-link.yaml`** - Main configuration file (auto-discovered)
 - **`llm-link.example.yaml`** - Template configuration file
 
-### Example Configurations
-- **`config-working.yaml`** - Working development configuration with client adapters
+### Available Configurations
+
+#### **Core Configurations**
+- **`config-working.yaml`** - Development environment configuration with client adapters
 - **`config-multi-provider.yaml`** - Multi-provider setup with examples for all supported LLM providers
-- **`config-env-vars.yaml`** - Configuration using environment variables
-- **`config-codex.yaml`** - Pure OpenAI API on port 8088 for Codex CLI
+
+#### **Protocol-Specific Configurations**
+- **`config-dual-protocol.yaml`** - Both OpenAI and Ollama APIs enabled (maximum compatibility)
+- **`config-openai-only.yaml`** - Pure OpenAI API only (for OpenAI-compatible clients)
+- **`config-ollama-only.yaml`** - Pure Ollama API only (for Ollama-compatible clients)
+
+#### **Client-Specific Configurations**
+- **`config-codex.yaml`** - Optimized for Codex CLI (pure OpenAI API on port 8088)
 
 ## Usage
 
@@ -90,15 +98,36 @@ See `llm-link.example.yaml` for a complete example with all available options in
 - Automatic client detection via User-Agent headers
 - Optimized streaming formats for different clients
 
-### For Codex CLI Integration
-- `config-codex.yaml` provides pure OpenAI API on port 8088
-- Bearer token authentication with environment variables
-- No Ollama protocol interference for maximum compatibility
+### Quick Start Guide
+
+#### **For Maximum Compatibility (Recommended)**
+```bash
+# Supports both OpenAI and Ollama clients
+./target/release/llm-link --config configs/config-dual-protocol.yaml
+```
+
+#### **For OpenAI Clients Only**
+```bash
+# Codex CLI, ChatGPT clients, OpenAI SDK
+./target/release/llm-link --config configs/config-openai-only.yaml
+```
+
+#### **For Ollama Clients Only**
+```bash
+# Zed.dev, Ollama CLI, Ollama ecosystem tools
+./target/release/llm-link --config configs/config-ollama-only.yaml
+```
+
+#### **For Codex CLI Specifically**
+```bash
+# Optimized configuration for Codex CLI
+./target/release/llm-link --config configs/config-codex.yaml
+```
 
 ### For Production
-- Copy `config-working.yaml` and modify for your production environment
-- Enable client adapters for better IDE compatibility
-- Use `config-codex.yaml` as a template for pure OpenAI API deployment
+- Start with `config-dual-protocol.yaml` for maximum compatibility
+- Use `config-working.yaml` for development with enhanced logging
+- Customize based on your specific client requirements
 
 ## Client Adapter System
 
