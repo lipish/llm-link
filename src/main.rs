@@ -181,7 +181,7 @@ fn build_app(state: AppState, config: &Config) -> Router {
             app = app
                 .route(&format!("{}/api/generate", ollama_config.path), post(handlers::ollama_generate))
                 .route(&format!("{}/api/chat", ollama_config.path), post(handlers::ollama::chat))
-                .route(&format!("{}/api/tags", ollama_config.path), get(handlers::ollama::tags))
+                .route(&format!("{}/api/tags", ollama_config.path), get(handlers::ollama::models))
                 .route(&format!("{}/api/show", ollama_config.path), post(handlers::ollama_show))
                 .route(&format!("{}/api/version", ollama_config.path), get(|| async {
                     axum::Json(serde_json::json!({
@@ -198,9 +198,9 @@ fn build_app(state: AppState, config: &Config) -> Router {
         if openai_config.enabled {
             info!("Enabling OpenAI API on path: {}", openai_config.path);
             app = app
-                .route(&format!("{}/chat/completions", openai_config.path), post(handlers::openai::chat_completions))
-                .route(&format!("{}/models", openai_config.path), get(handlers::openai::list_models))
-                .route(&format!("{}/models/:model", openai_config.path), get(handlers::openai::list_models));
+                .route(&format!("{}/chat/completions", openai_config.path), post(handlers::openai::chat))
+                .route(&format!("{}/models", openai_config.path), get(handlers::openai::models))
+                .route(&format!("{}/models/:model", openai_config.path), get(handlers::openai::models));
         }
     }
 

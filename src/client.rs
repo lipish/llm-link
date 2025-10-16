@@ -227,12 +227,7 @@ impl Client {
         Ok(UnboundedReceiverStream::new(rx))
     }
 
-    /// Send a streaming chat request to the LLM (backward compatibility - returns JSON format)
-    pub async fn chat_stream(&self, model: &str, messages: Vec<Message>) -> Result<UnboundedReceiverStream<String>> {
-        // 默认使用 JSON 格式以保持向后兼容性
-        self.chat_stream_with_format(model, messages, StreamFormat::Json).await
 
-    }
 
     /// List available models
     pub async fn list_models(&self) -> Result<Vec<Model>> {

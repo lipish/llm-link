@@ -6,7 +6,7 @@ use axum::{
     body::Body,
 };
 use futures::StreamExt;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::{json, Value};
 use std::convert::Infallible;
 use tracing::{info, warn, error};
@@ -20,6 +20,7 @@ pub struct OllamaChatRequest {
     pub model: String,
     pub messages: Vec<Value>,
     pub stream: Option<bool>,
+    #[allow(dead_code)]
     pub options: Option<Value>,
 }
 
@@ -36,7 +37,7 @@ pub async fn chat(
 ) -> Result<Response, StatusCode> {
     // Ollama API 通常不需要认证，但可以配置
     if let Some(cfg) = &state.config.apis.ollama {
-        if let Some(expected_key) = cfg.api_key.as_ref() {
+        if let Some(_expected_key) = cfg.api_key.as_ref() {
             // 如果配置了 API key，则进行验证
             // 这里可以添加 Ollama API key 验证逻辑
         }
@@ -152,8 +153,8 @@ async fn handle_non_streaming_request(
     }
 }
 
-/// Ollama Tags API
-pub async fn tags(
+/// Ollama Models API (Tags)
+pub async fn models(
     _headers: HeaderMap,
     State(state): State<AppState>,
     Query(_params): Query<OllamaTagsParams>,

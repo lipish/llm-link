@@ -6,7 +6,7 @@ use axum::{
     body::Body,
 };
 use futures::StreamExt;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::{json, Value};
 use std::convert::Infallible;
 use tracing::{info, warn, error};
@@ -20,7 +20,9 @@ pub struct OpenAIChatRequest {
     pub model: String,
     pub messages: Vec<Value>,
     pub stream: Option<bool>,
+    #[allow(dead_code)]
     pub max_tokens: Option<u32>,
+    #[allow(dead_code)]
     pub temperature: Option<f32>,
 }
 
@@ -30,7 +32,7 @@ pub struct OpenAIModelsParams {
 }
 
 /// OpenAI Chat Completions API
-pub async fn chat_completions(
+pub async fn chat(
     headers: HeaderMap,
     State(state): State<AppState>,
     Json(request): Json<OpenAIChatRequest>,
@@ -71,7 +73,7 @@ async fn handle_streaming_request(
 ) -> Result<Response, StatusCode> {
     // 🎯 OpenAI API 固定使用 OpenAI 适配器
     let client_adapter = ClientAdapter::OpenAI;
-    let (stream_format, _) = FormatDetector::determine_format(&headers);
+    let (_stream_format, _) = FormatDetector::determine_format(&headers);
     
     // 使用客户端偏好格式（SSE）
     let final_format = client_adapter.preferred_format();
@@ -143,7 +145,7 @@ async fn handle_non_streaming_request(
 }
 
 /// OpenAI Models API
-pub async fn list_models(
+pub async fn models(
     headers: HeaderMap,
     State(state): State<AppState>,
     Query(_params): Query<OpenAIModelsParams>,

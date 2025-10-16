@@ -30,11 +30,7 @@ impl Service {
         Ok(response)
     }
 
-    pub async fn chat_stream_with_model(&self, model: Option<&str>, messages: Vec<Message>) -> Result<UnboundedReceiverStream<String>> {
-        let model_to_use = model.unwrap_or(&self.model);
-        let stream = self.client.chat_stream(model_to_use, messages).await?;
-        Ok(stream)
-    }
+
 
     pub async fn chat_stream_with_format(&self, model: Option<&str>, messages: Vec<Message>, format: StreamFormat) -> Result<UnboundedReceiverStream<String>> {
         let model_to_use = model.unwrap_or(&self.model);
@@ -106,27 +102,7 @@ pub fn convert_openai_messages(messages: Vec<Value>) -> Result<Vec<Message>> {
     Ok(llm_messages)
 }
 
-pub fn convert_anthropic_messages(messages: Vec<Value>) -> Result<Vec<Message>> {
-    let mut llm_messages = Vec::new();
 
-    for msg in messages {
-        let role = msg["role"].as_str().ok_or_else(|| anyhow::anyhow!("Missing role"))?;
-        let content = msg["content"].as_str().ok_or_else(|| anyhow::anyhow!("Missing content"))?;
-
-        let llm_role = match role {
-            "user" => Role::User,
-            "assistant" => Role::Assistant,
-            _ => return Err(anyhow::anyhow!("Unsupported role: {}", role)),
-        };
-
-        llm_messages.push(Message {
-            role: llm_role,
-            content: content.to_string(),
-        });
-    }
-
-    Ok(llm_messages)
-}
 
 pub fn convert_response_to_openai(response: Response) -> Value {
     serde_json::json!({
@@ -150,24 +126,7 @@ pub fn convert_response_to_openai(response: Response) -> Value {
     })
 }
 
-pub fn convert_response_to_anthropic(response: Response) -> Value {
-    serde_json::json!({
-        "id": uuid::Uuid::new_v4().to_string(),
-        "type": "message",
-        "role": "assistant",
-        "content": [{
-            "type": "text",
-            "text": response.content
-        }],
-        "model": response.model,
-        "stop_reason": "end_turn",
-        "stop_sequence": null,
-        "usage": {
-            "input_tokens": response.usage.prompt_tokens,
-            "output_tokens": response.usage.completion_tokens
-        }
-    })
-}
+
 
 pub fn convert_response_to_ollama(response: Response) -> Value {
     serde_json::json!({
