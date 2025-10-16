@@ -14,7 +14,7 @@ tower = "0.4"
 tower-http = { version = "0.5", features = ["cors", "trace"] }
 
 # LLM connector
-llm-connector = { version = "0.3.13", features = ["streaming"] }
+llm-connector = { version = "0.4.9", features = ["streaming"] }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }

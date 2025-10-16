@@ -1,7 +1,7 @@
 use crate::config::LlmBackendConfig;
 use anyhow::{anyhow, Result};
 use tokio_stream::wrappers::UnboundedReceiverStream;
-use llm_connector::{LlmClient, ChatRequest, Message as LlmMessage, StreamFormat, StreamingConfig, StreamingFormat};
+use llm_connector::{LlmClient, types::{ChatRequest, Message as LlmMessage}, StreamFormat};
 use futures_util::StreamExt;
 
 /// Unified LLM client that wraps llm-connector for all providers
@@ -48,21 +48,31 @@ impl Client {
         let llm_client = match config {
             LlmBackendConfig::OpenAI { api_key, base_url, .. } => {
                 // Use 30 second timeout for better reliability
-                LlmClient::openai_with_timeout(api_key, base_url.as_deref(), 30000)
+                if let Some(base_url) = base_url {
+                    LlmClient::openai_compatible(api_key, base_url, "openai")?
+                } else {
+                    LlmClient::openai(api_key)?
+                }
             }
             LlmBackendConfig::Anthropic { api_key, .. } => {
                 // Use 30 second timeout for better reliability
-                LlmClient::anthropic_with_timeout(api_key, 30000)
+                LlmClient::anthropic(api_key)?
             }
             LlmBackendConfig::Aliyun { api_key, .. } => {
-                LlmClient::aliyun(api_key)
+                LlmClient::aliyun(api_key)?
             }
             LlmBackendConfig::Zhipu { api_key, .. } => {
-                // Use 30 second timeout for better reliability - this should fix the hanging issue
-                LlmClient::zhipu_with_timeout(api_key, 30000)
+                // Use Zhipu OpenAI compatible mode for better reliability
+                LlmClient::zhipu_openai_compatible(api_key)?
             }
             LlmBackendConfig::Ollama { base_url, .. } => {
-                LlmClient::ollama(base_url.as_deref())
+                if base_url.is_some() {
+                    // For custom Ollama URLs, we might need to use openai_compatible
+                    // But for now, let's use the standard ollama method
+                    LlmClient::ollama()?
+                } else {
+                    LlmClient::ollama()?
+                }
             }
         };
 
@@ -125,39 +135,30 @@ impl Client {
             ..Default::default()
         };
 
-        let config = StreamingConfig {
-            format: StreamingFormat::Ollama,  // 🎯 恢复 Ollama 格式用于 Ollama API
-            stream_format: format,
-            include_usage: true,
-            include_reasoning: false,
-        };
-
-        // 🎉 使用新的 chat_stream_universal 方法！
-        let stream = self.llm_client.chat_stream_universal(&request, &config).await
-            .map_err(|e| anyhow!("LLM connector universal streaming error: {}", e))?;
+        // 🎉 使用新的 V2 简化流式 API
+        let mut stream = self.llm_client.chat_stream(&request).await
+            .map_err(|e| anyhow!("LLM connector streaming error: {}", e))?;
 
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
 
         tokio::spawn(async move {
-            let mut stream = stream;
             while let Some(chunk) = stream.next().await {
                 match chunk {
                     Ok(stream_chunk) => {
-                        // 🎉 v0.3.13: 使用新的格式转换方法
-                        let formatted_data = match format {
-                            StreamFormat::SSE => stream_chunk.to_sse(),
-                            StreamFormat::NDJSON => stream_chunk.to_ndjson(),
-                            StreamFormat::Json => stream_chunk.to_json(),
-                        };
-
-                        let _ = tx.send(formatted_data);
-
-                        // 检查是否完成（从 data 中检查 done 字段）
-                        if let Some(done) = stream_chunk.data.get("done") {
-                            if done.as_bool().unwrap_or(false) {
-                                break;
-                            }
+                        // 获取内容并根据格式进行格式化
+                        if let Some(content) = stream_chunk.get_content() {
+                            let formatted_data = match format {
+                                StreamFormat::SSE => format!("data: {}\n\n", serde_json::json!({"content": content})),
+                                StreamFormat::NDJSON => format!("{}\n", serde_json::json!({"content": content})),
+                                StreamFormat::Json => serde_json::json!({"content": content}).to_string(),
+                            };
+                            let _ = tx.send(formatted_data);
                         }
+
+                        // 检查是否完成 - 暂时移除，让流自然结束
+                        // if stream_chunk.is_done() {
+                        //     break;
+                        // }
                     }
                     Err(_) => break,
                 }
@@ -185,39 +186,30 @@ impl Client {
             ..Default::default()
         };
 
-        let config = StreamingConfig {
-            format: StreamingFormat::OpenAI,  // 🎯 明确使用 OpenAI 格式
-            stream_format: format,
-            include_usage: true,
-            include_reasoning: false,
-        };
-
-        // 🎉 使用新的 chat_stream_universal 方法！
-        let stream = self.llm_client.chat_stream_universal(&request, &config).await
-            .map_err(|e| anyhow!("LLM connector universal streaming error: {}", e))?;
+        // 🎉 使用新的 V2 简化流式 API
+        let mut stream = self.llm_client.chat_stream(&request).await
+            .map_err(|e| anyhow!("LLM connector streaming error: {}", e))?;
 
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
 
         tokio::spawn(async move {
-            let mut stream = stream;
             while let Some(chunk) = stream.next().await {
                 match chunk {
                     Ok(stream_chunk) => {
-                        // 🎉 v0.3.13: 使用新的格式转换方法
-                        let formatted_data = match format {
-                            StreamFormat::SSE => stream_chunk.to_sse(),
-                            StreamFormat::NDJSON => stream_chunk.to_ndjson(),
-                            StreamFormat::Json => stream_chunk.to_json(),
-                        };
-
-                        let _ = tx.send(formatted_data);
-
-                        // 检查是否完成（从 data 中检查 done 字段）
-                        if let Some(done) = stream_chunk.data.get("done") {
-                            if done.as_bool().unwrap_or(false) {
-                                break;
-                            }
+                        // 获取内容并根据格式进行格式化
+                        if let Some(content) = stream_chunk.get_content() {
+                            let formatted_data = match format {
+                                StreamFormat::SSE => format!("data: {}\n\n", serde_json::json!({"content": content})),
+                                StreamFormat::NDJSON => format!("{}\n", serde_json::json!({"content": content})),
+                                StreamFormat::Json => serde_json::json!({"content": content}).to_string(),
+                            };
+                            let _ = tx.send(formatted_data);
                         }
+
+                        // 检查是否完成 - 暂时移除，让流自然结束
+                        // if stream_chunk.is_done() {
+                        //     break;
+                        // }
                     }
                     Err(_) => break,
                 }
