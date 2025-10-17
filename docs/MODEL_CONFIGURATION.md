@@ -26,19 +26,16 @@ LLM Link implements intelligent model management with API integration and config
 - **Fallback**: Configuration file with popular models
 - **Benefit**: Only shows models you can actually use
 
-### Other Providers (Embedded Configuration)
+### Other Providers (Embedded Data)
 - **Source**: `src/models/models.yaml` embedded in binary
 - **Data Sources**: Official provider documentation (see file header)
-- **Updates**: Maintained by llm-link team with community input
+- **Updates**: Maintained by llm-link team, requires rebuild to update
 
 ## 📁 Directory Structure
 
 ### Core Model Data
 - **`src/models/models.yaml`**: Embedded model data (part of binary)
 - **`src/models/mod.rs`**: Model configuration loading logic
-
-### Example Configurations
-- **`configs/models.yaml.example`**: Template for custom configurations
 
 ### File Structure
 ```yaml
@@ -126,14 +123,9 @@ cargo run --bin test_models
 
 This displays all configured models for each provider and verifies the configuration file loads correctly.
 
-## ✏️ Customizing Models
+## ✏️ Updating Models
 
-### For Development/Testing
-1. Copy `configs/models.yaml.example` to your desired location
-2. Modify the models as needed
-3. Use `ModelsConfig::load_from_file()` in your code to load custom configuration
-
-### For Production Changes
+### Modifying Model Lists
 1. Edit `src/models/models.yaml` (embedded data)
 2. Follow the existing YAML structure
 3. Include meaningful descriptions for user experience
@@ -148,13 +140,19 @@ provider_name:
       description: "Clear description of model capabilities"
 ```
 
+### Data Source Updates
+- Update model lists based on official provider documentation
+- Include source URLs in file header for verification
+- Test with `cargo run --bin test_models` after changes
+
 ## 🚀 Benefits
 
 - **Ollama Accuracy**: Shows only actually installed models via API
-- **Rich Metadata**: Embedded configuration provides descriptions and categorization
+- **Rich Metadata**: Embedded data provides descriptions and categorization
 - **Data Transparency**: Sources documented for verification
-- **No Dependencies**: Embedded data, no external file requirements
+- **Zero Dependencies**: No external configuration files needed
 - **Always Available**: Model data built into binary
+- **Simple Architecture**: No configuration file complexity
 
 ## 🔧 Implementation Details
 

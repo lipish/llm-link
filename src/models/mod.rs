@@ -1,6 +1,4 @@
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::path::Path;
 use anyhow::{Result, anyhow};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -45,17 +43,6 @@ impl ModelsConfig {
 
         // Fallback to hardcoded default configuration
         Self::default()
-    }
-
-    /// Load models configuration from external file (for testing/customization)
-    pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let content = fs::read_to_string(path)
-            .map_err(|e| anyhow!("Failed to read models config file: {}", e))?;
-
-        let config: ModelsConfig = serde_yaml::from_str(&content)
-            .map_err(|e| anyhow!("Failed to parse models config: {}", e))?;
-
-        Ok(config)
     }
 
     /// Get models for a specific provider
