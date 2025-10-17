@@ -1,64 +1,75 @@
 # Model List Management
 
-LLM Link uses a robust approach to provide accurate model lists without configuration file confusion.
+LLM Link implements intelligent model management with API integration and configuration fallbacks.
 
 ## 🎯 Design Philosophy
 
-**API-First Approach**: Model lists should come from the actual LLM provider APIs to ensure accuracy and avoid confusion between configured models and actually available models.
+**Hybrid Approach**: Combine real-time API data (where available) with curated configuration files to provide accurate and comprehensive model lists.
 
 ## 🔧 How It Works
 
-1. **API Priority**: The system attempts to get models from the actual LLM provider API first
-2. **Built-in Fallback**: If API calls fail, it uses a minimal set of well-known models for each provider
-3. **No Configuration Files**: No external configuration files are used to avoid data inconsistency
-4. **Real-time Accuracy**: Model lists reflect what's actually available from the provider
+1. **Ollama Special Handling**: Uses `ollama.models()` API to get actually installed models
+2. **Configuration Fallback**: For other providers or when APIs fail, uses curated model lists from `configs/models.yaml`
+3. **Data Source Transparency**: All model information includes source documentation links
+4. **Graceful Degradation**: System always works even if APIs are unavailable
 
 ## 🏗️ Architecture
 
-- **Primary**: Direct API calls to LLM providers (when supported by llm-connector)
-- **Fallback**: Minimal hardcoded model lists in the source code
-- **No Config Files**: Eliminates confusion between configured and available models
+- **llm-connector**: Basic library for LLM communication (no model management)
+- **llm-link**: Model management, availability checking, and configuration
+- **Configuration Files**: Curated by llm-link team with official data sources
 
-## 📋 Built-in Fallback Models
+## 📋 Model Sources
 
-When API calls fail, the system uses these minimal, well-known models:
+### Ollama (API-First)
+- **Primary**: `ollama.models()` API - gets actually installed models
+- **Fallback**: Configuration file with popular models
+- **Benefit**: Only shows models you can actually use
 
-### OpenAI
-- `gpt-4o` - GPT-4 Omni model
-- `gpt-4` - Standard GPT-4 model  
-- `gpt-3.5-turbo` - Fast and efficient model
+### Other Providers (Configuration-Based)
+- **Source**: `configs/models.yaml` with curated model lists
+- **Data Sources**: Official provider documentation (see file header)
+- **Updates**: Maintained by llm-link team with community input
 
-### Anthropic  
-- `claude-3-5-sonnet-20241022` - Latest Claude 3.5 Sonnet
-- `claude-3-haiku-20240307` - Fast Claude 3 Haiku
+## 📁 Configuration File Structure
 
-### Zhipu (GLM)
-- `glm-4-flash` - Fast GLM-4 model
-- `glm-4` - Standard GLM-4 model
+The `configs/models.yaml` file contains:
 
-### Ollama
-- `llama3.2` - Latest small Llama model
-- `llama2` - Stable Llama 2 model
+```yaml
+# Data sources documented at top of file
+openai:
+  models:
+    - id: "gpt-4o"
+      name: "GPT-4o"
+      description: "GPT-4 Omni model with multimodal capabilities"
+    # ... more models
 
-### Aliyun (Qwen)
-- `qwen-turbo` - Fast Qwen model
-- `qwen-plus` - Enhanced Qwen model
+anthropic:
+  models:
+    - id: "claude-3-5-sonnet-20241022"
+      name: "Claude 3.5 Sonnet"
+      description: "Latest Claude 3.5 Sonnet model"
+    # ... more models
+```
 
-## 🚫 Why No Configuration Files?
+## 🎯 Why This Hybrid Approach?
 
-### Problems with Config-Based Model Lists
+### Ollama Special Case
+- **Local Installation**: Ollama models are locally installed, so API can tell us exactly what's available
+- **Dynamic**: Users install/remove models frequently
+- **Accurate**: No point showing models that aren't installed
 
-1. **Data Inconsistency**: Config files can list models that don't actually exist or are unavailable
-2. **Maintenance Burden**: Requires manual updates when providers add/remove models  
-3. **User Confusion**: Users see models in lists that they can't actually use
-4. **Sync Issues**: Config files get out of sync with actual API capabilities
+### Other Providers
+- **Remote APIs**: Models are hosted remotely, availability is generally stable
+- **Rich Metadata**: Configuration files provide descriptions and categorization
+- **Curated Lists**: Maintained with official data sources for accuracy
+- **Offline Support**: Works even when provider APIs are down
 
-### Our Solution
-
-- **API-First**: Get model lists directly from provider APIs when possible
-- **Minimal Fallback**: Use only well-known, stable models as fallbacks
-- **No Config Files**: Eliminate the source of confusion entirely
-- **Real-time Accuracy**: Model lists reflect actual availability
+### Benefits of Hybrid Approach
+- **Accuracy**: Ollama shows only installed models, others show curated lists
+- **Reliability**: Always works even if APIs are unavailable
+- **Maintainability**: Configuration updates don't require code changes
+- **Transparency**: Data sources are documented and verifiable
 
 ## 🔄 API Endpoints
 
@@ -98,19 +109,40 @@ curl -H "Authorization: Bearer your-token" http://localhost:8088/v1/models
 }
 ```
 
+## 🧪 Testing Configuration
+
+Use the built-in test tool to verify model configuration:
+
+```bash
+cargo run --bin test_models
+```
+
+This displays all configured models for each provider and verifies the configuration file loads correctly.
+
+## ✏️ Customizing Models
+
+### Editing Configuration
+1. Edit `configs/models.yaml` to add/remove/modify models
+2. Follow the existing YAML structure
+3. Include meaningful descriptions for user experience
+4. Restart the service to pick up changes
+
+### Adding New Models
+```yaml
+provider_name:
+  models:
+    - id: "new-model-id"
+      name: "Human Readable Name"
+      description: "Clear description of model capabilities"
+```
+
 ## 🚀 Benefits
 
-- **Accurate Data**: Model lists reflect actual provider availability
-- **No Maintenance**: No manual configuration file updates needed
-- **No Confusion**: Users only see models they can actually use
-- **Future-Proof**: Automatically works with new models as APIs support them
-- **Reliable Fallback**: Minimal hardcoded models ensure system always works
-
-## 🎯 Future Improvements
-
-- **Real API Integration**: When llm-connector supports model listing APIs, we'll use those
-- **Ollama API**: Use `ollama.models()` to get actually installed models
-- **Dynamic Updates**: Real-time model availability from provider APIs
+- **Ollama Accuracy**: Shows only actually installed models via API
+- **Rich Metadata**: Configuration provides descriptions and categorization
+- **Data Transparency**: Sources documented for verification
+- **Offline Reliability**: Works even when provider APIs are down
+- **Easy Maintenance**: Update models without code changes
 
 ## 🔧 Implementation Details
 
@@ -118,28 +150,35 @@ The model listing logic is implemented in `src/client.rs`:
 
 ```rust
 pub async fn list_models(&self) -> Result<Vec<Model>> {
-    // Try to get models from llm-connector API first (real-time data)
-    // If that fails, fall back to minimal built-in list
-    
-    // TODO: Implement actual API calls when llm-connector supports it
-    // For now, use minimal built-in fallback based on provider type
-    
-    match &self.backend {
-        LlmBackendConfig::OpenAI { .. } => {
-            // Minimal fallback models
-            vec![
-                Model { id: "gpt-4o".to_string() },
-                Model { id: "gpt-4".to_string() },
-                Model { id: "gpt-3.5-turbo".to_string() },
-            ]
+    // Special handling for Ollama - get actual installed models
+    if provider_name == "ollama" {
+        if let Some(ollama_client) = self.llm_client.as_ollama() {
+            match ollama_client.models().await {
+                Ok(ollama_models) => {
+                    // Return actual installed models
+                    return Ok(models_from_api);
+                }
+                Err(e) => {
+                    // Fall back to configuration file
+                }
+            }
         }
-        // ... other providers
     }
+
+    // For other providers, use configuration file
+    let model_infos = self.models_config.get_models_for_provider(provider_name);
+    // Convert and return configured models
 }
 ```
 
-This approach ensures that:
-- Model lists are always accurate and reflect actual availability
-- No configuration files can get out of sync
-- Users are never confused by unavailable models
-- The system is future-proof and ready for real API integration
+## 📊 Data Sources
+
+Model information is sourced from official documentation:
+
+- **Anthropic**: [Claude Models Overview](https://docs.claude.com/en/docs/about-claude/models/overview)
+- **Ollama**: [Ollama Model Search](https://ollama.com/search) + Local API
+- **Aliyun**: [Model Studio Models](https://help.aliyun.com/zh/model-studio/models)
+- **Zhipu**: [BigModel Platform](https://bigmodel.cn/)
+- **OpenAI**: Official documentation and community reports
+
+All sources are documented in the configuration file header for transparency and verification.
