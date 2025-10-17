@@ -143,7 +143,7 @@ impl AppConfigGenerator {
                 }),
                 ollama: Some(OllamaApiConfig {
                     enabled: true,
-                    path: "/api".to_string(),
+                    path: "".to_string(),  // Empty path so routes become /api/tags directly
                     api_key_header: None,
                     api_key: None,
                 }),
