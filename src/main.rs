@@ -32,10 +32,6 @@ use apps::{SupportedApp, AppInfoProvider};
 #[command(name = "llm-link")]
 #[command(about = "A configurable LLM proxy service", long_about = None)]
 struct Args {
-    /// Configuration file path
-    #[arg(short, long)]
-    config: Option<String>,
-
     /// Application mode (codex-cli, zed-dev, claude-code)
     #[arg(short, long)]
     app: Option<String>,
@@ -97,7 +93,7 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
-    // Load configuration
+    // Load configuration - Application mode only
     let (mut config, config_source) = if let Some(app_name) = args.app {
         // Application mode
         use apps::{SupportedApp, AppConfigGenerator, EnvChecker};
@@ -188,11 +184,12 @@ async fn main() -> Result<()> {
 
         let config = AppConfigGenerator::generate_protocol_config(&protocols, args.api_key.as_deref());
         (config, format!("protocols: {}", protocols.join(", ")))
-    } else if let Some(config_path) = args.config {
-        let config = Config::from_file(&config_path)?;
-        (config, config_path)
     } else {
-        Config::load_with_source()?
+        return Err(anyhow::anyhow!(
+            "Application mode required. Use --app <app-name> or --protocols <protocols>.\n\
+             Available applications: codex-cli, zed-dev, claude-code\n\
+             Use --list-apps for more information."
+        ));
     };
 
     // Override with command line arguments
