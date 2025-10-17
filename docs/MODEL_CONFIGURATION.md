@@ -26,16 +26,23 @@ LLM Link implements intelligent model management with API integration and config
 - **Fallback**: Configuration file with popular models
 - **Benefit**: Only shows models you can actually use
 
-### Other Providers (Configuration-Based)
-- **Source**: `configs/models.yaml` with curated model lists
+### Other Providers (Embedded Configuration)
+- **Source**: `src/models/models.yaml` embedded in binary
 - **Data Sources**: Official provider documentation (see file header)
 - **Updates**: Maintained by llm-link team with community input
 
-## 📁 Configuration File Structure
+## 📁 Directory Structure
 
-The `configs/models.yaml` file contains:
+### Core Model Data
+- **`src/models/models.yaml`**: Embedded model data (part of binary)
+- **`src/models/mod.rs`**: Model configuration loading logic
 
+### Example Configurations
+- **`configs/models.yaml.example`**: Template for custom configurations
+
+### File Structure
 ```yaml
+# src/models/models.yaml (embedded in binary)
 # Data sources documented at top of file
 openai:
   models:
@@ -61,14 +68,14 @@ anthropic:
 
 ### Other Providers
 - **Remote APIs**: Models are hosted remotely, availability is generally stable
-- **Rich Metadata**: Configuration files provide descriptions and categorization
+- **Rich Metadata**: Embedded configuration provides descriptions and categorization
 - **Curated Lists**: Maintained with official data sources for accuracy
-- **Offline Support**: Works even when provider APIs are down
+- **Embedded Data**: No external file dependencies, always available
 
 ### Benefits of Hybrid Approach
 - **Accuracy**: Ollama shows only installed models, others show curated lists
-- **Reliability**: Always works even if APIs are unavailable
-- **Maintainability**: Configuration updates don't require code changes
+- **Reliability**: Embedded data ensures system always works
+- **No Dependencies**: Model data embedded in binary, no external files needed
 - **Transparency**: Data sources are documented and verifiable
 
 ## 🔄 API Endpoints
@@ -121,11 +128,16 @@ This displays all configured models for each provider and verifies the configura
 
 ## ✏️ Customizing Models
 
-### Editing Configuration
-1. Edit `configs/models.yaml` to add/remove/modify models
+### For Development/Testing
+1. Copy `configs/models.yaml.example` to your desired location
+2. Modify the models as needed
+3. Use `ModelsConfig::load_from_file()` in your code to load custom configuration
+
+### For Production Changes
+1. Edit `src/models/models.yaml` (embedded data)
 2. Follow the existing YAML structure
 3. Include meaningful descriptions for user experience
-4. Restart the service to pick up changes
+4. Rebuild the binary to embed new data
 
 ### Adding New Models
 ```yaml
@@ -139,10 +151,10 @@ provider_name:
 ## 🚀 Benefits
 
 - **Ollama Accuracy**: Shows only actually installed models via API
-- **Rich Metadata**: Configuration provides descriptions and categorization
+- **Rich Metadata**: Embedded configuration provides descriptions and categorization
 - **Data Transparency**: Sources documented for verification
-- **Offline Reliability**: Works even when provider APIs are down
-- **Easy Maintenance**: Update models without code changes
+- **No Dependencies**: Embedded data, no external file requirements
+- **Always Available**: Model data built into binary
 
 ## 🔧 Implementation Details
 
@@ -165,9 +177,9 @@ pub async fn list_models(&self) -> Result<Vec<Model>> {
         }
     }
 
-    // For other providers, use configuration file
+    // For other providers, use embedded configuration
     let model_infos = self.models_config.get_models_for_provider(provider_name);
-    // Convert and return configured models
+    // Convert and return embedded models
 }
 ```
 
