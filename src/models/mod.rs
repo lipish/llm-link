@@ -25,26 +25,37 @@ pub struct ModelsConfig {
 }
 
 impl ModelsConfig {
-    /// Load models configuration from file
-    pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
-        let content = fs::read_to_string(path)
-            .map_err(|e| anyhow!("Failed to read models config file: {}", e))?;
-        
-        let config: ModelsConfig = serde_yaml::from_str(&content)
-            .map_err(|e| anyhow!("Failed to parse models config: {}", e))?;
-        
+    /// Load models configuration from embedded YAML
+    pub fn load_embedded() -> Result<Self> {
+        // Load embedded models.yaml from src/models/models.yaml
+        let content = include_str!("models.yaml");
+
+        let config: ModelsConfig = serde_yaml::from_str(content)
+            .map_err(|e| anyhow!("Failed to parse embedded models config: {}", e))?;
+
         Ok(config)
     }
 
     /// Load models configuration with fallback to default
     pub fn load_with_fallback() -> Self {
-        // Try to load from configs/models.yaml first
-        if let Ok(config) = Self::load_from_file("configs/models.yaml") {
+        // Try to load from embedded YAML first
+        if let Ok(config) = Self::load_embedded() {
             return config;
         }
 
-        // Fallback to default configuration
+        // Fallback to hardcoded default configuration
         Self::default()
+    }
+
+    /// Load models configuration from external file (for testing/customization)
+    pub fn load_from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
+        let content = fs::read_to_string(path)
+            .map_err(|e| anyhow!("Failed to read models config file: {}", e))?;
+
+        let config: ModelsConfig = serde_yaml::from_str(&content)
+            .map_err(|e| anyhow!("Failed to parse models config: {}", e))?;
+
+        Ok(config)
     }
 
     /// Get models for a specific provider
