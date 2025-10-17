@@ -50,15 +50,20 @@ pub async fn ollama_show(
     Json(request): Json<serde_json::Value>,
 ) -> Result<Json<serde_json::Value>, axum::http::StatusCode> {
     use serde_json::json;
+    use tracing::info;
 
-    // Extract model name from request
+    // Extract model name from request - try both "name" and "model" fields
     let model_name = request.get("name")
+        .or_else(|| request.get("model"))
         .and_then(|v| v.as_str())
         .unwrap_or("unknown");
+
+    info!("🔍 /api/show request for model: '{}', full request: {}", model_name, request);
 
     // Check if model exists
     match state.llm_service.validate_model(model_name).await {
         Ok(true) => {
+            info!("✅ Model '{}' validated successfully", model_name);
             // Return model details in Ollama format
             let response = json!({
                 "license": "",
@@ -92,8 +97,14 @@ pub async fn ollama_show(
             });
             Ok(Json(response))
         }
-        Ok(false) => Err(axum::http::StatusCode::NOT_FOUND),
-        Err(_) => Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR),
+        Ok(false) => {
+            info!("❌ Model '{}' not found in available models", model_name);
+            Err(axum::http::StatusCode::NOT_FOUND)
+        },
+        Err(e) => {
+            info!("⚠️ Error validating model '{}': {:?}", model_name, e);
+            Err(axum::http::StatusCode::INTERNAL_SERVER_ERROR)
+        },
     }
 }
 
