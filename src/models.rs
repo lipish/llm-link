@@ -62,11 +62,11 @@ impl ModelsConfig {
 
 impl Default for ModelsConfig {
     fn default() -> Self {
-        // Use embedded default configuration instead of hardcoded models
-        const DEFAULT_CONFIG: &str = include_str!("default_models.yaml");
+        // Use embedded builtin models configuration
+        const BUILTIN_MODELS: &str = include_str!("models.yaml");
 
-        // Parse the embedded default config
-        serde_yaml::from_str(DEFAULT_CONFIG)
-            .expect("Embedded default models configuration should be valid")
+        // Parse the embedded builtin config
+        serde_yaml::from_str(BUILTIN_MODELS)
+            .expect("Builtin models configuration should be valid")
     }
 }

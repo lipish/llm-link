@@ -29,9 +29,14 @@ anthropic:
 ## 🔧 How It Works
 
 1. **Automatic Loading**: The system automatically loads `configs/models.yaml` when starting
-2. **Fallback Support**: If the file is missing, it falls back to built-in default models
+2. **Fallback Support**: If the file is missing, it falls back to built-in models from `src/models.yaml`
 3. **Provider Mapping**: Models are automatically mapped to the correct provider based on your backend configuration
 4. **API Integration**: The model list is exposed through the standard API endpoints
+
+## 📁 File Structure
+
+- **`configs/models.yaml`** - User-editable comprehensive model configuration
+- **`src/models.yaml`** - Built-in minimal model configuration (embedded in binary)
 
 ## 📋 Supported Providers
 
@@ -151,9 +156,11 @@ curl -H "Authorization: Bearer your-token" http://localhost:8088/v1/models
 - Ensure the YAML structure follows the expected format
 
 ### Fallback Behavior
-If the configuration file is missing or invalid, the system will use built-in defaults:
-- OpenAI: gpt-4, gpt-4-turbo, gpt-3.5-turbo
-- Anthropic: claude-3-5-sonnet, claude-3-opus
-- Zhipu: glm-4-flash, glm-4-plus, glm-4, glm-4-air, glm-4-long
-- Ollama: llama3.2, llama3.1, llama2, codellama, mistral
-- Aliyun: qwen-turbo, qwen-plus, qwen-max
+If the configuration file is missing or invalid, the system will use built-in models from `src/models.yaml`:
+- OpenAI: gpt-4, gpt-3.5-turbo
+- Anthropic: claude-3-5-sonnet
+- Zhipu: glm-4-flash, glm-4
+- Ollama: llama3.2, llama2
+- Aliyun: qwen-turbo
+
+The built-in configuration is minimal but ensures the system always works.
