@@ -4,7 +4,6 @@ mod config;
 mod service;
 mod client;
 mod handlers;
-mod models;
 
 use anyhow::Result;
 use axum::{
