@@ -1,10 +1,13 @@
 # Model Configuration Guide
 
-LLM Link now supports configurable model lists through a YAML configuration file, eliminating the need to modify code when adding or removing models.
+LLM Link supports configurable model lists through YAML configuration files, eliminating the need to modify code when adding or removing models.
 
-## 📁 Configuration File
+## 📁 Configuration Files
 
-The model configuration is stored in `configs/models.yaml`. This file contains comprehensive lists of popular models for all supported providers.
+The system uses a two-tier configuration approach:
+
+1. **Built-in models** (`src/models.yaml`) - Minimal essential models embedded in the binary
+2. **User configuration** (`configs/models.yaml`) - Optional comprehensive model lists (create if needed)
 
 ### File Structure
 
@@ -28,52 +31,55 @@ anthropic:
 
 ## 🔧 How It Works
 
-1. **Automatic Loading**: The system automatically loads `configs/models.yaml` when starting
-2. **Fallback Support**: If the file is missing, it falls back to built-in models from `src/models.yaml`
+1. **Automatic Loading**: The system tries to load `configs/models.yaml` when starting
+2. **Graceful Fallback**: If the file is missing, it uses built-in models from `src/models.yaml`
 3. **Provider Mapping**: Models are automatically mapped to the correct provider based on your backend configuration
 4. **API Integration**: The model list is exposed through the standard API endpoints
 
 ## 📁 File Structure
 
-- **`configs/models.yaml`** - User-editable comprehensive model configuration
 - **`src/models.yaml`** - Built-in minimal model configuration (embedded in binary)
+- **`configs/models.yaml`** - Optional user-editable comprehensive model configuration
 
-## 📋 Supported Providers
+## 📋 Built-in Models (src/models.yaml)
+
+The system includes minimal essential models for each provider:
 
 ### OpenAI
-- GPT-4 series (GPT-4, GPT-4 Turbo, GPT-4o, GPT-4o Mini)
-- GPT-3.5 series (GPT-3.5 Turbo, GPT-3.5 Turbo 16K)
+- gpt-4, gpt-3.5-turbo
 
 ### Anthropic
-- Claude 3.5 series (Sonnet, Haiku)
-- Claude 3 series (Opus, Sonnet, Haiku)
+- claude-3-5-sonnet-20241022
 
 ### Zhipu (GLM)
-- GLM-4 series (Flash, Plus, Standard, Air, Long)
-- Version-specific models (GLM-4-0520)
+- glm-4-flash, glm-4
 
 ### Ollama
-- Llama series (3.2, 3.1, 3, 2)
-- Specialized models (Code Llama, DeepSeek Coder)
-- Other popular models (Mistral, Mixtral, Qwen, Phi-3)
+- llama3.2, llama2
 
 ### Aliyun (Qwen)
-- Qwen series (Turbo, Plus, Max, Max Long Context)
-- Qwen 2.5 series (72B, 32B, 14B)
+- qwen-turbo
 
 ## ✏️ Customizing Models
 
-### Adding New Models
+### Creating Custom Configuration
 
-1. Edit `configs/models.yaml`
-2. Add your model to the appropriate provider section:
+1. Create `configs/models.yaml` (copy from `src/models.yaml` as a starting point)
+2. Add your models to the appropriate provider section:
 
 ```yaml
 openai:
   models:
-    # ... existing models
-    - id: "your-new-model"
-      name: "Your New Model"
+    # Built-in models
+    - id: "gpt-4"
+      name: "GPT-4"
+      description: "Most capable GPT-4 model"
+    # Your custom models
+    - id: "gpt-4-turbo"
+      name: "GPT-4 Turbo"
+      description: "Latest GPT-4 Turbo model"
+    - id: "your-custom-model"
+      name: "Your Custom Model"
       description: "Description of your model"
 ```
 

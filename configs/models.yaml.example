@@ -1,6 +1,6 @@
-# Model configurations for different LLM providers
-# This file contains popular and commonly used models for each provider
-# Update this file to add/remove models without changing code
+# Example model configuration file
+# Copy this file to configs/models.yaml and customize as needed
+# If this file doesn't exist, the system will use built-in minimal models
 
 openai:
   models:
