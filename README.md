@@ -75,15 +75,13 @@ export ANTHROPIC_API_KEY="your-anthropic-key"
 ./target/release/llm-link --help
 ```
 
-### 🔧 Traditional Configuration (Advanced)
+### 🔧 Protocol Mode (Advanced)
 
-For custom setups, you can still use configuration files:
+For custom protocol combinations:
 
 ```bash
-# Use existing configuration files
-./target/release/llm-link --config configs/codex-cli.yaml
-./target/release/llm-link --config configs/zed-dev.yaml
-./target/release/llm-link --config configs/config-dual-protocol.yaml
+# Support multiple protocols simultaneously
+./target/release/llm-link --protocols ollama,openai --api-key "your-key"
 ```
 
 ## 🎯 Application Setup Guides
