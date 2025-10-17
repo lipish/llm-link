@@ -1,13 +1,15 @@
 use crate::config::LlmBackendConfig;
+use crate::models::ModelsConfig;
 use anyhow::{anyhow, Result};
 use tokio_stream::wrappers::UnboundedReceiverStream;
-use llm_connector::{LlmClient, types::{ChatRequest, Message as LlmMessage}, StreamFormat};
+use llm_connector::{LlmClient, types::{ChatRequest, Message as LlmMessage}, StreamFormat, Provider};
 use futures_util::StreamExt;
 
 /// Unified LLM client that wraps llm-connector for all providers
 pub struct Client {
     backend: LlmBackendConfig,
     llm_client: LlmClient,
+    models_config: ModelsConfig,
 }
 
 #[derive(Debug, Clone)]
@@ -76,9 +78,13 @@ impl Client {
             }
         };
 
+        // Load models configuration
+        let models_config = ModelsConfig::load_with_fallback();
+
         Ok(Self {
             backend: config.clone(),
             llm_client,
+            models_config,
         })
     }
 
@@ -223,50 +229,56 @@ impl Client {
 
     /// List available models
     pub async fn list_models(&self) -> Result<Vec<Model>> {
-        // Try to get models from llm-connector API first (real-time data)
-        // If that fails, fall back to minimal built-in list
-
-        // TODO: Implement actual API calls to get real models when llm-connector supports it
-        // For now, use minimal built-in fallback based on provider type
-
-        let models = match &self.backend {
-            LlmBackendConfig::OpenAI { .. } => {
-                // Try API call first (when available)
-                // For now, use minimal fallback
-                vec![
-                    Model { id: "gpt-4o".to_string() },
-                    Model { id: "gpt-4".to_string() },
-                    Model { id: "gpt-3.5-turbo".to_string() },
-                ]
-            }
-            LlmBackendConfig::Anthropic { .. } => {
-                vec![
-                    Model { id: "claude-3-5-sonnet-20241022".to_string() },
-                    Model { id: "claude-3-haiku-20240307".to_string() },
-                ]
-            }
-            LlmBackendConfig::Zhipu { .. } => {
-                vec![
-                    Model { id: "glm-4-flash".to_string() },
-                    Model { id: "glm-4".to_string() },
-                ]
-            }
-            LlmBackendConfig::Ollama { .. } => {
-                // For Ollama, we should use the API to get actual installed models
-                // TODO: Use ollama.models() when available
-                vec![
-                    Model { id: "llama3.2".to_string() },
-                    Model { id: "llama2".to_string() },
-                ]
-            }
-            LlmBackendConfig::Aliyun { .. } => {
-                vec![
-                    Model { id: "qwen-turbo".to_string() },
-                    Model { id: "qwen-plus".to_string() },
-                ]
-            }
+        let provider_name = match &self.backend {
+            LlmBackendConfig::OpenAI { .. } => "openai",
+            LlmBackendConfig::Anthropic { .. } => "anthropic",
+            LlmBackendConfig::Zhipu { .. } => "zhipu",
+            LlmBackendConfig::Ollama { .. } => "ollama",
+            LlmBackendConfig::Aliyun { .. } => "aliyun",
         };
 
-        Ok(models)
+        // Special handling for Ollama - get actual installed models
+        if provider_name == "ollama" {
+            if let Some(ollama_client) = self.llm_client.as_ollama() {
+                // Try to get actual installed models from Ollama
+                match ollama_client.models().await {
+                    Ok(ollama_models) => {
+                        let models: Vec<Model> = ollama_models.into_iter()
+                            .map(|model_name| Model { id: model_name })
+                            .collect();
+
+                        if !models.is_empty() {
+                            return Ok(models);
+                        }
+                    }
+                    Err(e) => {
+                        eprintln!("Warning: Failed to get Ollama models: {}, falling back to config", e);
+                    }
+                }
+            }
+        }
+
+        // For other providers or if Ollama API fails, use configuration file
+        let model_infos = self.models_config.get_models_for_provider(provider_name);
+
+        // Convert ModelInfo to Model
+        let models: Vec<Model> = model_infos.into_iter().map(|info| Model {
+            id: info.id,
+        }).collect();
+
+        // If no models found in config, fall back to current model from backend config
+        if models.is_empty() {
+            let fallback_model = match &self.backend {
+                LlmBackendConfig::OpenAI { model, .. } => model.clone(),
+                LlmBackendConfig::Anthropic { model, .. } => model.clone(),
+                LlmBackendConfig::Zhipu { model, .. } => model.clone(),
+                LlmBackendConfig::Ollama { model, .. } => model.clone(),
+                LlmBackendConfig::Aliyun { model, .. } => model.clone(),
+            };
+
+            Ok(vec![Model { id: fallback_model }])
+        } else {
+            Ok(models)
+        }
     }
 }
