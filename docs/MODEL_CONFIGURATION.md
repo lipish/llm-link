@@ -43,22 +43,38 @@ anthropic:
 
 ## 📋 Built-in Models (src/models.yaml)
 
-The system includes minimal essential models for each provider:
+The system includes the latest and most popular models for each provider (updated 2025-01-17):
 
 ### OpenAI
-- gpt-4, gpt-3.5-turbo
+- **GPT-5 series**: gpt-5, gpt-5-mini (latest)
+- **GPT-4 series**: gpt-4o, gpt-4o-mini, gpt-4-turbo
+- **GPT-3.5 series**: gpt-3.5-turbo
 
 ### Anthropic
-- claude-3-5-sonnet-20241022
+- **Claude 4.5 series**: claude-sonnet-4-5, claude-haiku-4-5 (latest)
+- **Claude 4 series**: claude-opus-4-1, claude-sonnet-4
+- **Claude 3.7 series**: claude-3-7-sonnet
 
 ### Zhipu (GLM)
-- glm-4-flash, glm-4
+- **GLM-4 series**: glm-4.6 (latest), glm-4-flash, glm-4-plus, glm-4, glm-4-air, glm-4-long
 
 ### Ollama
-- llama3.2, llama2
+- **Trending 2025**: gpt-oss, qwen3-vl, deepseek-r1, qwen3-coder, gemma3, qwen3
+- **Meta Llama**: llama3.1, llama3.2, codellama
+- **Others**: mistral, codellama
 
 ### Aliyun (Qwen)
-- qwen-turbo
+- **Qwen series**: qwen-turbo, qwen-plus, qwen-max, qwen-max-longcontext
+- **Qwen 2.5 series**: qwen2.5-72b-instruct, qwen2.5-32b-instruct
+
+## 🔗 Data Sources
+
+Model information is gathered from official sources:
+- **Anthropic**: [Claude Models Overview](https://docs.claude.com/en/docs/about-claude/models/overview)
+- **Ollama**: [Ollama Model Search](https://ollama.com/search)
+- **Aliyun**: [Model Studio Models](https://help.aliyun.com/zh/model-studio/models)
+- **Zhipu**: [BigModel Platform](https://bigmodel.cn/)
+- **OpenAI**: Official documentation and community reports
 
 ## ✏️ Customizing Models
 
@@ -163,10 +179,10 @@ curl -H "Authorization: Bearer your-token" http://localhost:8088/v1/models
 
 ### Fallback Behavior
 If the configuration file is missing or invalid, the system will use built-in models from `src/models.yaml`:
-- OpenAI: gpt-4, gpt-3.5-turbo
-- Anthropic: claude-3-5-sonnet
-- Zhipu: glm-4-flash, glm-4
-- Ollama: llama3.2, llama2
-- Aliyun: qwen-turbo
+- **OpenAI**: gpt-5, gpt-5-mini, gpt-4o, gpt-4o-mini, gpt-4-turbo, gpt-3.5-turbo
+- **Anthropic**: claude-sonnet-4-5, claude-haiku-4-5, claude-opus-4-1, claude-sonnet-4, claude-3-7-sonnet
+- **Zhipu**: glm-4.6, glm-4-flash, glm-4-plus, glm-4, glm-4-air, glm-4-long
+- **Ollama**: gpt-oss, qwen3-vl, deepseek-r1, qwen3-coder, gemma3, qwen3, llama3.1, llama3.2, mistral, codellama
+- **Aliyun**: qwen-turbo, qwen-plus, qwen-max, qwen-max-longcontext, qwen2.5-72b-instruct, qwen2.5-32b-instruct
 
-The built-in configuration is minimal but ensures the system always works.
+The built-in configuration includes the latest and most popular models, ensuring excellent out-of-the-box experience.
