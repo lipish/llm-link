@@ -4,6 +4,7 @@ use anyhow::{anyhow, Result};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use llm_connector::{LlmClient, types::{ChatRequest, Message as LlmMessage}, StreamFormat, Provider};
 use futures_util::StreamExt;
+use serde_json;
 
 /// Unified LLM client that wraps llm-connector for all providers
 pub struct Client {
@@ -136,39 +137,92 @@ impl Client {
 
         let request = ChatRequest {
             model: model.to_string(),
-            messages: chat_messages,
+            messages: chat_messages.clone(),
             stream: Some(true),
             ..Default::default()
         };
 
-        // 🎉 使用新的 V2 简化流式 API
-        let mut stream = self.llm_client.chat_stream(&request).await
-            .map_err(|e| anyhow!("LLM connector streaming error: {}", e))?;
+        // 🎉 直接回退到模拟流式响应，因为智谱AI的流式支持有问题
+        tracing::info!("🔄 Using simulated streaming for better compatibility");
+        self.fallback_to_simulated_stream(model, chat_messages, format).await
+    }
+
+    /// 回退到模拟流式响应
+    async fn fallback_to_simulated_stream(&self, model: &str, messages: Vec<LlmMessage>, format: StreamFormat) -> Result<UnboundedReceiverStream<String>> {
+        // 使用非流式请求获取完整响应
+        let request = ChatRequest {
+            model: model.to_string(),
+            messages,
+            stream: Some(false),
+            ..Default::default()
+        };
+
+        let response = self.llm_client.chat(&request).await
+            .map_err(|e| anyhow!("LLM connector non-streaming error: {}", e))?;
+
+        let content = response.get_content().unwrap_or("").to_string();
+        tracing::info!("📝 Fallback response content: '{}'", content);
 
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let model_name = model.to_string();
 
         tokio::spawn(async move {
-            while let Some(chunk) = stream.next().await {
-                match chunk {
-                    Ok(stream_chunk) => {
-                        // 获取内容并根据格式进行格式化
-                        if let Some(content) = stream_chunk.get_content() {
-                            let formatted_data = match format {
-                                StreamFormat::SSE => format!("data: {}\n\n", serde_json::json!({"content": content})),
-                                StreamFormat::NDJSON => format!("{}\n", serde_json::json!({"content": content})),
-                                StreamFormat::Json => serde_json::json!({"content": content}).to_string(),
-                            };
-                            let _ = tx.send(formatted_data);
-                        }
+            // 模拟流式输出：将内容分块发送
+            let words: Vec<&str> = content.split_whitespace().collect();
+            let chunk_size = 3; // 每次发送3个词
 
-                        // 检查是否完成 - 暂时移除，让流自然结束
-                        // if stream_chunk.is_done() {
-                        //     break;
-                        // }
-                    }
-                    Err(_) => break,
+            for chunk in words.chunks(chunk_size) {
+                let chunk_content = chunk.join(" ");
+                if !chunk_content.is_empty() {
+                    let ollama_chunk = serde_json::json!({
+                        "model": model_name,
+                        "created_at": chrono::Utc::now().to_rfc3339(),
+                        "message": {
+                            "role": "assistant",
+                            "content": chunk_content + " ",
+                            "images": null
+                        },
+                        "done": false
+                    });
+
+                    let formatted_data = match format {
+                        StreamFormat::SSE => format!("data: {}\n\n", ollama_chunk),
+                        StreamFormat::NDJSON => format!("{}\n", ollama_chunk),
+                        StreamFormat::Json => ollama_chunk.to_string(),
+                    };
+
+                    let _ = tx.send(formatted_data);
+
+                    // 添加小延迟以模拟真实的流式体验
+                    tokio::time::sleep(std::time::Duration::from_millis(50)).await;
                 }
             }
+
+            // 发送最终消息
+            let final_chunk = serde_json::json!({
+                "model": model_name,
+                "created_at": chrono::Utc::now().to_rfc3339(),
+                "message": {
+                    "role": "assistant",
+                    "content": "",
+                    "images": null
+                },
+                "done": true,
+                "total_duration": 0,
+                "load_duration": 0,
+                "prompt_eval_count": 0,
+                "prompt_eval_duration": 0,
+                "eval_count": 0,
+                "eval_duration": 0
+            });
+
+            let formatted_final = match format {
+                StreamFormat::SSE => format!("data: {}\n\n", final_chunk),
+                StreamFormat::NDJSON => format!("{}\n", final_chunk),
+                StreamFormat::Json => final_chunk.to_string(),
+            };
+
+            let _ = tx.send(formatted_final);
         });
 
         Ok(UnboundedReceiverStream::new(rx))
@@ -204,22 +258,52 @@ impl Client {
                     Ok(stream_chunk) => {
                         // 获取内容并根据格式进行格式化
                         if let Some(content) = stream_chunk.get_content() {
+                            // 构建符合 OpenAI 标准的流式响应格式
+                            let openai_chunk = serde_json::json!({
+                                "id": "chatcmpl-123",
+                                "object": "chat.completion.chunk",
+                                "created": chrono::Utc::now().timestamp(),
+                                "model": "gpt-3.5-turbo",
+                                "choices": [{
+                                    "index": 0,
+                                    "delta": {
+                                        "content": content
+                                    },
+                                    "finish_reason": null
+                                }]
+                            });
+
                             let formatted_data = match format {
-                                StreamFormat::SSE => format!("data: {}\n\n", serde_json::json!({"content": content})),
-                                StreamFormat::NDJSON => format!("{}\n", serde_json::json!({"content": content})),
-                                StreamFormat::Json => serde_json::json!({"content": content}).to_string(),
+                                StreamFormat::SSE => format!("data: {}\n\n", openai_chunk),
+                                StreamFormat::NDJSON => format!("{}\n", openai_chunk),
+                                StreamFormat::Json => openai_chunk.to_string(),
                             };
                             let _ = tx.send(formatted_data);
                         }
-
-                        // 检查是否完成 - 暂时移除，让流自然结束
-                        // if stream_chunk.is_done() {
-                        //     break;
-                        // }
                     }
                     Err(_) => break,
                 }
             }
+
+            // 流结束时发送最终消息
+            let final_chunk = serde_json::json!({
+                "id": "chatcmpl-123",
+                "object": "chat.completion.chunk",
+                "created": chrono::Utc::now().timestamp(),
+                "model": "gpt-3.5-turbo",
+                "choices": [{
+                    "index": 0,
+                    "delta": {},
+                    "finish_reason": "stop"
+                }]
+            });
+
+            let formatted_final = match format {
+                StreamFormat::SSE => format!("data: {}\n\ndata: [DONE]\n\n", final_chunk),
+                StreamFormat::NDJSON => format!("{}\n", final_chunk),
+                StreamFormat::Json => final_chunk.to_string(),
+            };
+            let _ = tx.send(formatted_final);
         });
 
         Ok(UnboundedReceiverStream::new(rx))
