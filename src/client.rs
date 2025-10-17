@@ -1,4 +1,5 @@
 use crate::config::LlmBackendConfig;
+use crate::models::ModelsConfig;
 use anyhow::{anyhow, Result};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use llm_connector::{LlmClient, types::{ChatRequest, Message as LlmMessage}, StreamFormat};
@@ -8,6 +9,7 @@ use futures_util::StreamExt;
 pub struct Client {
     backend: LlmBackendConfig,
     llm_client: LlmClient,
+    models_config: ModelsConfig,
 }
 
 #[derive(Debug, Clone)]
@@ -76,9 +78,13 @@ impl Client {
             }
         };
 
+        // Load models configuration
+        let models_config = ModelsConfig::load_with_fallback();
+
         Ok(Self {
             backend: config.clone(),
             llm_client,
+            models_config,
         })
     }
 
@@ -223,39 +229,38 @@ impl Client {
 
     /// List available models
     pub async fn list_models(&self) -> Result<Vec<Model>> {
-        // For now, return static model lists based on backend type
-        // TODO: Use llm-connector's list_models when available
-        match &self.backend {
-            LlmBackendConfig::Ollama { .. } => {
-                Ok(vec![
-                    Model {
-                        id: "llama2".to_string(),
-                    }
-                ])
-            }
-            LlmBackendConfig::OpenAI { .. } => {
-                Ok(vec![Model {
-                    id: "gpt-3.5-turbo".to_string(),
-                }])
-            }
-            LlmBackendConfig::Anthropic { model, .. } => {
-                Ok(vec![Model {
-                    id: model.clone(),
-                }])
-            }
-            LlmBackendConfig::Aliyun { model, .. } => {
-                Ok(vec![Model {
-                    id: model.clone(),
-                }])
-            }
-            LlmBackendConfig::Zhipu { .. } => {
-                let models = vec![
-                    "glm-4", "glm-4.6", "glm-4-plus", "glm-4-flash", "glm-4-air", "glm-4-long"
-                ];
-                Ok(models.into_iter().map(|name| Model {
-                    id: name.to_string(),
-                }).collect())
-            }
+        // Try to get models from llm-connector first (if available)
+        // If that fails, fall back to configuration file
+
+        let provider_name = match &self.backend {
+            LlmBackendConfig::OpenAI { .. } => "openai",
+            LlmBackendConfig::Anthropic { .. } => "anthropic",
+            LlmBackendConfig::Zhipu { .. } => "zhipu",
+            LlmBackendConfig::Ollama { .. } => "ollama",
+            LlmBackendConfig::Aliyun { .. } => "aliyun",
+        };
+
+        // Get models from configuration file
+        let model_infos = self.models_config.get_models_for_provider(provider_name);
+
+        // Convert ModelInfo to Model
+        let models: Vec<Model> = model_infos.into_iter().map(|info| Model {
+            id: info.id,
+        }).collect();
+
+        // If no models found in config, fall back to current model from backend config
+        if models.is_empty() {
+            let fallback_model = match &self.backend {
+                LlmBackendConfig::OpenAI { model, .. } => model.clone(),
+                LlmBackendConfig::Anthropic { model, .. } => model.clone(),
+                LlmBackendConfig::Zhipu { model, .. } => model.clone(),
+                LlmBackendConfig::Ollama { model, .. } => model.clone(),
+                LlmBackendConfig::Aliyun { model, .. } => model.clone(),
+            };
+
+            Ok(vec![Model { id: fallback_model }])
+        } else {
+            Ok(models)
         }
     }
 }
