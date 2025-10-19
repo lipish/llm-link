@@ -628,7 +628,7 @@ llm-link/
 ## 📚 Documentation
 
 - [Refactoring History](docs/REFACTORING.md) - Recent refactoring and improvements
-- [Provider Override](docs/PROVIDER_OVERRIDE.md) - Switch between LLM providers
+- [Quick Start Guide](docs/QUICK_START.md) - Fast reference for common use cases (中文)
 - [Changelog](CHANGELOG.md) - Version history and updates
 
 ## 📄 License
@@ -645,5 +645,4 @@ If you find LLM Link helpful, please consider giving it a star on GitHub!
 
 ---
 
-**Made with ❤️ for the AI coding community**
-
+**Made with ❤️ for the AI coding**

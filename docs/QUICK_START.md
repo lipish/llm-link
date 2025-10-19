@@ -67,6 +67,6 @@ LLM_LINK_API_KEY=xxx \
 
 ## 📚 更多文档
 
-- [Provider Override 详细文档](PROVIDER_OVERRIDE.md)
-- [完整 README](../README.md)
+- [完整 README](../README.md) - 包含完整的功能说明和架构文档
+- [重构历史](REFACTORING.md) - 最近的重构和改进
 
