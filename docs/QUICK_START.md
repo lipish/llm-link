@@ -56,7 +56,7 @@ LLM_LINK_API_KEY=xxx \
 ## 🔧 命令行参数
 
 ```bash
---app <APP>              # 应用模式（codex-cli, zed-dev, etc.）
+--app <APP>              # 应用模式（codex-cli, zed, claude-code）
 --provider <PROVIDER>    # 覆盖 provider
 --model <MODEL>          # 覆盖 model
 --llm-api-key <KEY>      # 覆盖 API key
@@ -67,7 +67,6 @@ LLM_LINK_API_KEY=xxx \
 
 ## 📚 更多文档
 
-- [Provider Override 详细文档](docs/PROVIDER_OVERRIDE.md)
-- [完整功能说明](PROVIDER_OVERRIDE_FEATURE.md)
-- [测试脚本](tests/test_provider_override.sh)
+- [Provider Override 详细文档](PROVIDER_OVERRIDE.md)
+- [完整 README](../README.md)
 

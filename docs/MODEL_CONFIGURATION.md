@@ -156,7 +156,7 @@ provider_name:
 
 ## 🔧 Implementation Details
 
-The model listing logic is implemented in `src/client.rs`:
+The model listing logic is implemented in `src/llm/models.rs`:
 
 ```rust
 pub async fn list_models(&self) -> Result<Vec<Model>> {
