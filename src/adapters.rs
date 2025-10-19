@@ -1,7 +1,7 @@
+use crate::settings::Settings;
 use axum::http::HeaderMap;
 use llm_connector::StreamFormat;
 use serde_json::Value;
-use crate::settings::Settings;
 
 /// 客户端适配器类型
 ///
@@ -61,7 +61,7 @@ impl ClientAdapter {
     pub fn preferred_format(&self) -> StreamFormat {
         match self {
             ClientAdapter::Standard => StreamFormat::NDJSON, // Ollama 标准
-            ClientAdapter::Zed => StreamFormat::NDJSON,   // Zed 偏好 NDJSON
+            ClientAdapter::Zed => StreamFormat::NDJSON,      // Zed 偏好 NDJSON
             ClientAdapter::OpenAI => StreamFormat::SSE,      // OpenAI/Codex 偏好 SSE
         }
     }
@@ -101,7 +101,7 @@ impl ClientAdapter {
                 // 标准模式：无特殊处理
             }
             ClientAdapter::Zed => {
-                // Zed.dev 特定适配：添加 images 字段
+                // Zed 特定适配：添加 images 字段
                 let should_add_images = if let Some(ref adapters) = config.client_adapters {
                     if let Some(ref zed_config) = adapters.zed {
                         zed_config.force_images_field.unwrap_or(true)
@@ -115,10 +115,10 @@ impl ClientAdapter {
                 if should_add_images {
                     if let Some(message) = data.get_mut("message") {
                         if message.get("images").is_none() {
-                            message.as_object_mut().unwrap().insert(
-                                "images".to_string(),
-                                Value::Null
-                            );
+                            message
+                                .as_object_mut()
+                                .unwrap()
+                                .insert("images".to_string(), Value::Null);
                         }
                     }
                 }
@@ -142,7 +142,9 @@ impl FormatDetector {
                 if accept_str.contains("text/event-stream") {
                     return (StreamFormat::SSE, "text/event-stream");
                 }
-                if accept_str.contains("application/x-ndjson") || accept_str.contains("application/jsonlines") {
+                if accept_str.contains("application/x-ndjson")
+                    || accept_str.contains("application/jsonlines")
+                {
                     return (StreamFormat::NDJSON, "application/x-ndjson");
                 }
             }
