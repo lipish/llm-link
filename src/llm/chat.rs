@@ -23,17 +23,20 @@ impl Client {
             .map_err(|e| anyhow!("LLM connector error: {}", e))?;
 
         // Debug: log the raw response
-        tracing::info!("📦 Raw LLM response choices: {:?}", response.choices.len());
+        tracing::info!("📦 Raw LLM response: {:?}", response);
+        tracing::info!("📦 Raw LLM response choices: {}", response.choices.len());
         if let Some(choice) = response.choices.get(0) {
             tracing::info!("📦 Message content: '{}'", choice.message.content);
             tracing::info!("📦 Message reasoning_content: {:?}", choice.message.reasoning_content);
             tracing::info!("📦 Message reasoning: {:?}", choice.message.reasoning);
+        } else {
+            tracing::warn!("⚠️ No choices in response!");
         }
 
         // Extract content and usage information
         let (prompt_tokens, completion_tokens, total_tokens) = response.get_usage_safe();
 
-        // Extract content and tool_calls from choices[0].message
+        // Extract content and tool_calls from choices[0].message or response.content
         let (content, tool_calls) = if let Some(choice) = response.choices.get(0) {
             let msg = &choice.message;
 
@@ -53,6 +56,11 @@ impl Client {
                 .and_then(|tc| serde_json::to_value(tc).ok());
 
             (content, tool_calls)
+        } else if !response.content.is_empty() {
+            // Fallback: some providers (like Aliyun in llm-connector 0.4.16)
+            // put content directly in response.content instead of choices
+            tracing::info!("📦 Using response.content: '{}'", response.content);
+            (response.content.clone(), None)
         } else {
             (String::new(), None)
         };
