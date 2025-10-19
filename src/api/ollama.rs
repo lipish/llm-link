@@ -12,8 +12,7 @@ use std::convert::Infallible;
 use tracing::{info, warn, error};
 
 use crate::adapters::{ClientAdapter, FormatDetector};
-use crate::handlers::AppState;
-use crate::service;
+use crate::api::{AppState, convert};
 
 #[derive(Debug, Deserialize)]
 pub struct OllamaChatRequest {
@@ -53,7 +52,7 @@ pub async fn chat(
     }
 
     // 转换消息格式
-    match service::convert_openai_messages(request.messages) {
+    match convert::openai_messages_to_llm(request.messages) {
         Ok(messages) => {
             let model = if request.model.is_empty() { None } else { Some(request.model.as_str()) };
 
@@ -90,7 +89,7 @@ async fn handle_streaming_request(
     info!("📡 Starting Ollama streaming response - Client: {:?}, Format: {:?} ({})",
           client_adapter, final_format, content_type);
 
-    match state.llm_service.chat_stream_with_format(model, messages.clone(), final_format).await {
+    match state.llm_service.chat_stream_ollama(model, messages.clone(), final_format).await {
         Ok(rx) => {
             info!("✅ Ollama streaming response started successfully");
 
@@ -141,9 +140,9 @@ async fn handle_non_streaming_request(
     model: Option<&str>,
     messages: Vec<llm_connector::types::Message>,
 ) -> Result<Response, StatusCode> {
-    match state.llm_service.chat_with_model(model, messages, None).await {
+    match state.llm_service.chat(model, messages, None).await {
         Ok(response) => {
-            let ollama_response = service::convert_response_to_ollama(response);
+            let ollama_response = convert::response_to_ollama(response);
             Ok(Json(ollama_response).into_response())
         }
         Err(e) => {
@@ -159,10 +158,12 @@ pub async fn models(
     State(state): State<AppState>,
     Query(_params): Query<OllamaTagsParams>,
 ) -> Result<impl IntoResponse, StatusCode> {
-    match state.llm_service.models().await {
+    match state.llm_service.list_models().await {
         Ok(models) => {
+            // Convert to Ollama format
+            let ollama_models = convert::models_to_ollama(models);
             let response = json!({
-                "models": models
+                "models": ollama_models
             });
             Ok(Json(response))
         }
@@ -171,14 +172,13 @@ pub async fn models(
 }
 
 /// 检测 Ollama 客户端类型
-fn detect_ollama_client(headers: &HeaderMap, config: &crate::config::Config) -> ClientAdapter {
+fn detect_ollama_client(headers: &HeaderMap, config: &crate::settings::Settings) -> ClientAdapter {
     // 1. 检查强制适配器设置
     if let Some(ref adapters) = config.client_adapters {
         if let Some(force_adapter) = &adapters.force_adapter {
             match force_adapter.to_lowercase().as_str() {
-                "zed" | "zed.dev" => return ClientAdapter::ZedDev,
+                "zed" | "zed.dev" => return ClientAdapter::Zed,
                 "standard" => return ClientAdapter::Standard,
-                "zhipu" | "zhipu-native" => return ClientAdapter::ZhipuNative,
                 _ => {}
             }
         }
@@ -188,9 +188,8 @@ fn detect_ollama_client(headers: &HeaderMap, config: &crate::config::Config) -> 
     if let Some(client) = headers.get("x-client") {
         if let Ok(client_str) = client.to_str() {
             match client_str.to_lowercase().as_str() {
-                "zed" | "zed.dev" => return ClientAdapter::ZedDev,
+                "zed" | "zed.dev" => return ClientAdapter::Zed,
                 "standard" => return ClientAdapter::Standard,
-                "zhipu" | "zhipu-native" => return ClientAdapter::ZhipuNative,
                 _ => {}
             }
         }
@@ -204,15 +203,12 @@ fn detect_ollama_client(headers: &HeaderMap, config: &crate::config::Config) -> 
                 if let Some(ref adapters) = config.client_adapters {
                     if let Some(ref zed_config) = adapters.zed {
                         if zed_config.enabled {
-                            return ClientAdapter::ZedDev;
+                            return ClientAdapter::Zed;
                         }
                     }
                 }
             }
-            // 检测 Zhipu 原生客户端
-            if ua_str.contains("Zhipu") || ua_str.contains("GLM") {
-                return ClientAdapter::ZhipuNative;
-            }
+
         }
     }
 
@@ -220,9 +216,8 @@ fn detect_ollama_client(headers: &HeaderMap, config: &crate::config::Config) -> 
     if let Some(ref adapters) = config.client_adapters {
         if let Some(default_adapter) = &adapters.default_adapter {
             match default_adapter.to_lowercase().as_str() {
-                "zed" | "zed.dev" => return ClientAdapter::ZedDev,
+                "zed" | "zed.dev" => return ClientAdapter::Zed,
                 "standard" => return ClientAdapter::Standard,
-                "zhipu" | "zhipu-native" => return ClientAdapter::ZhipuNative,
                 _ => {}
             }
         }
@@ -230,4 +225,77 @@ fn detect_ollama_client(headers: &HeaderMap, config: &crate::config::Config) -> 
 
     // 5. 最终默认
     ClientAdapter::Standard
+}
+
+/// Ollama Generate API (占位符)
+pub async fn generate() -> &'static str {
+    "Not implemented"
+}
+
+/// Ollama Show API - 显示模型详细信息
+pub async fn show(
+    State(state): State<AppState>,
+    Json(request): Json<Value>,
+) -> Result<Json<Value>, StatusCode> {
+    use tracing::info;
+
+    // Extract model name from request - try both "name" and "model" fields
+    let model_name = request.get("name")
+        .or_else(|| request.get("model"))
+        .and_then(|v| v.as_str())
+        .unwrap_or("unknown");
+
+    info!("🔍 /api/show request for model: '{}', full request: {}", model_name, request);
+
+    // Check if model exists
+    match state.llm_service.validate_model(model_name).await {
+        Ok(true) => {
+            info!("✅ Model '{}' validated successfully", model_name);
+            // Return model details in Ollama format
+            let response = json!({
+                "license": "",
+                "modelfile": format!("FROM {}", model_name),
+                "parameters": "",
+                "template": "{{ if .System }}{{ .System }}{{ end }}{{ if .Prompt }}{{ .Prompt }}{{ end }}{{ .Response }}",
+                "details": {
+                    "parent_model": "",
+                    "format": "gguf",
+                    "family": model_name.split('-').next().unwrap_or("unknown"),
+                    "families": [model_name.split('-').next().unwrap_or("unknown")],
+                    "parameter_size": "7B",
+                    "quantization_level": "Q4_K_M"
+                },
+                "model_info": {
+                    "general.architecture": "llama",
+                    "general.file_type": 2,
+                    "general.parameter_count": 7000000000u64,
+                    "general.quantization_version": 2,
+                    "llama.attention.head_count": 32,
+                    "llama.attention.head_count_kv": 32,
+                    "llama.attention.layer_norm_rms_epsilon": 0.000001,
+                    "llama.block_count": 32,
+                    "llama.context_length": 4096,
+                    "llama.embedding_length": 4096,
+                    "llama.feed_forward_length": 11008,
+                    "llama.rope.dimension_count": 128,
+                    "llama.rope.freq_base": 10000.0,
+                    "llama.vocab_size": 32000
+                }
+            });
+            Ok(Json(response))
+        }
+        Ok(false) => {
+            info!("❌ Model '{}' not found in available models", model_name);
+            Err(StatusCode::NOT_FOUND)
+        },
+        Err(e) => {
+            info!("⚠️ Error validating model '{}': {:?}", model_name, e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        },
+    }
+}
+
+/// Ollama PS API - 列出运行中的模型 (占位符)
+pub async fn ps() -> &'static str {
+    "Not implemented"
 }

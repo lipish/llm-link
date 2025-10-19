@@ -12,8 +12,7 @@ use std::convert::Infallible;
 use tracing::{info, warn, error};
 
 use crate::adapters::{ClientAdapter, FormatDetector};
-use crate::handlers::AppState;
-use crate::service;
+use crate::api::{AppState, convert};
 
 #[derive(Debug, Deserialize)]
 pub struct OpenAIChatRequest {
@@ -65,13 +64,13 @@ pub async fn chat(
     }
 
     // 转换消息格式
-    match service::convert_openai_messages(request.messages) {
+    match convert::openai_messages_to_llm(request.messages) {
         Ok(messages) => {
             info!("✅ Successfully converted {} messages", messages.len());
             let model = if request.model.is_empty() { None } else { Some(request.model.as_str()) };
 
             // 转换 tools 格式
-            let tools = request.tools.map(|t| service::convert_tools(t));
+            let tools = request.tools.map(|t| convert::openai_tools_to_llm(t));
             if tools.is_some() {
                 info!("🔧 Request includes {} tools", tools.as_ref().unwrap().len());
                 // Debug: log the first tool
@@ -179,9 +178,9 @@ async fn handle_non_streaming_request(
     messages: Vec<llm_connector::types::Message>,
     tools: Option<Vec<llm_connector::types::Tool>>,
 ) -> Result<Response, StatusCode> {
-    match state.llm_service.chat_with_model(model, messages, tools).await {
+    match state.llm_service.chat(model, messages, tools).await {
         Ok(response) => {
-            let openai_response = service::convert_response_to_openai(response);
+            let openai_response = convert::response_to_openai(response);
             Ok(Json(openai_response).into_response())
         }
         Err(e) => {
@@ -200,11 +199,21 @@ pub async fn models(
     // API Key 校验
     enforce_api_key(&headers, &state)?;
     
-    match state.llm_service.models().await {
+    match state.llm_service.list_models().await {
         Ok(models) => {
+            // Convert to OpenAI format
+            let openai_models: Vec<Value> = models.into_iter().map(|model| {
+                json!({
+                    "id": model.id,
+                    "object": "model",
+                    "created": chrono::Utc::now().timestamp(),
+                    "owned_by": "system"
+                })
+            }).collect();
+
             let response = json!({
                 "object": "list",
-                "data": models
+                "data": openai_models
             });
             Ok(Json(response))
         }
@@ -252,37 +261,7 @@ fn enforce_api_key(headers: &HeaderMap, state: &AppState) -> Result<(), StatusCo
 }
 
 /// 检测 OpenAI 客户端类型
-fn detect_openai_client(headers: &HeaderMap, config: &crate::config::Config) -> ClientAdapter {
-    // 1. 检查强制适配器设置
-    if let Some(ref adapters) = config.client_adapters {
-        if let Some(force_adapter) = &adapters.force_adapter {
-            match force_adapter.to_lowercase().as_str() {
-                "zhipu" | "zhipu-native" => return ClientAdapter::ZhipuNative,
-                _ => {}
-            }
-        }
-    }
-
-    // 2. 检查显式客户端标识
-    if let Some(client) = headers.get("x-client") {
-        if let Ok(client_str) = client.to_str() {
-            match client_str.to_lowercase().as_str() {
-                "zhipu" | "zhipu-native" => return ClientAdapter::ZhipuNative,
-                _ => {}
-            }
-        }
-    }
-
-    // 3. 检查 User-Agent 自动检测
-    if let Some(user_agent) = headers.get("user-agent") {
-        if let Ok(ua_str) = user_agent.to_str() {
-            // 检测 Zhipu 原生客户端
-            if ua_str.contains("Zhipu") || ua_str.contains("GLM") {
-                return ClientAdapter::ZhipuNative;
-            }
-        }
-    }
-
-    // 4. 默认使用 OpenAI 适配器
+fn detect_openai_client(_headers: &HeaderMap, _config: &crate::settings::Settings) -> ClientAdapter {
+    // OpenAI API 总是使用 OpenAI 适配器
     ClientAdapter::OpenAI
 }

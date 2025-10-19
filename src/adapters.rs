@@ -1,46 +1,107 @@
 use axum::http::HeaderMap;
 use llm_connector::StreamFormat;
 use serde_json::Value;
-use crate::config::Config;
-use crate::utils::xml;
+use crate::settings::Settings;
 
 /// 客户端适配器类型
+///
+/// 用于识别不同的客户端并应用相应的响应转换。
+///
+/// # 工作流程
+/// 1. 检测客户端类型（通过 HTTP 头、User-Agent、配置等）
+/// 2. 确定偏好的流式格式（SSE/NDJSON/JSON）
+/// 3. 应用客户端特定的响应适配（字段添加、格式调整等）
+///
+/// # 使用位置
+/// - `src/api/ollama.rs::detect_ollama_client()` - Ollama API 客户端检测
+/// - `src/api/openai.rs::detect_openai_client()` - OpenAI API 客户端检测
+///
+/// # 示例
+/// ```rust
+/// let adapter = detect_client(&headers, &config);
+/// let format = adapter.preferred_format();
+/// adapter.apply_response_adaptations(&config, &mut response_data);
+/// ```
 #[derive(Debug, Clone, PartialEq)]
 pub enum ClientAdapter {
     /// 标准 Ollama 客户端
+    /// - 偏好格式: NDJSON
+    /// - 特殊处理: 无
     Standard,
-    /// Zed.dev 编辑器适配
-    ZedDev,
-    /// OpenAI API 客户端适配
+
+    /// Zed 编辑器适配
+    /// - 偏好格式: NDJSON
+    /// - 特殊处理: 添加 `images` 字段
+    Zed,
+
+    /// OpenAI API 客户端适配（包括 Codex CLI）
+    /// - 偏好格式: SSE
+    /// - 特殊处理: finish_reason 修正（在 llm/stream.rs 中处理）
     OpenAI,
-    /// Zhipu 原生客户端（保留 XML 格式）
-    ZhipuNative,
 }
 
 impl ClientAdapter {
-    /// 获取该客户端的首选格式
+    /// 获取该客户端的首选流式格式
+    ///
+    /// 当客户端没有明确指定 Accept 头（或使用 `*/*`）时，
+    /// 使用此方法返回的格式。
+    ///
+    /// # 返回值
+    /// - `StreamFormat::SSE` - Server-Sent Events (OpenAI/Codex 偏好)
+    /// - `StreamFormat::NDJSON` - Newline Delimited JSON (Ollama/Zed 偏好)
+    ///
+    /// # 使用场景
+    /// ```rust
+    /// let format = if headers.get("accept").contains("*/*") {
+    ///     adapter.preferred_format()  // 使用偏好格式
+    /// } else {
+    ///     detected_format  // 使用客户端指定的格式
+    /// };
+    /// ```
     pub fn preferred_format(&self) -> StreamFormat {
         match self {
             ClientAdapter::Standard => StreamFormat::NDJSON, // Ollama 标准
-            ClientAdapter::ZedDev => StreamFormat::NDJSON,   // Zed 偏好 NDJSON
+            ClientAdapter::Zed => StreamFormat::NDJSON,   // Zed 偏好 NDJSON
             ClientAdapter::OpenAI => StreamFormat::SSE,      // OpenAI/Codex 偏好 SSE
-            ClientAdapter::ZhipuNative => StreamFormat::NDJSON, // Zhipu 原生格式
         }
     }
 
     /// 应用客户端特定的响应处理
-    pub fn apply_response_adaptations(&self, config: &Config, data: &mut Value) {
+    ///
+    /// 根据客户端类型，对 LLM 返回的响应数据进行适配转换。
+    ///
+    /// # 参数
+    /// - `config`: 全局配置
+    /// - `data`: 响应数据（可变引用），会被就地修改
+    ///
+    /// # 适配内容
+    ///
+    /// ## Standard
+    /// - 无特殊处理
+    ///
+    /// ## Zed
+    /// - 添加 `images: null` 字段（Zed 要求）
+    ///
+    /// ## OpenAI
+    /// - finish_reason 修正（在 client.rs 中处理）
+    ///
+    /// # 调用位置
+    /// - `src/handlers/ollama.rs` - 在流式响应的每个 chunk 中调用
+    /// - `src/handlers/openai.rs` - 在流式响应的每个 chunk 中调用
+    ///
+    /// # 示例
+    /// ```rust
+    /// let mut response_data = serde_json::from_str(&chunk)?;
+    /// adapter.apply_response_adaptations(&config, &mut response_data);
+    /// // response_data 已被适配
+    /// ```
+    pub fn apply_response_adaptations(&self, config: &Settings, data: &mut Value) {
         match self {
             ClientAdapter::Standard => {
-                // 标准模式：检查是否需要转换 XML
-                self.apply_xml_conversion(config, data);
+                // 标准模式：无特殊处理
             }
-            ClientAdapter::ZedDev => {
-                // Zed.dev 特定适配：
-                // 1. 转换 XML（如果需要）
-                self.apply_xml_conversion(config, data);
-
-                // 2. 添加 images 字段
+            ClientAdapter::Zed => {
+                // Zed.dev 特定适配：添加 images 字段
                 let should_add_images = if let Some(ref adapters) = config.client_adapters {
                     if let Some(ref zed_config) = adapters.zed {
                         zed_config.force_images_field.unwrap_or(true)
@@ -63,56 +124,8 @@ impl ClientAdapter {
                 }
             }
             ClientAdapter::OpenAI => {
-                // OpenAI 特定适配：
-                // 1. 转换 XML（如果需要）
-                self.apply_xml_conversion(config, data);
-                // 2. 确保 OpenAI 格式兼容性（目前不需要特殊处理）
-            }
-            ClientAdapter::ZhipuNative => {
-                // Zhipu 原生客户端：保留 XML 格式，不做任何转换
-                tracing::debug!("🔧 ZhipuNative adapter: preserving original XML format");
-            }
-        }
-    }
-
-    /// 应用 XML 到 JSON 的转换（如果配置启用）
-    fn apply_xml_conversion(&self, config: &Config, data: &mut Value) {
-        use crate::config::LlmBackendConfig;
-
-        // 首先检查是否是 Zhipu provider
-        let is_zhipu = matches!(config.llm_backend, LlmBackendConfig::Zhipu { .. });
-
-        // 只对 Zhipu provider 进行 XML 转换
-        if !is_zhipu {
-            tracing::debug!("⏭️  Skipping XML conversion: not a Zhipu provider");
-            return;
-        }
-
-        // 检查是否启用 XML 转换
-        let should_convert = if let Some(ref adapters) = config.client_adapters {
-            if let Some(ref zhipu_config) = adapters.zhipu {
-                // 如果明确设置了 preserve_xml=true，则不转换
-                if zhipu_config.preserve_xml.unwrap_or(false) {
-                    tracing::debug!("⏭️  Skipping XML conversion: preserve_xml is enabled");
-                    return;
-                }
-                // 否则根据 convert_xml_to_json 配置决定（默认为 true）
-                zhipu_config.convert_xml_to_json.unwrap_or(true)
-            } else {
-                // 没有 zhipu 配置，默认转换
-                true
-            }
-        } else {
-            // 没有 client_adapters 配置，默认转换
-            true
-        };
-
-        if should_convert {
-            tracing::debug!("🔍 Checking for XML in Zhipu response...");
-            if xml::transform_xml_in_json_response(data) {
-                tracing::info!("🔄 Successfully converted XML to JSON in response");
-            } else {
-                tracing::debug!("✓ No XML found in response");
+                // OpenAI 特定适配：无特殊处理
+                // finish_reason 修正在 client.rs 中处理
             }
         }
     }

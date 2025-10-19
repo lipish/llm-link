@@ -1,11 +1,10 @@
 mod adapters;
 mod apps;
-mod config;
+mod settings;
 mod service;
-mod client;
-mod handlers;
+mod llm;
+mod api;
 mod models;
-mod utils;
 
 use anyhow::Result;
 use axum::{
@@ -15,8 +14,8 @@ use axum::{
     response::Response,
 };
 use clap::Parser;
-use config::Config;
-use handlers::{AppState, health_check};
+use settings::Settings;
+use api::{AppState, health_check};
 // use std::net::SocketAddr;
 use tower::ServiceBuilder;
 use tower_http::{
@@ -33,7 +32,7 @@ use apps::{SupportedApp, AppInfoProvider};
 #[command(name = "llm-link")]
 #[command(about = "A configurable LLM proxy service", long_about = None)]
 struct Args {
-    /// Application mode (codex-cli, zed-dev, claude-code)
+    /// Application mode (codex-cli, zed, claude-code)
     #[arg(short, long)]
     app: Option<String>,
 
@@ -211,7 +210,7 @@ async fn main() -> Result<()> {
     } else {
         return Err(anyhow::anyhow!(
             "Application mode required. Use --app <app-name> or --protocols <protocols>.\n\
-             Available applications: codex-cli, zed-dev, claude-code\n\
+             Available applications: codex-cli, zed, claude-code\n\
              Use --list-apps for more information."
         ));
     };
@@ -245,7 +244,7 @@ async fn main() -> Result<()> {
 
     // Initialize LLM service
     info!("🔧 Initializing LLM service...");
-    let llm_service = service::Service::from_config(&config.llm_backend)?;
+    let llm_service = service::Service::new(&config.llm_backend)?;
     info!("✅ LLM service initialized successfully");
 
     let app_state = AppState::new(llm_service, config.clone());
@@ -323,7 +322,7 @@ fn list_applications() {
 
     println!("💡 Examples:");
     println!("   ./target/release/llm-link --app codex-cli");
-    println!("   ./target/release/llm-link --app zed-dev");
+    println!("   ./target/release/llm-link --app zed");
     println!("   ./target/release/llm-link --app claude-code");
     println!("   ./target/release/llm-link --protocols openai,ollama");
     println!();
@@ -356,7 +355,7 @@ fn show_application_info(app_name: &str) {
     }
 }
 
-fn build_app(state: AppState, config: &Config) -> Router {
+fn build_app(state: AppState, config: &Settings) -> Router {
     let mut app = Router::new()
         .route("/", get(|| {
             info!("🏠 Root endpoint accessed");
@@ -368,7 +367,7 @@ fn build_app(state: AppState, config: &Config) -> Router {
         }))
         .route("/debug", get(|| {
             info!("🐛 Debug endpoint accessed");
-            async { handlers::debug_test().await }
+            async { api::debug_test().await }
         }))
         .layer(
             ServiceBuilder::new()
@@ -381,17 +380,17 @@ fn build_app(state: AppState, config: &Config) -> Router {
         if ollama_config.enabled {
             info!("Enabling Ollama API on path: {}", ollama_config.path);
             app = app
-                .route(&format!("{}/api/generate", ollama_config.path), post(handlers::ollama_generate))
-                .route(&format!("{}/api/chat", ollama_config.path), post(handlers::ollama::chat))
-                .route(&format!("{}/api/tags", ollama_config.path), get(handlers::ollama::models))
-                .route(&format!("{}/api/show", ollama_config.path), post(handlers::ollama_show))
+                .route(&format!("{}/api/generate", ollama_config.path), post(api::ollama::generate))
+                .route(&format!("{}/api/chat", ollama_config.path), post(api::ollama::chat))
+                .route(&format!("{}/api/tags", ollama_config.path), get(api::ollama::models))
+                .route(&format!("{}/api/show", ollama_config.path), post(api::ollama::show))
                 .route(&format!("{}/api/version", ollama_config.path), get(|| async {
                     axum::Json(serde_json::json!({
                         "version": "0.1.0",
                         "build": "llm-link"
                     }))
                 }))
-                .route(&format!("{}/api/ps", ollama_config.path), get(handlers::ollama_ps));
+                .route(&format!("{}/api/ps", ollama_config.path), get(api::ollama::ps));
         }
     }
 
@@ -400,9 +399,9 @@ fn build_app(state: AppState, config: &Config) -> Router {
         if openai_config.enabled {
             info!("Enabling OpenAI API on path: {}", openai_config.path);
             app = app
-                .route(&format!("{}/chat/completions", openai_config.path), post(handlers::openai::chat))
-                .route(&format!("{}/models", openai_config.path), get(handlers::openai::models))
-                .route(&format!("{}/models/:model", openai_config.path), get(handlers::openai::models));
+                .route(&format!("{}/chat/completions", openai_config.path), post(api::openai::chat))
+                .route(&format!("{}/models", openai_config.path), get(api::openai::models))
+                .route(&format!("{}/models/:model", openai_config.path), get(api::openai::models));
         }
     }
 
@@ -411,8 +410,8 @@ fn build_app(state: AppState, config: &Config) -> Router {
         if anthropic_config.enabled {
             info!("Enabling Anthropic API on path: {}", anthropic_config.path);
             app = app
-                .route(&format!("{}/v1/messages", anthropic_config.path), post(handlers::anthropic_messages))
-                .route(&format!("{}/v1/models", anthropic_config.path), get(handlers::anthropic_models));
+                .route(&format!("{}/v1/messages", anthropic_config.path), post(api::anthropic::messages))
+                .route(&format!("{}/v1/models", anthropic_config.path), get(api::anthropic::models));
         }
     }
 
@@ -439,12 +438,12 @@ fn build_app(state: AppState, config: &Config) -> Router {
 
 /// Apply provider and model overrides from command line arguments
 fn apply_provider_overrides(
-    mut config: Config,
+    mut config: Settings,
     provider: Option<&str>,
     model: Option<&str>,
     llm_api_key: Option<&str>,
-) -> Result<Config> {
-    use config::LlmBackendConfig;
+) -> Result<Settings> {
+    use settings::LlmBackendSettings;
 
     // If provider is specified, create new backend config
     if let Some(provider_name) = provider {
@@ -468,7 +467,7 @@ fn apply_provider_overrides(
                     .or_else(|| std::env::var("OPENAI_API_KEY").ok())
                     .ok_or_else(|| anyhow::anyhow!("OPENAI_API_KEY not provided"))?;
 
-                LlmBackendConfig::OpenAI {
+                LlmBackendSettings::OpenAI {
                     api_key,
                     base_url: None,
                     model: model_name.to_string(),
@@ -480,7 +479,7 @@ fn apply_provider_overrides(
                     .or_else(|| std::env::var("ANTHROPIC_API_KEY").ok())
                     .ok_or_else(|| anyhow::anyhow!("ANTHROPIC_API_KEY not provided"))?;
 
-                LlmBackendConfig::Anthropic {
+                LlmBackendSettings::Anthropic {
                     api_key,
                     model: model_name.to_string(),
                 }
@@ -491,14 +490,14 @@ fn apply_provider_overrides(
                     .or_else(|| std::env::var("ZHIPU_API_KEY").ok())
                     .ok_or_else(|| anyhow::anyhow!("ZHIPU_API_KEY not provided"))?;
 
-                LlmBackendConfig::Zhipu {
+                LlmBackendSettings::Zhipu {
                     api_key,
                     base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
                     model: model_name.to_string(),
                 }
             }
             "ollama" => {
-                LlmBackendConfig::Ollama {
+                LlmBackendSettings::Ollama {
                     base_url: Some(std::env::var("OLLAMA_BASE_URL")
                         .unwrap_or_else(|_| "http://localhost:11434".to_string())),
                     model: model_name.to_string(),
@@ -516,11 +515,11 @@ fn apply_provider_overrides(
         info!("🔄 Overriding model: {}", model_name);
 
         match &mut config.llm_backend {
-            LlmBackendConfig::OpenAI { model, .. } => *model = model_name.to_string(),
-            LlmBackendConfig::Anthropic { model, .. } => *model = model_name.to_string(),
-            LlmBackendConfig::Zhipu { model, .. } => *model = model_name.to_string(),
-            LlmBackendConfig::Ollama { model, .. } => *model = model_name.to_string(),
-            LlmBackendConfig::Aliyun { model, .. } => *model = model_name.to_string(),
+            LlmBackendSettings::OpenAI { model, .. } => *model = model_name.to_string(),
+            LlmBackendSettings::Anthropic { model, .. } => *model = model_name.to_string(),
+            LlmBackendSettings::Zhipu { model, .. } => *model = model_name.to_string(),
+            LlmBackendSettings::Ollama { model, .. } => *model = model_name.to_string(),
+            LlmBackendSettings::Aliyun { model, .. } => *model = model_name.to_string(),
         }
     }
 
