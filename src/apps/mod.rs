@@ -1,14 +1,12 @@
 mod codex;
 mod claude;
 mod zed;
-mod env;
 mod info;
 mod protocol;
 
 use serde::{Deserialize, Serialize};
 use crate::settings::Settings;
 
-pub use env::EnvChecker;
 pub use info::AppInfoProvider;
 
 // Re-export app-specific modules

@@ -9,8 +9,6 @@ pub struct AppInfo {
     pub protocol: String,
     pub endpoints: Vec<String>,
     pub auth_required: bool,
-    pub env_vars: Vec<String>,
-    pub example_usage: String,
 }
 
 /// 应用信息提供器
@@ -30,11 +28,6 @@ impl AppInfoProvider {
                     "GET /v1/models".to_string(),
                 ],
                 auth_required: true,
-                env_vars: vec![
-                    "ZHIPU_API_KEY".to_string(),
-                    "LLM_LINK_API_KEY".to_string(),
-                ],
-                example_usage: "codex chat \"Write a function to sort an array\"".to_string(),
             },
             SupportedApp::ClaudeCode => AppInfo {
                 name: "Claude Code".to_string(),
@@ -46,10 +39,6 @@ impl AppInfoProvider {
                     "GET /v1/models".to_string(),
                 ],
                 auth_required: true,
-                env_vars: vec![
-                    "ANTHROPIC_API_KEY".to_string(),
-                ],
-                example_usage: "curl -X POST http://localhost:8089/v1/messages".to_string(),
             },
             SupportedApp::Zed => AppInfo {
                 name: "Zed".to_string(),
@@ -62,8 +51,6 @@ impl AppInfoProvider {
                     "GET /api/tags".to_string(),
                 ],
                 auth_required: false,
-                env_vars: vec!["ZHIPU_API_KEY".to_string()],
-                example_usage: "Configure in Zed settings: \"api_url\": \"http://localhost:11434\"".to_string(),
             },
         }
     }
