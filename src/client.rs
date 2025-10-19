@@ -3,7 +3,6 @@ use crate::models::ModelsConfig;
 use anyhow::{anyhow, Result};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 use llm_connector::{LlmClient, types::{ChatRequest, Message as LlmMessage}, StreamFormat, Provider};
-use futures_util::StreamExt;
 use serde_json;
 
 /// Unified LLM client that wraps llm-connector for all providers
@@ -11,19 +10,6 @@ pub struct Client {
     backend: LlmBackendConfig,
     llm_client: LlmClient,
     models_config: ModelsConfig,
-}
-
-#[derive(Debug, Clone)]
-pub enum Role {
-    System,
-    User,
-    Assistant,
-}
-
-#[derive(Debug, Clone)]
-pub struct Message {
-    pub role: Role,
-    pub content: String,
 }
 
 #[derive(Debug, Clone)]
@@ -38,6 +24,7 @@ pub struct Response {
     pub content: String,
     pub model: String,
     pub usage: Usage,
+    pub tool_calls: Option<serde_json::Value>,  // Store tool_calls from LLM response
 }
 
 #[derive(Debug, Clone)]
@@ -90,28 +77,52 @@ impl Client {
     }
 
     /// Send a chat request to the LLM
-    pub async fn chat(&self, model: &str, messages: Vec<Message>) -> Result<Response> {
-        // Convert messages to llm-connector format
-        let chat_messages: Vec<LlmMessage> = messages.into_iter().map(|msg| {
-            match msg.role {
-                Role::System => LlmMessage::system(&msg.content),
-                Role::User => LlmMessage::user(&msg.content),
-                Role::Assistant => LlmMessage::assistant(&msg.content),
-            }
-        }).collect();
-
+    pub async fn chat(&self, model: &str, messages: Vec<llm_connector::types::Message>, tools: Option<Vec<llm_connector::types::Tool>>) -> Result<Response> {
+        // Messages are already in llm-connector format
         let request = ChatRequest {
             model: model.to_string(),
-            messages: chat_messages,
+            messages,
+            tools,
             ..Default::default()
         };
 
         let response = self.llm_client.chat(&request).await
             .map_err(|e| anyhow!("LLM connector error: {}", e))?;
 
+        // Debug: log the raw response
+        tracing::info!("📦 Raw LLM response choices: {:?}", response.choices.len());
+        if let Some(choice) = response.choices.get(0) {
+            tracing::info!("📦 Message content: '{}'", choice.message.content);
+            tracing::info!("📦 Message reasoning_content: {:?}", choice.message.reasoning_content);
+            tracing::info!("📦 Message reasoning: {:?}", choice.message.reasoning);
+        }
+
         // Extract content and usage information
-        let content = response.get_content().unwrap_or("").to_string();
         let (prompt_tokens, completion_tokens, total_tokens) = response.get_usage_safe();
+
+        // Extract content and tool_calls from choices[0].message
+        let (content, tool_calls) = if let Some(choice) = response.choices.get(0) {
+            let msg = &choice.message;
+
+            // Extract content (could be in content, reasoning_content, reasoning, etc.)
+            let content = if !msg.content.is_empty() {
+                msg.content.clone()
+            } else if let Some(reasoning) = &msg.reasoning_content {
+                reasoning.clone()
+            } else if let Some(reasoning) = &msg.reasoning {
+                reasoning.clone()
+            } else {
+                String::new()
+            };
+
+            // Extract tool_calls if present
+            let tool_calls = msg.tool_calls.as_ref()
+                .and_then(|tc| serde_json::to_value(tc).ok());
+
+            (content, tool_calls)
+        } else {
+            (String::new(), None)
+        };
 
         Ok(Response {
             content,
@@ -121,30 +132,16 @@ impl Client {
                 completion_tokens,
                 total_tokens,
             },
+            tool_calls,
         })
     }
 
     /// Send a streaming chat request to the LLM with specified format
-    pub async fn chat_stream_with_format(&self, model: &str, messages: Vec<Message>, format: StreamFormat) -> Result<UnboundedReceiverStream<String>> {
-        // Convert messages to llm-connector format
-        let chat_messages: Vec<LlmMessage> = messages.into_iter().map(|msg| {
-            match msg.role {
-                Role::System => LlmMessage::system(&msg.content),
-                Role::User => LlmMessage::user(&msg.content),
-                Role::Assistant => LlmMessage::assistant(&msg.content),
-            }
-        }).collect();
-
-        let request = ChatRequest {
-            model: model.to_string(),
-            messages: chat_messages.clone(),
-            stream: Some(true),
-            ..Default::default()
-        };
-
+    pub async fn chat_stream_with_format(&self, model: &str, messages: Vec<llm_connector::types::Message>, format: StreamFormat) -> Result<UnboundedReceiverStream<String>> {
+        // Messages are already in llm-connector format
         // 🎉 直接回退到模拟流式响应，因为智谱AI的流式支持有问题
         tracing::info!("🔄 Using simulated streaming for better compatibility");
-        self.fallback_to_simulated_stream(model, chat_messages, format).await
+        self.fallback_to_simulated_stream(model, messages, format).await
     }
 
     /// 回退到模拟流式响应
@@ -229,46 +226,76 @@ impl Client {
     }
 
     /// Send a streaming chat request to the LLM for OpenAI API (uses OpenAI format)
-    pub async fn chat_stream_openai(&self, model: &str, messages: Vec<Message>, format: StreamFormat) -> Result<UnboundedReceiverStream<String>> {
-        // Convert messages to llm-connector format
-        let chat_messages: Vec<LlmMessage> = messages.into_iter().map(|msg| {
-            match msg.role {
-                Role::System => LlmMessage::system(&msg.content),
-                Role::User => LlmMessage::user(&msg.content),
-                Role::Assistant => LlmMessage::assistant(&msg.content),
-            }
-        }).collect();
+    pub async fn chat_stream_openai(&self, model: &str, messages: Vec<llm_connector::types::Message>, tools: Option<Vec<llm_connector::types::Tool>>, format: StreamFormat) -> Result<UnboundedReceiverStream<String>> {
+        use futures_util::StreamExt;
 
+        // Messages are already in llm-connector format
         let request = ChatRequest {
             model: model.to_string(),
-            messages: chat_messages,
+            messages,
             stream: Some(true),
+            tools,
             ..Default::default()
         };
 
-        // 🎉 使用新的 V2 简化流式 API
+        tracing::info!("🔄 Requesting real streaming from LLM connector...");
+
+        // 使用真实的流式 API
         let mut stream = self.llm_client.chat_stream(&request).await
             .map_err(|e| anyhow!("LLM connector streaming error: {}", e))?;
 
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+        let model_name = model.to_string();
 
         tokio::spawn(async move {
+            tracing::info!("🔄 Starting to process OpenAI stream chunks...");
+            let mut chunk_count = 0;
+            let mut has_tool_calls = false;  // 标记是否检测到 tool_calls
+
             while let Some(chunk) = stream.next().await {
+                tracing::debug!("📥 Received raw chunk from stream");
+
                 match chunk {
                     Ok(stream_chunk) => {
-                        // 获取内容并根据格式进行格式化
+                        tracing::debug!("✅ Chunk OK, checking for content or tool_calls...");
+
+                        // 构建 delta 对象
+                        let mut delta = serde_json::json!({});
+                        let mut has_data = false;
+
+                        // 检查是否有 content
                         if let Some(content) = stream_chunk.get_content() {
+                            if !content.is_empty() {
+                                delta["content"] = serde_json::json!(content);
+                                has_data = true;
+                                chunk_count += 1;
+                                tracing::info!("📦 Received chunk #{}: '{}' ({} chars)", chunk_count, content, content.len());
+                            }
+                        }
+
+                        // 检查是否有 tool_calls（从 choices[0].delta.tool_calls 提取）
+                        if let Some(first_choice) = stream_chunk.choices.get(0) {
+                            if let Some(tool_calls) = &first_choice.delta.tool_calls {
+                                if let Ok(tool_calls_value) = serde_json::to_value(tool_calls) {
+                                    delta["tool_calls"] = tool_calls_value;
+                                    has_data = true;
+                                    has_tool_calls = true;  // 标记检测到 tool_calls
+                                    chunk_count += 1;
+                                    tracing::info!("🔧 Received chunk #{} with tool_calls: {} calls", chunk_count, tool_calls.len());
+                                }
+                            }
+                        }
+
+                        if has_data {
                             // 构建符合 OpenAI 标准的流式响应格式
                             let openai_chunk = serde_json::json!({
                                 "id": "chatcmpl-123",
                                 "object": "chat.completion.chunk",
                                 "created": chrono::Utc::now().timestamp(),
-                                "model": "gpt-3.5-turbo",
+                                "model": &model_name,
                                 "choices": [{
                                     "index": 0,
-                                    "delta": {
-                                        "content": content
-                                    },
+                                    "delta": delta,
                                     "finish_reason": null
                                 }]
                             });
@@ -278,23 +305,44 @@ impl Client {
                                 StreamFormat::NDJSON => format!("{}\n", openai_chunk),
                                 StreamFormat::Json => openai_chunk.to_string(),
                             };
-                            let _ = tx.send(formatted_data);
+
+                            // 立即发送所有 chunks（保留流式体验）
+                            if tx.send(formatted_data).is_err() {
+                                tracing::warn!("⚠️ Failed to send chunk to receiver (client disconnected?)");
+                                break;
+                            }
+                            tracing::debug!("✅ Sent chunk #{} to client", chunk_count);
+                        } else {
+                            tracing::warn!("⚠️ Chunk has no content or tool_calls");
                         }
                     }
-                    Err(_) => break,
+                    Err(e) => {
+                        tracing::error!("❌ Stream error: {:?}", e);
+                        break;
+                    }
                 }
             }
 
+            tracing::info!("✅ Stream processing completed. Total chunks: {}", chunk_count);
+
             // 流结束时发送最终消息
+            // 🎯 关键修复：如果检测到 tool_calls，finish_reason 应该是 "tool_calls" 而不是 "stop"
+            let finish_reason = if has_tool_calls {
+                tracing::info!("🎯 Setting finish_reason to 'tool_calls' (detected tool_calls in stream)");
+                "tool_calls"
+            } else {
+                "stop"
+            };
+
             let final_chunk = serde_json::json!({
                 "id": "chatcmpl-123",
                 "object": "chat.completion.chunk",
                 "created": chrono::Utc::now().timestamp(),
-                "model": "gpt-3.5-turbo",
+                "model": model_name,
                 "choices": [{
                     "index": 0,
                     "delta": {},
-                    "finish_reason": "stop"
+                    "finish_reason": finish_reason
                 }]
             });
 
@@ -304,6 +352,7 @@ impl Client {
                 StreamFormat::Json => final_chunk.to_string(),
             };
             let _ = tx.send(formatted_final);
+            tracing::info!("🏁 Sent final chunk and [DONE] marker");
         });
 
         Ok(UnboundedReceiverStream::new(rx))

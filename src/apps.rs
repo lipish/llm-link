@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use crate::config::{Config, ServerConfig, LlmBackendConfig, ApiConfigs, OpenAiApiConfig, OllamaApiConfig, AnthropicApiConfig, ClientAdapterConfigs, ZedAdapterConfig};
+use crate::config::{Config, ServerConfig, LlmBackendConfig, ApiConfigs, OpenAiApiConfig, OllamaApiConfig, AnthropicApiConfig, ClientAdapterConfigs, ZedAdapterConfig, ZhipuAdapterConfig};
 
 /// 支持的应用类型
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -117,6 +117,10 @@ impl AppConfigGenerator {
                     force_images_field: Some(false),
                     preferred_format: Some("json".to_string()),
                 }),
+                zhipu: Some(ZhipuAdapterConfig {
+                    convert_xml_to_json: Some(true),
+                    preserve_xml: Some(false),
+                }),
             }),
         }
     }
@@ -161,6 +165,10 @@ impl AppConfigGenerator {
                     force_images_field: Some(true),
                     preferred_format: Some("ndjson".to_string()),
                 }),
+                zhipu: Some(ZhipuAdapterConfig {
+                    convert_xml_to_json: Some(true),
+                    preserve_xml: Some(false),
+                }),
             }),
         }
     }
@@ -204,6 +212,10 @@ impl AppConfigGenerator {
                     enabled: false,
                     force_images_field: Some(false),
                     preferred_format: Some("json".to_string()),
+                }),
+                zhipu: Some(ZhipuAdapterConfig {
+                    convert_xml_to_json: Some(true),
+                    preserve_xml: Some(false),
                 }),
             }),
         }
@@ -271,6 +283,10 @@ impl AppConfigGenerator {
                     enabled: true,
                     force_images_field: Some(true),
                     preferred_format: Some("ndjson".to_string()),
+                }),
+                zhipu: Some(ZhipuAdapterConfig {
+                    convert_xml_to_json: Some(true),  // 默认转换 XML 为 JSON
+                    preserve_xml: Some(false),         // 默认不保留 XML
                 }),
             }),
         }

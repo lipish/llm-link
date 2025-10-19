@@ -24,6 +24,10 @@ pub struct OpenAIChatRequest {
     pub max_tokens: Option<u32>,
     #[allow(dead_code)]
     pub temperature: Option<f32>,
+    #[allow(dead_code)]
+    pub tools: Option<Vec<Value>>,
+    #[allow(dead_code)]
+    pub tool_choice: Option<Value>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -39,28 +43,55 @@ pub async fn chat(
 ) -> Result<Response, StatusCode> {
     // API Key 校验
     enforce_api_key(&headers, &state)?;
-    
+
+    info!("📝 Received request - model: {}, stream: {:?}, messages count: {}",
+          request.model, request.stream, request.messages.len());
+
     // 验证模型
     if !request.model.is_empty() {
         match state.llm_service.validate_model(&request.model).await {
-            Ok(false) => return Err(StatusCode::BAD_REQUEST),
-            Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR),
-            Ok(true) => {}
+            Ok(false) => {
+                error!("❌ Model validation failed: model '{}' not found", request.model);
+                return Err(StatusCode::BAD_REQUEST);
+            }
+            Err(e) => {
+                error!("❌ Model validation error: {:?}", e);
+                return Err(StatusCode::INTERNAL_SERVER_ERROR);
+            }
+            Ok(true) => {
+                info!("✅ Model '{}' validated successfully", request.model);
+            }
         }
     }
 
     // 转换消息格式
     match service::convert_openai_messages(request.messages) {
         Ok(messages) => {
+            info!("✅ Successfully converted {} messages", messages.len());
             let model = if request.model.is_empty() { None } else { Some(request.model.as_str()) };
 
+            // 转换 tools 格式
+            let tools = request.tools.map(|t| service::convert_tools(t));
+            if tools.is_some() {
+                info!("🔧 Request includes {} tools", tools.as_ref().unwrap().len());
+                // Debug: log the first tool
+                if let Some(first_tool) = tools.as_ref().unwrap().first() {
+                    info!("🔧 First tool: {:?}", serde_json::to_value(first_tool).ok());
+                }
+            }
+
+            // 直接使用请求指定的模式（流式或非流式）
+            // 等待 llm-connector 修复流式 tool_calls 解析问题
             if request.stream.unwrap_or(false) {
-                handle_streaming_request(headers, state, model, messages).await
+                handle_streaming_request(headers, state, model, messages, tools).await
             } else {
-                handle_non_streaming_request(state, model, messages).await
+                handle_non_streaming_request(state, model, messages, tools).await
             }
         }
-        Err(_) => Err(StatusCode::BAD_REQUEST),
+        Err(e) => {
+            error!("❌ Failed to convert OpenAI messages: {:?}", e);
+            Err(StatusCode::BAD_REQUEST)
+        }
     }
 }
 
@@ -69,10 +100,11 @@ async fn handle_streaming_request(
     headers: HeaderMap,
     state: AppState,
     model: Option<&str>,
-    messages: Vec<crate::client::Message>,
+    messages: Vec<llm_connector::types::Message>,
+    tools: Option<Vec<llm_connector::types::Tool>>,
 ) -> Result<Response, StatusCode> {
-    // 🎯 OpenAI API 固定使用 OpenAI 适配器
-    let client_adapter = ClientAdapter::OpenAI;
+    // 🎯 检测客户端类型（默认使用 OpenAI 适配器）
+    let client_adapter = detect_openai_client(&headers, &state.config);
     let (_stream_format, _) = FormatDetector::determine_format(&headers);
     
     // 使用客户端偏好格式（SSE）
@@ -81,14 +113,27 @@ async fn handle_streaming_request(
 
     info!("📡 Starting OpenAI streaming response - Format: {:?} ({})", final_format, content_type);
 
-    match state.llm_service.chat_stream_openai(model, messages.clone(), final_format).await {
+    match state.llm_service.chat_stream_openai(model, messages.clone(), tools.clone(), final_format).await {
         Ok(rx) => {
             info!("✅ OpenAI streaming response started successfully");
 
             let config = state.config.clone();
             let adapted_stream = rx.map(move |data| {
+                // SSE 格式的数据以 "data: " 开头，需要先提取 JSON 部分
+                let json_str = if data.starts_with("data: ") {
+                    &data[6..] // 去掉 "data: " 前缀
+                } else {
+                    &data
+                };
+
+                // 跳过空行和 [DONE] 标记
+                if json_str.trim().is_empty() || json_str.trim() == "[DONE]" {
+                    return data.to_string();
+                }
+
                 // 解析并适配响应数据
-                if let Ok(mut json_data) = serde_json::from_str::<Value>(&data) {
+                if let Ok(mut json_data) = serde_json::from_str::<Value>(json_str) {
+                    tracing::debug!("📝 Parsed JSON chunk, applying adaptations...");
                     client_adapter.apply_response_adaptations(&config, &mut json_data);
 
                     match final_format {
@@ -103,6 +148,7 @@ async fn handle_streaming_request(
                         }
                     }
                 } else {
+                    tracing::debug!("⚠️ Failed to parse chunk as JSON: {}", json_str);
                     data.to_string()
                 }
             });
@@ -121,7 +167,7 @@ async fn handle_streaming_request(
         }
         Err(e) => {
             warn!("⚠️ OpenAI streaming failed, falling back to non-streaming: {:?}", e);
-            handle_non_streaming_request(state, model, messages).await
+            handle_non_streaming_request(state, model, messages, tools).await
         }
     }
 }
@@ -130,9 +176,10 @@ async fn handle_streaming_request(
 async fn handle_non_streaming_request(
     state: AppState,
     model: Option<&str>,
-    messages: Vec<crate::client::Message>,
+    messages: Vec<llm_connector::types::Message>,
+    tools: Option<Vec<llm_connector::types::Tool>>,
 ) -> Result<Response, StatusCode> {
-    match state.llm_service.chat_with_model(model, messages).await {
+    match state.llm_service.chat_with_model(model, messages, tools).await {
         Ok(response) => {
             let openai_response = service::convert_response_to_openai(response);
             Ok(Json(openai_response).into_response())
@@ -202,4 +249,40 @@ fn enforce_api_key(headers: &HeaderMap, state: &AppState) -> Result<(), StatusCo
         }
     }
     Ok(())
+}
+
+/// 检测 OpenAI 客户端类型
+fn detect_openai_client(headers: &HeaderMap, config: &crate::config::Config) -> ClientAdapter {
+    // 1. 检查强制适配器设置
+    if let Some(ref adapters) = config.client_adapters {
+        if let Some(force_adapter) = &adapters.force_adapter {
+            match force_adapter.to_lowercase().as_str() {
+                "zhipu" | "zhipu-native" => return ClientAdapter::ZhipuNative,
+                _ => {}
+            }
+        }
+    }
+
+    // 2. 检查显式客户端标识
+    if let Some(client) = headers.get("x-client") {
+        if let Ok(client_str) = client.to_str() {
+            match client_str.to_lowercase().as_str() {
+                "zhipu" | "zhipu-native" => return ClientAdapter::ZhipuNative,
+                _ => {}
+            }
+        }
+    }
+
+    // 3. 检查 User-Agent 自动检测
+    if let Some(user_agent) = headers.get("user-agent") {
+        if let Ok(ua_str) = user_agent.to_str() {
+            // 检测 Zhipu 原生客户端
+            if ua_str.contains("Zhipu") || ua_str.contains("GLM") {
+                return ClientAdapter::ZhipuNative;
+            }
+        }
+    }
+
+    // 4. 默认使用 OpenAI 适配器
+    ClientAdapter::OpenAI
 }

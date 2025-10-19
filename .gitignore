@@ -28,6 +28,12 @@
 *.log
 logs/
 
+# Test outputs
+/tmp/llm-link*.log
+/tmp/stream-response.txt
+debug.log
+llm-link-debug.log
+
 # OS generated files
 .DS_Store
 .DS_Store?

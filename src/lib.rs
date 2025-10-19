@@ -5,3 +5,4 @@ pub mod adapters;
 pub mod apps;
 pub mod handlers;
 pub mod models;
+pub mod utils;

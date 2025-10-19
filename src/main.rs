@@ -5,6 +5,7 @@ mod service;
 mod client;
 mod handlers;
 mod models;
+mod utils;
 
 use anyhow::Result;
 use axum::{
@@ -51,6 +52,18 @@ struct Args {
     /// API key for LLM Link authentication (overrides LLM_LINK_API_KEY env var)
     #[arg(long)]
     api_key: Option<String>,
+
+    /// Override LLM provider (openai, anthropic, zhipu, ollama)
+    #[arg(long)]
+    provider: Option<String>,
+
+    /// Override LLM model name
+    #[arg(long)]
+    model: Option<String>,
+
+    /// LLM provider API key (overrides provider-specific env vars)
+    #[arg(long)]
+    llm_api_key: Option<String>,
 
     /// Host to bind to (if provided overrides config)
     #[arg(long)]
@@ -114,7 +127,18 @@ async fn main() -> Result<()> {
             return Err(anyhow::anyhow!("Missing required environment variables"));
         }
 
-        let config = AppConfigGenerator::generate_config(&app, args.api_key.as_deref());
+        let mut config = AppConfigGenerator::generate_config(&app, args.api_key.as_deref());
+
+        // Apply provider/model overrides if specified
+        if args.provider.is_some() || args.model.is_some() {
+            config = apply_provider_overrides(
+                config,
+                args.provider.as_deref(),
+                args.model.as_deref(),
+                args.llm_api_key.as_deref()
+            )?;
+        }
+
         (config, format!("built-in: {}", app.name()))
     } else if let Some(protocols_str) = args.protocols {
         // Protocol combination mode
@@ -411,6 +435,96 @@ fn build_app(state: AppState, config: &Config) -> Router {
 
     // Apply concrete state at the end so the resulting type is Router<()>
     app.with_state(state)
+}
+
+/// Apply provider and model overrides from command line arguments
+fn apply_provider_overrides(
+    mut config: Config,
+    provider: Option<&str>,
+    model: Option<&str>,
+    llm_api_key: Option<&str>,
+) -> Result<Config> {
+    use config::LlmBackendConfig;
+
+    // If provider is specified, create new backend config
+    if let Some(provider_name) = provider {
+        let model_name = model.unwrap_or_else(|| {
+            // Default models for each provider
+            match provider_name {
+                "openai" => "gpt-4",
+                "anthropic" => "claude-3-5-sonnet-20241022",
+                "zhipu" => "glm-4-flash",
+                "ollama" => "llama2",
+                _ => "default",
+            }
+        });
+
+        info!("🔄 Overriding provider: {} with model: {}", provider_name, model_name);
+
+        config.llm_backend = match provider_name {
+            "openai" => {
+                let api_key = llm_api_key
+                    .map(String::from)
+                    .or_else(|| std::env::var("OPENAI_API_KEY").ok())
+                    .ok_or_else(|| anyhow::anyhow!("OPENAI_API_KEY not provided"))?;
+
+                LlmBackendConfig::OpenAI {
+                    api_key,
+                    base_url: None,
+                    model: model_name.to_string(),
+                }
+            }
+            "anthropic" => {
+                let api_key = llm_api_key
+                    .map(String::from)
+                    .or_else(|| std::env::var("ANTHROPIC_API_KEY").ok())
+                    .ok_or_else(|| anyhow::anyhow!("ANTHROPIC_API_KEY not provided"))?;
+
+                LlmBackendConfig::Anthropic {
+                    api_key,
+                    model: model_name.to_string(),
+                }
+            }
+            "zhipu" => {
+                let api_key = llm_api_key
+                    .map(String::from)
+                    .or_else(|| std::env::var("ZHIPU_API_KEY").ok())
+                    .ok_or_else(|| anyhow::anyhow!("ZHIPU_API_KEY not provided"))?;
+
+                LlmBackendConfig::Zhipu {
+                    api_key,
+                    base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
+                    model: model_name.to_string(),
+                }
+            }
+            "ollama" => {
+                LlmBackendConfig::Ollama {
+                    base_url: Some(std::env::var("OLLAMA_BASE_URL")
+                        .unwrap_or_else(|_| "http://localhost:11434".to_string())),
+                    model: model_name.to_string(),
+                }
+            }
+            _ => {
+                return Err(anyhow::anyhow!(
+                    "Unsupported provider: {}. Supported: openai, anthropic, zhipu, ollama",
+                    provider_name
+                ));
+            }
+        };
+    } else if let Some(model_name) = model {
+        // Only model is specified, update the model in existing backend
+        info!("🔄 Overriding model: {}", model_name);
+
+        match &mut config.llm_backend {
+            LlmBackendConfig::OpenAI { model, .. } => *model = model_name.to_string(),
+            LlmBackendConfig::Anthropic { model, .. } => *model = model_name.to_string(),
+            LlmBackendConfig::Zhipu { model, .. } => *model = model_name.to_string(),
+            LlmBackendConfig::Ollama { model, .. } => *model = model_name.to_string(),
+            LlmBackendConfig::Aliyun { model, .. } => *model = model_name.to_string(),
+        }
+    }
+
+    Ok(config)
 }
 
 

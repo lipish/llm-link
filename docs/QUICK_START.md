@@ -1,84 +1,73 @@
-# LLM Link - Quick Start Guide
+# LLM Link 快速开始
 
-## 🚀 Installation
+## 🚀 基础使用
 
+### 默认配置（Zhipu）
 ```bash
-git clone https://github.com/your-repo/llm-link.git
-cd llm-link
-cargo build --release
+ZHIPU_API_KEY=xxx \
+LLM_LINK_API_KEY=xxx \
+./target/release/llm-link --app codex-cli
 ```
 
-## 🎯 Usage Modes
+## 🔄 切换 Provider
 
-### Application Mode (Recommended)
-
-For specific tools with optimized configurations:
-
+### OpenAI GPT-4
 ```bash
-# Codex CLI
-export ZHIPU_API_KEY="your-zhipu-key"
-./target/release/llm-link --app codex-cli --api-key "your-auth-token"
-
-# Zed.dev
-export ZHIPU_API_KEY="your-zhipu-key"
-./target/release/llm-link --app zed-dev
-
-# Claude Code
-export ZHIPU_API_KEY="your-zhipu-key"
-export ANTHROPIC_API_KEY="your-anthropic-key"
-./target/release/llm-link --app claude-code
+OPENAI_API_KEY=sk-xxx \
+LLM_LINK_API_KEY=xxx \
+./target/release/llm-link --app codex-cli \
+  --provider openai \
+  --model gpt-4
 ```
 
-### Protocol Mode (Flexible)
-
-For custom protocol combinations:
-
+### Anthropic Claude
 ```bash
-# Two protocols
-./target/release/llm-link --protocols openai,ollama --api-key "your-token"
-
-# All three protocols
-./target/release/llm-link --protocols openai,ollama,anthropic --api-key "your-token"
+ANTHROPIC_API_KEY=sk-ant-xxx \
+LLM_LINK_API_KEY=xxx \
+./target/release/llm-link --app codex-cli \
+  --provider anthropic
 ```
 
-## 📋 Get Help
-
+### Ollama 本地模型
 ```bash
-# List all applications
-./target/release/llm-link --list-apps
-
-# Get setup guide for specific app
-./target/release/llm-link --app-info codex-cli
-
-# Show all options
-./target/release/llm-link --help
+LLM_LINK_API_KEY=xxx \
+./target/release/llm-link --app codex-cli \
+  --provider ollama \
+  --model llama2
 ```
 
-## 🧪 Testing
-
+### 只更换模型
 ```bash
-# Test the API
-./test_api.sh
-
-# Manual tests
-curl http://localhost:11434/ollama/api/tags
-curl -H "Authorization: Bearer your-token" http://localhost:8088/v1/models
+ZHIPU_API_KEY=xxx \
+LLM_LINK_API_KEY=xxx \
+./target/release/llm-link --app codex-cli \
+  --model glm-4
 ```
 
-## 🔧 Configuration Files (Advanced)
+## 📋 支持的 Provider
 
-For custom setups, use configuration files:
+| Provider | 默认模型 | API Key 环境变量 |
+|----------|---------|-----------------|
+| `openai` | `gpt-4` | `OPENAI_API_KEY` |
+| `anthropic` | `claude-3-5-sonnet-20241022` | `ANTHROPIC_API_KEY` |
+| `zhipu` | `glm-4-flash` | `ZHIPU_API_KEY` |
+| `ollama` | `llama2` | - |
+
+## 🔧 命令行参数
 
 ```bash
-./target/release/llm-link --config configs/codex-cli.yaml
-./target/release/llm-link --config configs/zed-dev.yaml
-./target/release/llm-link --config configs/claude-code.yaml
+--app <APP>              # 应用模式（codex-cli, zed-dev, etc.）
+--provider <PROVIDER>    # 覆盖 provider
+--model <MODEL>          # 覆盖 model
+--llm-api-key <KEY>      # 覆盖 API key
+--host <HOST>            # 服务器地址
+--port <PORT>            # 服务器端口
+--log-level <LEVEL>      # 日志级别
 ```
 
-## 📚 Available Models
+## 📚 更多文档
 
-- `glm-4-flash` - Fast model for quick tasks
-- `glm-4-plus` - Enhanced model for complex tasks
-- `glm-4` - Standard model
-- `glm-4-air` - Lightweight model
-- `glm-4-long` - Long context model
+- [Provider Override 详细文档](docs/PROVIDER_OVERRIDE.md)
+- [完整功能说明](PROVIDER_OVERRIDE_FEATURE.md)
+- [测试脚本](tests/test_provider_override.sh)
+

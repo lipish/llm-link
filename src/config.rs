@@ -57,6 +57,8 @@ pub struct ClientAdapterConfigs {
     pub force_adapter: Option<String>,
     /// Zed.dev 特定配置
     pub zed: Option<ZedAdapterConfig>,
+    /// Zhipu 特定配置
+    pub zhipu: Option<ZhipuAdapterConfig>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -67,6 +69,16 @@ pub struct ZedAdapterConfig {
     pub force_images_field: Option<bool>,
     /// 首选响应格式
     pub preferred_format: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ZhipuAdapterConfig {
+    /// 是否启用 XML 到 JSON 转换（针对标准客户端如 Codex/Zed）
+    /// 默认为 true，即自动转换 XML function calls 为 JSON 格式
+    pub convert_xml_to_json: Option<bool>,
+    /// 是否保留原始 XML 格式（针对 Zhipu 原生应用）
+    /// 默认为 false
+    pub preserve_xml: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

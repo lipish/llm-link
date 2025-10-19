@@ -72,7 +72,7 @@ async fn handle_streaming_request(
     headers: HeaderMap,
     state: AppState,
     model: Option<&str>,
-    messages: Vec<crate::client::Message>,
+    messages: Vec<llm_connector::types::Message>,
 ) -> Result<Response, StatusCode> {
     // 🎯 检测客户端类型（Zed.dev 或标准）
     let client_adapter = detect_ollama_client(&headers, &state.config);
@@ -139,9 +139,9 @@ async fn handle_streaming_request(
 async fn handle_non_streaming_request(
     state: AppState,
     model: Option<&str>,
-    messages: Vec<crate::client::Message>,
+    messages: Vec<llm_connector::types::Message>,
 ) -> Result<Response, StatusCode> {
-    match state.llm_service.chat_with_model(model, messages).await {
+    match state.llm_service.chat_with_model(model, messages, None).await {
         Ok(response) => {
             let ollama_response = service::convert_response_to_ollama(response);
             Ok(Json(ollama_response).into_response())
@@ -178,6 +178,7 @@ fn detect_ollama_client(headers: &HeaderMap, config: &crate::config::Config) -> 
             match force_adapter.to_lowercase().as_str() {
                 "zed" | "zed.dev" => return ClientAdapter::ZedDev,
                 "standard" => return ClientAdapter::Standard,
+                "zhipu" | "zhipu-native" => return ClientAdapter::ZhipuNative,
                 _ => {}
             }
         }
@@ -189,6 +190,7 @@ fn detect_ollama_client(headers: &HeaderMap, config: &crate::config::Config) -> 
             match client_str.to_lowercase().as_str() {
                 "zed" | "zed.dev" => return ClientAdapter::ZedDev,
                 "standard" => return ClientAdapter::Standard,
+                "zhipu" | "zhipu-native" => return ClientAdapter::ZhipuNative,
                 _ => {}
             }
         }
@@ -207,6 +209,10 @@ fn detect_ollama_client(headers: &HeaderMap, config: &crate::config::Config) -> 
                     }
                 }
             }
+            // 检测 Zhipu 原生客户端
+            if ua_str.contains("Zhipu") || ua_str.contains("GLM") {
+                return ClientAdapter::ZhipuNative;
+            }
         }
     }
 
@@ -216,6 +222,7 @@ fn detect_ollama_client(headers: &HeaderMap, config: &crate::config::Config) -> 
             match default_adapter.to_lowercase().as_str() {
                 "zed" | "zed.dev" => return ClientAdapter::ZedDev,
                 "standard" => return ClientAdapter::Standard,
+                "zhipu" | "zhipu-native" => return ClientAdapter::ZhipuNative,
                 _ => {}
             }
         }
