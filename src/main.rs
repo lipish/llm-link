@@ -108,37 +108,45 @@ async fn main() -> Result<()> {
     // Load configuration - Application mode only
     let (mut config, config_source) = if let Some(app_name) = args.app {
         // Application mode
-        use apps::{SupportedApp, AppConfigGenerator, EnvChecker};
+        use apps::{SupportedApp, AppConfigGenerator};
 
         let app = SupportedApp::from_str(&app_name)
             .ok_or_else(|| anyhow::anyhow!("Unknown application: {}. Use --list-apps to see available applications.", app_name))?;
 
         info!("🚀 Starting in {} mode", app.name());
 
-        // Check environment variables
-        if let Err(missing_vars) = EnvChecker::check_env_vars(&app, args.api_key.as_deref()) {
-            error!("❌ Missing required environment variables:");
-            for var in &missing_vars {
-                error!("   - {}", var);
-            }
-            error!("");
-            EnvChecker::show_env_guide(&app);
-            return Err(anyhow::anyhow!("Missing required environment variables"));
-        }
+        // Require --provider parameter
+        let provider = args.provider.as_deref()
+            .ok_or_else(|| {
+                error!("❌ Missing required parameter: --provider");
+                error!("");
+                error!("🔧 You must specify which LLM provider to use:");
+                error!("   --provider openai      (requires OPENAI_API_KEY)");
+                error!("   --provider anthropic   (requires ANTHROPIC_API_KEY)");
+                error!("   --provider zhipu       (requires ZHIPU_API_KEY)");
+                error!("   --provider aliyun      (requires ALIYUN_API_KEY)");
+                error!("   --provider ollama      (no API key needed)");
+                error!("");
+                error!("💡 Example:");
+                error!("   ./llm-link --app {} --provider openai", app_name);
+                error!("");
+                error!("📚 For more information:");
+                error!("   ./llm-link --app-info {}", app_name);
+                anyhow::anyhow!("Missing required parameter: --provider")
+            })?;
 
+        // Generate base config for the app
         let mut config = AppConfigGenerator::generate_config(&app, args.api_key.as_deref());
 
-        // Apply provider/model overrides if specified
-        if args.provider.is_some() || args.model.is_some() {
-            config = apply_provider_overrides(
-                config,
-                args.provider.as_deref(),
-                args.model.as_deref(),
-                args.llm_api_key.as_deref()
-            )?;
-        }
+        // Apply provider/model overrides (provider is required, model is optional)
+        config = apply_provider_overrides(
+            config,
+            Some(provider),
+            args.model.as_deref(),
+            args.llm_api_key.as_deref()
+        )?;
 
-        (config, format!("built-in: {}", app.name()))
+        (config, format!("built-in: {} with provider: {}", app.name(), provider))
     } else if let Some(protocols_str) = args.protocols {
         // Protocol combination mode
         use apps::AppConfigGenerator;
@@ -343,8 +351,37 @@ fn show_application_info(app_name: &str) {
         println!("   Auth Required: {}", if info.auth_required { "Yes" } else { "No" });
         println!();
 
-        use apps::EnvChecker;
-        EnvChecker::show_env_guide(&app);
+        println!("🔧 Required Parameters:");
+        println!();
+        println!("⚠️  You MUST specify --provider and corresponding API key:");
+        println!();
+        println!("   --provider openai      (requires OPENAI_API_KEY)");
+        println!("   --provider anthropic   (requires ANTHROPIC_API_KEY)");
+        println!("   --provider zhipu       (requires ZHIPU_API_KEY)");
+        println!("   --provider aliyun      (requires ALIYUN_API_KEY)");
+        println!("   --provider ollama      (no API key needed)");
+        println!();
+
+        if info.auth_required {
+            println!("   --api-key <TOKEN>      (or set LLM_LINK_API_KEY env var)");
+            println!();
+        }
+
+        println!("💡 Example:");
+        println!();
+        println!("   export OPENAI_API_KEY=\"sk-xxx\"");
+        if info.auth_required {
+            println!("   export LLM_LINK_API_KEY=\"your-auth-token\"");
+        }
+        println!("   ./llm-link --app {} --provider openai", app_name);
+        println!();
+        println!("   # Or use a different provider:");
+        println!("   export ANTHROPIC_API_KEY=\"sk-ant-xxx\"");
+        if info.auth_required {
+            println!("   export LLM_LINK_API_KEY=\"your-auth-token\"");
+        }
+        println!("   ./llm-link --app {} --provider anthropic", app_name);
+        println!();
     } else {
         error!("❌ Unknown application: {}", app_name);
         println!();
