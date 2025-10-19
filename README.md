@@ -627,7 +627,6 @@ llm-link/
 
 ## 📚 Documentation
 
-- [Refactoring History](docs/REFACTORING.md) - Recent refactoring and improvements
 - [Quick Start Guide](docs/QUICK_START.md) - Fast reference for common use cases (中文)
 - [Changelog](CHANGELOG.md) - Version history and updates
 

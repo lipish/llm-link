@@ -315,10 +315,9 @@ echo $LLM_LINK_API_KEY
 
 ## 📚 相关文档
 
-- [Streaming Tool Calls 修复](../docs/streaming-tool-calls-fix.md)
-- [Codex Tool Calls 修复总结](../docs/codex-tool-calls-fix-summary.md)
-- [XML 转换功能文档](../docs/ZHIPU_XML_CONVERSION.md)
-- [架构文档](../docs/ARCHITECTURE.md)
+- [主 README](../README.md) - 完整的功能说明和架构文档
+- [快速开始](../docs/QUICK_START.md) - 快速开始指南
+- [版本历史](../CHANGELOG.md) - 更新和变更记录
 
 ## 🎯 贡献
 

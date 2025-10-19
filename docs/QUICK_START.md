@@ -68,5 +68,5 @@ LLM_LINK_API_KEY=xxx \
 ## 📚 更多文档
 
 - [完整 README](../README.md) - 包含完整的功能说明和架构文档
-- [重构历史](REFACTORING.md) - 最近的重构和改进
+- [版本历史](../CHANGELOG.md) - 查看更新和变更记录
 
