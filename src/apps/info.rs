@@ -20,7 +20,7 @@ impl AppInfoProvider {
         match app {
             SupportedApp::CodexCLI => AppInfo {
                 name: "Codex CLI".to_string(),
-                description: "GitHub Codex CLI tool for AI-powered coding assistance".to_string(),
+                description: "OpenAI Codex CLI tool for AI-powered coding assistance".to_string(),
                 port: 8088,
                 protocol: "OpenAI API".to_string(),
                 endpoints: vec![
