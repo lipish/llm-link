@@ -18,8 +18,10 @@ pub struct AnthropicMessagesRequest {
     pub model: String,
     pub messages: Vec<AnthropicMessage>,
     #[serde(default)]
+    #[allow(dead_code)]
     pub max_tokens: Option<u32>,
     #[serde(default)]
+    #[allow(dead_code)]
     pub temperature: Option<f32>,
     #[serde(default)]
     pub stream: bool,
@@ -53,6 +55,7 @@ struct AnthropicContentBlock {
 #[derive(Debug, Deserialize)]
 struct AnthropicImageSource {
     #[serde(rename = "type")]
+    #[allow(dead_code)]
     type_: String,
     media_type: String,
     data: String,
