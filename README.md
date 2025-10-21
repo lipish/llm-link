@@ -1,5 +1,10 @@
 # LLM Link
 
+[![Crates.io](https://img.shields.io/crates/v/llm-link.svg)](https://crates.io/crates/llm-link)
+[![Documentation](https://docs.rs/llm-link/badge.svg)](https://docs.rs/llm-link)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Downloads](https://img.shields.io/crates/d/llm-link.svg)](https://crates.io/crates/llm-link)
+
 🚀 **A user-friendly LLM proxy service with built-in support for popular AI coding tools**
 
 LLM Link provides zero-configuration access to LLM providers through multiple API formats, with optimized built-in support for Codex CLI, Zed, and Claude Code.
@@ -9,7 +14,7 @@ LLM Link provides zero-configuration access to LLM providers through multiple AP
 - **🎯 Application-Oriented**: Built-in configurations for popular AI coding tools
 - **⚡ Zero Configuration**: One-command startup for common use cases
 - **🔄 Multi-Protocol**: Simultaneous OpenAI, Ollama, and Anthropic API support
-- **🔀 Provider Override**: Switch between LLM providers via command-line (OpenAI, Anthropic, Zhipu, Aliyun, Ollama)
+- **🔀 7 LLM Providers**: OpenAI, Anthropic, Zhipu, Aliyun, Volcengine, Tencent, Ollama
 - **🛠️ CLI-First**: Simple command-line interface with helpful guidance
 - **🔧 Smart Adaptation**: Automatic client detection and optimization
 - **🚀 Production Ready**: Built with Rust for performance and reliability
@@ -25,6 +30,14 @@ LLM Link provides zero-configuration access to LLM providers through multiple AP
 ## 🚀 Quick Start
 
 ### Installation
+
+#### Option 1: Install from crates.io (Recommended)
+
+```bash
+cargo install llm-link
+```
+
+#### Option 2: Build from source
 
 ```bash
 git clone https://github.com/lipish/llm-link.git
