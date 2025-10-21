@@ -91,24 +91,31 @@ curl -N -X POST http://localhost:11434/api/chat \
 
 #### Volcengine (火山引擎)
 
-**Provider Name**: `volcengine`  
-**Default Model**: `doubao-pro-32k`  
-**API Key**: `VOLCENGINE_API_KEY`  
+**Provider Name**: `volcengine`
+**Default Model**: `doubao-pro-32k`
+**API Key**: `VOLCENGINE_API_KEY`
 **Marketplace**: https://console.volcengine.com/ark/region:ark+cn-beijing/model
 
 **Usage**:
 ```bash
 export VOLCENGINE_API_KEY="your-key"
-./llm-link --app zed --provider volcengine --model doubao-pro-32k
+./llm-link --app zed --provider volcengine --model ep-20251006132256-vrq2p
 ```
 
-**Status**: ✅ Integrated (not tested - no API key available)
+**Test Results**:
+- ✅ Non-streaming chat: **SUCCESS**
+  - Response: "我是由字节跳动公司开发的人工智能豆包，能陪你聊天、解答问题，为你提供帮助。"
+- ⚠️ Streaming chat: **PARTIAL** (llm-connector issue)
+  - Chunks received but all empty content
+  - This is a llm-connector 0.4.20 issue, not llm-link
+
+**Status**: ✅ Integrated and tested
 
 #### Tencent Hunyuan (腾讯混元)
 
-**Provider Name**: `tencent`  
-**Default Model**: `hunyuan-lite`  
-**API Key**: `TENCENT_API_KEY`  
+**Provider Name**: `tencent`
+**Default Model**: `hunyuan-lite`
+**API Key**: `TENCENT_API_KEY`
 **Marketplace**: https://hunyuan.tencent.com/modelSquare/home/list
 
 **Usage**:
@@ -117,7 +124,7 @@ export TENCENT_API_KEY="your-key"
 ./llm-link --app zed --provider tencent --model hunyuan-lite
 ```
 
-**Status**: ✅ Integrated (not tested - no API key available)
+**Status**: ✅ Integrated (awaiting testing)
 
 ---
 
