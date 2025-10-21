@@ -135,6 +135,15 @@ pub async fn messages(
     Json(request): Json<AnthropicMessagesRequest>,
 ) -> Response {
     info!("📨 Anthropic Messages API request: client_model={}, stream={}", request.model, request.stream);
+    info!("📋 Request details: messages_count={}, max_tokens={:?}, temperature={:?}",
+          request.messages.len(), request.max_tokens, request.temperature);
+
+    // Force streaming for Claude Code compatibility
+    // Claude Code expects streaming responses but doesn't always set stream=true
+    let force_streaming = true;
+    if force_streaming && !request.stream {
+        info!("🔄 Forcing streaming mode for Claude Code compatibility");
+    }
 
     // Convert Anthropic messages to llm-connector format
     let llm_messages: Vec<LlmMessage> = request
@@ -162,7 +171,7 @@ pub async fn messages(
         })
         .collect();
 
-    if request.stream {
+    if request.stream || force_streaming {
         // Streaming response
         match state.llm_service.chat_stream_openai(Some(&request.model), llm_messages, None, llm_connector::StreamFormat::SSE).await {
             Ok(stream) => {
