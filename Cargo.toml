@@ -3,8 +3,20 @@ name = "llm-link"
 version = "0.1.0"
 edition = "2021"
 authors = ["LLM Link Contributors"]
-description = "A configurable LLM proxy service supporting Ollama, OpenAI, and Anthropic APIs"
+description = "A universal LLM proxy supporting 7 providers (OpenAI, Anthropic, Zhipu, Aliyun, Volcengine, Tencent, Ollama) with Ollama-compatible API"
 license = "MIT"
+repository = "https://github.com/lipish/llm-link"
+homepage = "https://github.com/lipish/llm-link"
+documentation = "https://github.com/lipish/llm-link/blob/master/README.md"
+readme = "README.md"
+keywords = ["llm", "proxy", "ollama", "openai", "anthropic"]
+categories = ["command-line-utilities", "web-programming", "api-bindings"]
+exclude = [
+    "tests/*",
+    "keys.yaml",
+    ".gitignore",
+    ".git/*",
+]
 
 [dependencies]
 # Web framework
