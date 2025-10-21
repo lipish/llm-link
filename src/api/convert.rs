@@ -1,6 +1,6 @@
 use crate::llm::Response;
 use anyhow::Result;
-use llm_connector::types::{Function, Message as LlmMessage, Role as LlmRole, Tool};
+use llm_connector::types::{Function, Message as LlmMessage, MessageBlock, Role as LlmRole, Tool};
 use serde_json::Value;
 
 /// Convert OpenAI messages format to llm-connector format
@@ -70,7 +70,7 @@ pub fn openai_messages_to_llm(messages: Vec<Value>) -> Result<Vec<LlmMessage>> {
 
         llm_messages.push(LlmMessage {
             role: llm_role,
-            content,
+            content: vec![MessageBlock::Text { text: content }],
             name: None,
             tool_calls,
             tool_call_id,

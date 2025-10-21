@@ -26,7 +26,7 @@ impl Client {
         tracing::info!("📦 Raw LLM response: {:?}", response);
         tracing::info!("📦 Raw LLM response choices: {}", response.choices.len());
         if let Some(choice) = response.choices.get(0) {
-            tracing::info!("📦 Message content: '{}'", choice.message.content);
+            tracing::info!("📦 Message content: '{}'", choice.message.content_as_text());
             tracing::info!("📦 Message reasoning_content: {:?}", choice.message.reasoning_content);
             tracing::info!("📦 Message reasoning: {:?}", choice.message.reasoning);
         } else {
@@ -41,8 +41,8 @@ impl Client {
             let msg = &choice.message;
 
             // Extract content (could be in content, reasoning_content, reasoning, etc.)
-            let content = if !msg.content.is_empty() {
-                msg.content.clone()
+            let content = if msg.is_text_only() && !msg.content_as_text().is_empty() {
+                msg.content_as_text()
             } else if let Some(reasoning) = &msg.reasoning_content {
                 reasoning.clone()
             } else if let Some(reasoning) = &msg.reasoning {
