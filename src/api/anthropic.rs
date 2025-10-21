@@ -105,7 +105,9 @@ pub async fn messages(
     State(state): State<AppState>,
     Json(request): Json<AnthropicMessagesRequest>,
 ) -> Response {
-    info!("📨 Anthropic Messages API request: model={}, stream={}", request.model, request.stream);
+    info!("📨 Anthropic Messages API request: client_model={}, stream={}", request.model, request.stream);
+    info!("💡 Using configured backend model (ignoring client model name)");
+    info!("💡 Note: Ignoring client model name, using configured backend model");
 
     // Convert Anthropic messages to OpenAI format (JSON)
     let openai_messages_json: Vec<serde_json::Value> = request
@@ -139,7 +141,7 @@ pub async fn messages(
 
     if request.stream {
         // Streaming response
-        match state.llm_service.chat_stream_openai(None, llm_messages, None, llm_connector::StreamFormat::SSE).await {
+        match state.llm_service.chat_stream_openai(Some(&request.model), llm_messages, None, llm_connector::StreamFormat::SSE).await {
             Ok(stream) => {
                 info!("✅ Starting Anthropic streaming response");
                 let anthropic_stream = convert_to_anthropic_stream(stream, request.model.clone());
@@ -161,7 +163,7 @@ pub async fn messages(
         }
     } else {
         // Non-streaming response
-        match state.llm_service.chat(None, llm_messages, None).await {
+        match state.llm_service.chat(Some(&request.model), llm_messages, None).await {
             Ok(response) => {
                 info!("✅ Anthropic non-streaming response successful");
 
