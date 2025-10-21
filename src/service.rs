@@ -27,6 +27,8 @@ impl Service {
             LlmBackendSettings::Ollama { model, .. } => model.clone(),
             LlmBackendSettings::Aliyun { model, .. } => model.clone(),
             LlmBackendSettings::Zhipu { model, .. } => model.clone(),
+            LlmBackendSettings::Volcengine { model, .. } => model.clone(),
+            LlmBackendSettings::Tencent { model, .. } => model.clone(),
         };
 
         Ok(Self { client, model })

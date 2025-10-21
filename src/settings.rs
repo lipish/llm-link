@@ -40,6 +40,14 @@ pub enum LlmBackendSettings {
         api_key: String,
         model: String,
     },
+    Volcengine {
+        api_key: String,
+        model: String,
+    },
+    Tencent {
+        api_key: String,
+        model: String,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

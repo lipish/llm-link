@@ -13,6 +13,8 @@ impl Client {
             LlmBackendSettings::Zhipu { .. } => "zhipu",
             LlmBackendSettings::Ollama { .. } => "ollama",
             LlmBackendSettings::Aliyun { .. } => "aliyun",
+            LlmBackendSettings::Volcengine { .. } => "volcengine",
+            LlmBackendSettings::Tencent { .. } => "tencent",
         };
 
         // Special handling for Ollama - get actual installed models
@@ -52,6 +54,8 @@ impl Client {
                 LlmBackendSettings::Zhipu { model, .. } => model.clone(),
                 LlmBackendSettings::Ollama { model, .. } => model.clone(),
                 LlmBackendSettings::Aliyun { model, .. } => model.clone(),
+                LlmBackendSettings::Volcengine { model, .. } => model.clone(),
+                LlmBackendSettings::Tencent { model, .. } => model.clone(),
             };
 
             Ok(vec![Model { id: fallback_model }])

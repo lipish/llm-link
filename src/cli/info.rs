@@ -42,6 +42,8 @@ pub fn show_application_info(app_name: &str) {
         println!("   --provider anthropic   (requires ANTHROPIC_API_KEY)");
         println!("   --provider zhipu       (requires ZHIPU_API_KEY)");
         println!("   --provider aliyun      (requires ALIYUN_API_KEY)");
+        println!("   --provider volcengine  (requires VOLCENGINE_API_KEY)");
+        println!("   --provider tencent     (requires TENCENT_API_KEY)");
         println!("   --provider ollama      (no API key needed)");
         println!();
         

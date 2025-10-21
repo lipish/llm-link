@@ -173,6 +173,8 @@ impl ConfigLoader {
                     "anthropic" => std::env::var("ANTHROPIC_API_KEY").ok(),
                     "zhipu" => std::env::var("ZHIPU_API_KEY").ok(),
                     "aliyun" => std::env::var("ALIYUN_API_KEY").ok(),
+                    "volcengine" => std::env::var("VOLCENGINE_API_KEY").ok(),
+                    "tencent" => std::env::var("TENCENT_API_KEY").ok(),
                     "ollama" => None,
                     _ => return Err(anyhow::anyhow!("Unknown provider: {}", provider_name)),
                 }
@@ -185,6 +187,8 @@ impl ConfigLoader {
                     "anthropic" => "ANTHROPIC_API_KEY",
                     "zhipu" => "ZHIPU_API_KEY",
                     "aliyun" => "ALIYUN_API_KEY",
+                    "volcengine" => "VOLCENGINE_API_KEY",
+                    "tencent" => "TENCENT_API_KEY",
                     _ => "API_KEY",
                 };
                 return Err(anyhow::anyhow!(
@@ -203,6 +207,8 @@ impl ConfigLoader {
                     "anthropic" => "claude-3-5-sonnet-20241022".to_string(),
                     "zhipu" => "glm-4-flash".to_string(),
                     "aliyun" => "qwen-max".to_string(),
+                    "volcengine" => "doubao-pro-32k".to_string(),
+                    "tencent" => "hunyuan-lite".to_string(),
                     "ollama" => "llama2".to_string(),
                     _ => return Err(anyhow::anyhow!("Unknown provider: {}", provider_name)),
                 }
@@ -230,6 +236,14 @@ impl ConfigLoader {
                     api_key: api_key.unwrap(),
                     model: model_name,
                 },
+                "volcengine" => LlmBackendSettings::Volcengine {
+                    api_key: api_key.unwrap(),
+                    model: model_name,
+                },
+                "tencent" => LlmBackendSettings::Tencent {
+                    api_key: api_key.unwrap(),
+                    model: model_name,
+                },
                 "ollama" => LlmBackendSettings::Ollama {
                     base_url: std::env::var("OLLAMA_BASE_URL").ok()
                         .or(Some("http://localhost:11434".to_string())),
@@ -245,6 +259,8 @@ impl ConfigLoader {
                 LlmBackendSettings::Anthropic { model, .. } => *model = model_name.to_string(),
                 LlmBackendSettings::Zhipu { model, .. } => *model = model_name.to_string(),
                 LlmBackendSettings::Aliyun { model, .. } => *model = model_name.to_string(),
+                LlmBackendSettings::Volcengine { model, .. } => *model = model_name.to_string(),
+                LlmBackendSettings::Tencent { model, .. } => *model = model_name.to_string(),
                 LlmBackendSettings::Ollama { model, .. } => *model = model_name.to_string(),
             }
         }
