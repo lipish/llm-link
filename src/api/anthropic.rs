@@ -9,7 +9,8 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use tracing::{error, info};
 
-use crate::api::{convert, AppState};
+use crate::api::AppState;
+use llm_connector::types::{ImageSource, Message as LlmMessage, MessageBlock, Role as LlmRole};
 
 /// Anthropic Messages API Request
 #[derive(Debug, Deserialize)]
@@ -28,7 +29,7 @@ pub struct AnthropicMessagesRequest {
 pub struct AnthropicMessage {
     pub role: String,
     #[serde(deserialize_with = "deserialize_content")]
-    pub content: String,
+    pub content: Vec<MessageBlock>,
 }
 
 /// Anthropic content can be either a string or an array of content blocks
@@ -46,30 +47,55 @@ struct AnthropicContentBlock {
     #[serde(default)]
     text: Option<String>,
     #[serde(default)]
-    source: Option<serde_json::Value>,
+    source: Option<AnthropicImageSource>,
+}
+
+#[derive(Debug, Deserialize)]
+struct AnthropicImageSource {
+    #[serde(rename = "type")]
+    type_: String,
+    media_type: String,
+    data: String,
 }
 
 /// Custom deserializer for content field
-fn deserialize_content<'de, D>(deserializer: D) -> Result<String, D::Error>
+/// Converts Anthropic format to llm-connector MessageBlock format
+fn deserialize_content<'de, D>(deserializer: D) -> Result<Vec<MessageBlock>, D::Error>
 where
     D: serde::Deserializer<'de>,
 {
     let content = AnthropicContentInput::deserialize(deserializer)?;
     match content {
-        AnthropicContentInput::String(s) => Ok(s),
+        AnthropicContentInput::String(s) => {
+            // Simple string → single text block
+            Ok(vec![MessageBlock::Text { text: s }])
+        }
         AnthropicContentInput::Array(blocks) => {
-            // Extract text from all text blocks and concatenate
-            let text_parts: Vec<String> = blocks
+            // Array of blocks → convert each block
+            let message_blocks: Vec<MessageBlock> = blocks
                 .into_iter()
-                .filter_map(|block| {
-                    if block.type_ == "text" {
-                        block.text
-                    } else {
+                .filter_map(|block| match block.type_.as_str() {
+                    "text" => block.text.map(|text| MessageBlock::Text { text }),
+                    "image" => block.source.map(|source| MessageBlock::Image {
+                        source: ImageSource::Base64 {
+                            media_type: source.media_type,
+                            data: source.data,
+                        },
+                    }),
+                    _ => {
+                        tracing::warn!("⚠️ Unsupported content block type: {}", block.type_);
                         None
                     }
                 })
                 .collect();
-            Ok(text_parts.join("\n"))
+
+            if message_blocks.is_empty() {
+                Ok(vec![MessageBlock::Text {
+                    text: String::new(),
+                }])
+            } else {
+                Ok(message_blocks)
+            }
         }
     }
 }
@@ -106,38 +132,32 @@ pub async fn messages(
     Json(request): Json<AnthropicMessagesRequest>,
 ) -> Response {
     info!("📨 Anthropic Messages API request: client_model={}, stream={}", request.model, request.stream);
-    info!("💡 Using configured backend model (ignoring client model name)");
-    info!("💡 Note: Ignoring client model name, using configured backend model");
 
-    // Convert Anthropic messages to OpenAI format (JSON)
-    let openai_messages_json: Vec<serde_json::Value> = request
+    // Convert Anthropic messages to llm-connector format
+    let llm_messages: Vec<LlmMessage> = request
         .messages
-        .iter()
+        .into_iter()
         .map(|msg| {
-            json!({
-                "role": msg.role,
-                "content": msg.content
-            })
+            let role = match msg.role.as_str() {
+                "user" => LlmRole::User,
+                "assistant" => LlmRole::Assistant,
+                "system" => LlmRole::System,
+                _ => LlmRole::User, // Default to user
+            };
+
+            LlmMessage {
+                role,
+                content: msg.content,
+                name: None,
+                tool_calls: None,
+                tool_call_id: None,
+                reasoning_content: None,
+                reasoning: None,
+                thought: None,
+                thinking: None,
+            }
         })
         .collect();
-
-    // Convert to llm-connector format
-    let llm_messages = match convert::openai_messages_to_llm(openai_messages_json) {
-        Ok(msgs) => msgs,
-        Err(e) => {
-            error!("❌ Failed to convert messages: {}", e);
-            return (
-                StatusCode::BAD_REQUEST,
-                Json(json!({
-                    "error": {
-                        "type": "invalid_request_error",
-                        "message": format!("Invalid messages format: {}", e)
-                    }
-                })),
-            )
-                .into_response();
-        }
-    };
 
     if request.stream {
         // Streaming response
