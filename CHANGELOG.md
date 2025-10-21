@@ -5,6 +5,70 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2025-10-21
+
+### 🎉 Major Features
+
+#### Multi-Modal Support
+- **Upgraded to llm-connector 0.5.1** with native multi-modal content support
+- **Message.content** now supports `Vec<MessageBlock>` (text + images)
+- **Anthropic API** fully supports multi-modal messages (text + base64 images)
+- **Future-proof** for documents, audio, and video content
+
+#### Claude Code Integration
+- **Fixed streaming detection** via HTTP Accept header
+- **Smart content negotiation** - respects `Accept: text/event-stream`
+- **Proper streaming** for Claude Code and other clients
+- **No breaking changes** - non-streaming requests still work
+
+### ✨ Enhancements
+
+#### Code Quality
+- **Cleaner API** with helper methods (`content_as_text()`, `is_text_only()`, `has_images()`)
+- **Type-safe** content handling with Rust enums
+- **Better error messages** and logging
+- **Removed dead code warnings**
+
+#### Provider Testing
+- **Comprehensive testing** of Zhipu, Aliyun, Volcengine providers
+- **Test report** documenting provider compatibility
+- **Known issues** documented for Volcengine streaming
+
+### 🔧 Bug Fixes
+
+- **Fixed**: Client-requested model names now properly passed to backend
+- **Fixed**: Streaming detection via Accept header instead of forcing all requests
+- **Fixed**: Multi-modal content no longer discarded (images preserved)
+- **Fixed**: Dead code warnings in Anthropic API
+
+### 📚 Documentation
+
+- **UPGRADE_v0.5.1.md** - Comprehensive upgrade guide
+- **PROVIDER_TEST_REPORT.md** - Detailed provider test results
+- **Updated CHANGELOG.md** - This changelog
+
+### 🔄 Breaking Changes
+
+**None!** This release is fully backward compatible.
+
+### 📊 Technical Details
+
+#### Dependencies
+- **llm-connector**: 0.4.20 → 0.5.1
+
+#### API Changes (Internal)
+- `Message.content`: `String` → `Vec<MessageBlock>`
+- Added `MessageBlock` enum for multi-modal content
+- Added `ImageSource` enum for image handling
+
+### 🧪 Testing
+
+- ✅ Zhipu GLM-4-Flash: Fully tested (streaming + non-streaming)
+- ✅ Aliyun Qwen-Max: Fully tested (streaming + non-streaming)
+- ⚠️ Volcengine Doubao: Non-streaming works, streaming has known issue
+
+---
+
 ## [0.1.4] - 2025-10-18
 
 ### Added
