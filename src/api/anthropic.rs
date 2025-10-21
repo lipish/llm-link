@@ -27,7 +27,51 @@ pub struct AnthropicMessagesRequest {
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct AnthropicMessage {
     pub role: String,
+    #[serde(deserialize_with = "deserialize_content")]
     pub content: String,
+}
+
+/// Anthropic content can be either a string or an array of content blocks
+#[derive(Debug, Deserialize)]
+#[serde(untagged)]
+enum AnthropicContentInput {
+    String(String),
+    Array(Vec<AnthropicContentBlock>),
+}
+
+#[derive(Debug, Deserialize)]
+struct AnthropicContentBlock {
+    #[serde(rename = "type")]
+    type_: String,
+    #[serde(default)]
+    text: Option<String>,
+    #[serde(default)]
+    source: Option<serde_json::Value>,
+}
+
+/// Custom deserializer for content field
+fn deserialize_content<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let content = AnthropicContentInput::deserialize(deserializer)?;
+    match content {
+        AnthropicContentInput::String(s) => Ok(s),
+        AnthropicContentInput::Array(blocks) => {
+            // Extract text from all text blocks and concatenate
+            let text_parts: Vec<String> = blocks
+                .into_iter()
+                .filter_map(|block| {
+                    if block.type_ == "text" {
+                        block.text
+                    } else {
+                        None
+                    }
+                })
+                .collect();
+            Ok(text_parts.join("\n"))
+        }
+    }
 }
 
 /// Anthropic Messages API Response
