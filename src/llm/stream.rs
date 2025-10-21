@@ -75,7 +75,7 @@ impl Client {
                                 tracing::debug!("✅ Sent chunk #{} to client", chunk_count);
                             }
                         } else {
-                            tracing::warn!("⚠️ Chunk has no content");
+                            tracing::debug!("⚠️ Chunk has no content (likely metadata or finish chunk)");
                         }
                     }
                     Err(e) => {
@@ -210,7 +210,7 @@ impl Client {
                             }
                             tracing::debug!("✅ Sent chunk #{} to client", chunk_count);
                         } else {
-                            tracing::warn!("⚠️ Chunk has no content or tool_calls");
+                            tracing::debug!("⚠️ Chunk has no content or tool_calls (likely metadata or finish chunk)");
                         }
                     }
                     Err(e) => {
