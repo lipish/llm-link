@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2025-10-23
+
+### 📚 Documentation Improvements
+
+#### Enhanced Claude Code Configuration Guide
+- **Detailed setup instructions** for Claude Code integration with LLM Link
+- **Complete configuration examples** for `~/.claude/settings.json`
+- **Multi-provider support guide** - how to use OpenAI, Zhipu, Aliyun, Ollama with Claude Code
+- **Configuration options explanation** - ANTHROPIC_AUTH_TOKEN, ANTHROPIC_BASE_URL, API_TIMEOUT_MS
+- **Enhanced testing section** with Claude Code API endpoint examples
+- **Improved troubleshooting** with Claude Code specific issues and provider switching
+
+#### Key Documentation Additions
+- Step-by-step Claude Code configuration process
+- Examples for all supported LLM providers with Claude Code
+- API testing commands for Claude Code endpoints
+- Troubleshooting guide for configuration and provider switching issues
+- Clear explanation that Claude Code settings remain unchanged when switching providers
+
+### 🔧 Benefits
+- **Easier onboarding** for Claude Code users
+- **Clear provider switching** instructions
+- **Better troubleshooting** support
+- **Complete configuration reference**
+
 ## [0.2.0] - 2025-10-21
 
 ### 🎉 Major Features

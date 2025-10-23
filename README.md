@@ -251,7 +251,55 @@ ALIYUN_API_KEY=your-aliyun-key
    ./target/release/llm-link --app claude-code
    ```
 
-2. **Configure Claude Code**: Follow Claude Code's configuration guide to point to `http://localhost:8089`
+2. **Configure Claude Code**:
+
+   Create or edit the Claude Code settings file at `~/.claude/settings.json`:
+
+   ```json
+   {
+     "env": {
+       "ANTHROPIC_AUTH_TOKEN": "your-auth-token",
+       "ANTHROPIC_BASE_URL": "http://localhost:8089",
+       "API_TIMEOUT_MS": "300000"
+     }
+   }
+   ```
+
+   **Configuration Options:**
+   - `ANTHROPIC_AUTH_TOKEN`: Your authentication token (can be any value when using LLM Link)
+   - `ANTHROPIC_BASE_URL`: Point to LLM Link's Claude Code endpoint (`http://localhost:8089`)
+   - `API_TIMEOUT_MS`: Request timeout in milliseconds (optional, default: 300000)
+
+3. **Using Different LLM Providers with Claude Code**:
+
+   You can use any supported LLM provider with Claude Code by configuring LLM Link:
+
+   ```bash
+   # Use OpenAI GPT-4 with Claude Code
+   export OPENAI_API_KEY="sk-xxx"
+   ./target/release/llm-link --app claude-code \
+     --provider openai \
+     --model gpt-4
+
+   # Use Zhipu GLM models with Claude Code
+   export ZHIPU_API_KEY="your-zhipu-key"
+   ./target/release/llm-link --app claude-code \
+     --provider zhipu \
+     --model glm-4-flash
+
+   # Use Aliyun Qwen models with Claude Code
+   export ALIYUN_API_KEY="your-aliyun-key"
+   ./target/release/llm-link --app claude-code \
+     --provider aliyun \
+     --model qwen-max
+
+   # Use local Ollama models with Claude Code
+   ./target/release/llm-link --app claude-code \
+     --provider ollama \
+     --model llama2
+   ```
+
+   **Note**: The Claude Code settings file (`~/.claude/settings.json`) remains the same regardless of which LLM provider you use. LLM Link handles the provider switching transparently.
 
 ## 🔧 Advanced Usage
 
@@ -327,6 +375,18 @@ curl http://localhost:11434/api/tags
 
 # Test Claude Code setup
 curl http://localhost:8089/health
+
+# Test Claude Code API endpoint
+curl -X POST http://localhost:8089/v1/messages \
+  -H "Content-Type: application/json" \
+  -H "x-api-key: your-auth-token" \
+  -d '{
+    "model": "claude-3-5-sonnet-20241022",
+    "max_tokens": 100,
+    "messages": [
+      {"role": "user", "content": "Hello, world!"}
+    ]
+  }'
 ```
 
 ### Health Check
@@ -361,6 +421,32 @@ curl http://localhost:8089/health  # Claude Code
    # Verify your API keys are set correctly
    echo $ZHIPU_API_KEY
    echo $LLM_LINK_API_KEY
+   echo $ANTHROPIC_API_KEY
+   ```
+
+4. **Claude Code Configuration Issues**
+   ```bash
+   # Check Claude Code settings file
+   cat ~/.claude/settings.json
+
+   # Verify the settings format is correct
+   # Should contain: ANTHROPIC_AUTH_TOKEN, ANTHROPIC_BASE_URL
+
+   # Test if LLM Link is accessible from Claude Code
+   curl -H "x-api-key: your-auth-token" http://localhost:8089/health
+   ```
+
+5. **Provider Switching Issues**
+   ```bash
+   # When switching providers, make sure to:
+   # 1. Stop the current LLM Link instance
+   # 2. Set the correct API key for the new provider
+   # 3. Start LLM Link with the new provider
+
+   # Example: Switch from Anthropic to OpenAI
+   # Stop current instance (Ctrl+C)
+   export OPENAI_API_KEY="sk-xxx"
+   ./target/release/llm-link --app claude-code --provider openai --model gpt-4
    ```
 
 ## 🏗️ Architecture
