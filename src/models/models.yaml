@@ -1,72 +1,14 @@
 # Model configurations for LLM Link
 # This file contains model lists for different LLM providers
 # 
-# Data sources (last updated 2025-01-17):
-# - OpenAI: Official documentation and community reports
-# - Anthropic: https://docs.claude.com/en/docs/about-claude/models/overview
+# Data sources (last updated 2025-10-24):
 # - Zhipu: https://bigmodel.cn/ and community reports
 # - Ollama: https://ollama.com/search (Note: actual available models depend on local installation)
 # - Aliyun: https://help.aliyun.com/zh/model-studio/models
-
-openai:
-  models:
-    # GPT-5 series (latest)
-    - id: "gpt-5"
-      name: "GPT-5"
-      description: "Best model for coding and agentic tasks"
-    - id: "gpt-5-mini"
-      name: "GPT-5 Mini"
-      description: "Faster, cheaper version of GPT-5"
-
-    # GPT-4 series
-    - id: "gpt-4o"
-      name: "GPT-4o"
-      description: "GPT-4 Omni model with multimodal capabilities"
-    - id: "gpt-4o-mini"
-      name: "GPT-4o Mini"
-      description: "Smaller, faster GPT-4o model"
-    - id: "gpt-4-turbo"
-      name: "GPT-4 Turbo"
-      description: "Latest GPT-4 Turbo model"
-    - id: "gpt-4"
-      name: "GPT-4"
-      description: "Most capable GPT-4 model"
-
-    # GPT-3.5 series
-    - id: "gpt-3.5-turbo"
-      name: "GPT-3.5 Turbo"
-      description: "Fast and efficient model"
-
-anthropic:
-  models:
-    # Claude 4.5 series (latest)
-    - id: "claude-sonnet-4-5-20250929"
-      name: "Claude Sonnet 4.5"
-      description: "Best model for complex agents and coding"
-    - id: "claude-haiku-4-5-20251001"
-      name: "Claude Haiku 4.5"
-      description: "Fastest and most intelligent Haiku model"
-
-    # Claude 4 series
-    - id: "claude-opus-4-1-20250805"
-      name: "Claude Opus 4.1"
-      description: "Exceptional model for specialized complex tasks"
-    - id: "claude-sonnet-4-20250514"
-      name: "Claude Sonnet 4"
-      description: "High-performance model"
-
-    # Claude 3.7 series
-    - id: "claude-3-7-sonnet-20250219"
-      name: "Claude Sonnet 3.7"
-      description: "High-performance model with extended thinking"
-
-    # Claude 3.5 series (legacy)
-    - id: "claude-3-5-sonnet-20241022"
-      name: "Claude 3.5 Sonnet"
-      description: "Previous generation Sonnet model"
-    - id: "claude-3-5-haiku-20241022"
-      name: "Claude 3.5 Haiku"
-      description: "Previous generation Haiku model"
+# - Moonshot: https://platform.moonshot.cn/docs/introduction#%E6%A8%A1%E5%9E%8B%E5%88%97%E8%A1%A8
+# - Longcat: https://longcat.chat/platform/docs/zh/#%E6%94%AF%E6%8C%81%E7%9A%84%E6%A8%A1%E5%9E%8B
+# - Tencent: https://cloud.tencent.com/document/product/1729/104753
+# - Volcengine: https://www.volcengine.com/docs/82379/1330310
 
 zhipu:
   models:
@@ -115,3 +57,102 @@ aliyun:
     - id: "qwen2.5-32b-instruct"
       name: "Qwen 2.5 32B"
       description: "Medium Qwen 2.5 model"
+
+moonshot:
+  models:
+    - id: "kimi-k2-turbo-preview"
+      name: "Kimi K2 Turbo Preview"
+      description: "Recommended model with 262K context"
+    - id: "kimi-k2-0905-preview"
+      name: "Kimi K2 0905 Preview"
+      description: "262K context model"
+    - id: "kimi-k2-0711-preview"
+      name: "Kimi K2 0711 Preview"
+      description: "131K context model"
+    - id: "kimi-k1.5"
+      name: "Kimi K1.5"
+      description: "Advanced model with improved capabilities"
+    - id: "kimi-k1"
+      name: "Kimi K1"
+      description: "High-performance model"
+    - id: "moonshot-v1-8k"
+      name: "Moonshot v1 8K"
+      description: "8K context window model"
+    - id: "moonshot-v1-32k"
+      name: "Moonshot v1 32K"
+      description: "32K context window model"
+    - id: "moonshot-v1-128k"
+      name: "Moonshot v1 128K"
+      description: "128K context window model"
+
+longcat:
+  models:
+    - id: "LongCat-Flash-Chat"
+      name: "LongCat Flash Chat"
+      description: "High-performance general dialogue model"
+    - id: "LongCat-Flash-Thinking"
+      name: "LongCat Flash Thinking"
+      description: "Deep thinking model"
+
+tencent:
+  models:
+    - id: "hunyuan-t1-latest"
+      name: "Hunyuan T1"
+      description: "Reasoning model with extended inference capability"
+    - id: "hunyuan-a13b"
+      name: "Hunyuan A13B"
+      description: "Mixed reasoning model, 80B total parameters, 13B activated"
+    - id: "hunyuan-turbos-latest"
+      name: "Hunyuan Turbos"
+      description: "Flagship model with enhanced thinking capability"
+    - id: "hunyuan-large"
+      name: "Hunyuan Large"
+      description: "389B parameters, 52B activated"
+    - id: "hunyuan-standard-256K"
+      name: "Hunyuan Standard 256K"
+      description: "Long context support up to 250K tokens"
+    - id: "hunyuan-lite"
+      name: "Hunyuan Lite"
+      description: "MOE structure with 256K context window"
+    - id: "hunyuan-translation"
+      name: "Hunyuan Translation"
+      description: "33 languages + 5 ethnic languages support"
+    - id: "hunyuan-role"
+      name: "Hunyuan Role"
+      description: "Role-playing specialized model"
+    - id: "hunyuan-functioncall"
+      name: "Hunyuan FunctionCall"
+      description: "MOE architecture for function calling"
+    - id: "hunyuan-code"
+      name: "Hunyuan Code"
+      description: "Code generation model"
+    - id: "hunyuan-t1-vision"
+      name: "Hunyuan T1 Vision"
+      description: "Deep reasoning with visual understanding"
+    - id: "hunyuan-turbos-vision"
+      name: "Hunyuan Turbos Vision"
+      description: "Image understanding, OCR, visual Q&A"
+    - id: "hunyuan-large-vision"
+      name: "Hunyuan Large Vision"
+      description: "Multi-image support with arbitrary resolution"
+
+volcengine:
+  models:
+    - id: "doubao-seed-0513"
+      name: "Doubao Seed 0513"
+      description: "Seed model variant 0513"
+    - id: "doubao-seed-0903"
+      name: "Doubao Seed 0903"
+      description: "Seed model variant 0903"
+    - id: "doubao-pro-4k"
+      name: "Doubao Pro 4K"
+      description: "Pro model with 4K context"
+    - id: "doubao-pro-32k"
+      name: "Doubao Pro 32K"
+      description: "Pro model with 32K context"
+    - id: "doubao-pro-128k"
+      name: "Doubao Pro 128K"
+      description: "Pro model with 128K context"
+    - id: "doubao-lite-4k"
+      name: "Doubao Lite 4K"
+      description: "Lite model with 4K context"

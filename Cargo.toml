@@ -1,6 +1,6 @@
 [package]
 name = "llm-link"
-version = "0.2.1"
+version = "0.2.2"
 edition = "2021"
 authors = ["LLM Link Contributors"]
 description = "A universal LLM proxy supporting 7 providers (OpenAI, Anthropic, Zhipu, Aliyun, Volcengine, Tencent, Ollama) with Ollama-compatible API"
