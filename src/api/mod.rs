@@ -179,6 +179,7 @@ fn get_provider_name(backend: &LlmBackendSettings) -> &str {
         LlmBackendSettings::Aliyun { .. } => "aliyun",
         LlmBackendSettings::Volcengine { .. } => "volcengine",
         LlmBackendSettings::Tencent { .. } => "tencent",
+        LlmBackendSettings::Longcat { .. } => "longcat",
     }
 }
 
@@ -191,5 +192,6 @@ fn get_current_model(backend: &LlmBackendSettings) -> String {
         LlmBackendSettings::Aliyun { model, .. } => model.clone(),
         LlmBackendSettings::Volcengine { model, .. } => model.clone(),
         LlmBackendSettings::Tencent { model, .. } => model.clone(),
+        LlmBackendSettings::Longcat { model, .. } => model.clone(),
     }
 }

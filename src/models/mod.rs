@@ -20,6 +20,9 @@ pub struct ModelsConfig {
     pub zhipu: ProviderModels,
     pub ollama: ProviderModels,
     pub aliyun: ProviderModels,
+    pub volcengine: ProviderModels,
+    pub tencent: ProviderModels,
+    pub longcat: ProviderModels,
 }
 
 impl ModelsConfig {
@@ -143,6 +146,38 @@ impl Default for ModelsConfig {
                         id: "qwen-plus".to_string(),
                         name: "Qwen Plus".to_string(),
                         description: "Enhanced Qwen model".to_string(),
+                    },
+                ],
+            },
+            volcengine: ProviderModels {
+                models: vec![
+                    ModelInfo {
+                        id: "ep-20241023xxxxx-xxxxx".to_string(),
+                        name: "Doubao".to_string(),
+                        description: "Volcengine Doubao model".to_string(),
+                    },
+                ],
+            },
+            tencent: ProviderModels {
+                models: vec![
+                    ModelInfo {
+                        id: "hunyuan-lite".to_string(),
+                        name: "Hunyuan Lite".to_string(),
+                        description: "Tencent Hunyuan Lite model".to_string(),
+                    },
+                ],
+            },
+            longcat: ProviderModels {
+                models: vec![
+                    ModelInfo {
+                        id: "LongCat-Flash-Chat".to_string(),
+                        name: "LongCat Flash Chat".to_string(),
+                        description: "High-performance general dialogue model".to_string(),
+                    },
+                    ModelInfo {
+                        id: "LongCat-Flash-Thinking".to_string(),
+                        name: "LongCat Flash Thinking".to_string(),
+                        description: "Deep thinking model".to_string(),
                     },
                 ],
             },

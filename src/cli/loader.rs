@@ -261,6 +261,7 @@ impl ConfigLoader {
                 LlmBackendSettings::Aliyun { model, .. } => *model = model_name.to_string(),
                 LlmBackendSettings::Volcengine { model, .. } => *model = model_name.to_string(),
                 LlmBackendSettings::Tencent { model, .. } => *model = model_name.to_string(),
+                LlmBackendSettings::Longcat { model, .. } => *model = model_name.to_string(),
                 LlmBackendSettings::Ollama { model, .. } => *model = model_name.to_string(),
             }
         }

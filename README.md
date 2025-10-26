@@ -14,7 +14,7 @@ LLM Link provides zero-configuration access to LLM providers through multiple AP
 - **🎯 Application-Oriented**: Built-in configurations for popular AI coding tools
 - **⚡ Zero Configuration**: One-command startup for common use cases
 - **🔄 Multi-Protocol**: Simultaneous OpenAI, Ollama, and Anthropic API support
-- **🔀 7 LLM Providers**: OpenAI, Anthropic, Zhipu, Aliyun, Volcengine, Tencent, Ollama
+- **🔀 8 LLM Providers**: OpenAI, Anthropic, Zhipu, Aliyun, Volcengine, Tencent, Longcat, Ollama
 - **🔥 Hot-Reload Configuration**: Update API keys and switch providers without restart
 - **🛠️ CLI-First**: Simple command-line interface with helpful guidance
 - **🔧 Smart Adaptation**: Automatic client detection and optimization

@@ -55,7 +55,7 @@ fn validate_api_key(provider: &str, api_key: &str) -> Result<(), String> {
 /// 验证 provider 名称
 fn validate_provider(provider: &str) -> Result<(), String> {
     match provider {
-        "openai" | "anthropic" | "zhipu" | "ollama" | "aliyun" | "volcengine" | "tencent" => Ok(()),
+        "openai" | "anthropic" | "zhipu" | "ollama" | "aliyun" | "volcengine" | "tencent" | "longcat" => Ok(()),
         _ => Err(format!("Unsupported provider: {}", provider)),
     }
 }
@@ -143,6 +143,9 @@ pub async fn get_current_config(
         LlmBackendSettings::Tencent { model, .. } => {
             ("tencent", model.clone(), true, false)
         }
+        LlmBackendSettings::Longcat { model, .. } => {
+            ("longcat", model.clone(), true, false)
+        }
     };
     
     Ok(Json(CurrentConfigResponse {
@@ -171,6 +174,7 @@ pub async fn get_health(
         LlmBackendSettings::Aliyun { model, .. } => ("aliyun", model.clone()),
         LlmBackendSettings::Volcengine { model, .. } => ("volcengine", model.clone()),
         LlmBackendSettings::Tencent { model, .. } => ("tencent", model.clone()),
+        LlmBackendSettings::Longcat { model, .. } => ("longcat", model.clone()),
     };
     
     Json(json!({
@@ -313,6 +317,10 @@ pub async fn validate_key(
             api_key: request.api_key.clone(),
             model,
         },
+        "longcat" => LlmBackendSettings::Longcat {
+            api_key: request.api_key.clone(),
+            model,
+        },
         _ => {
             error!("❌ Unsupported provider: {}", request.provider);
             return Err(StatusCode::BAD_REQUEST);
@@ -383,6 +391,7 @@ pub async fn validate_key_for_update(
         "aliyun" => "qwen-turbo".to_string(),
         "volcengine" => "ep-20241023xxxxx-xxxxx".to_string(),
         "tencent" => "hunyuan-lite".to_string(),
+        "longcat" => "LongCat-Flash-Chat".to_string(),
         _ => {
             error!("❌ Unsupported provider: {}", request.provider);
             return Err(StatusCode::BAD_REQUEST);
@@ -417,6 +426,10 @@ pub async fn validate_key_for_update(
             model,
         },
         "tencent" => LlmBackendSettings::Tencent {
+            api_key: request.api_key.clone(),
+            model,
+        },
+        "longcat" => LlmBackendSettings::Longcat {
             api_key: request.api_key.clone(),
             model,
         },
@@ -574,6 +587,19 @@ pub async fn update_key(
                 }
             }
         }
+        "longcat" => {
+            if let crate::settings::LlmBackendSettings::Longcat { model, .. } = &current_config.llm_backend {
+                crate::settings::LlmBackendSettings::Longcat {
+                    api_key: request.api_key.clone(),
+                    model: model.clone(),
+                }
+            } else {
+                crate::settings::LlmBackendSettings::Longcat {
+                    api_key: request.api_key.clone(),
+                    model: "LongCat-Flash-Chat".to_string(),
+                }
+            }
+        }
         "ollama" => {
             if let crate::settings::LlmBackendSettings::Ollama { model, .. } = &current_config.llm_backend {
                 crate::settings::LlmBackendSettings::Ollama {
@@ -663,6 +689,38 @@ pub async fn switch_provider(
                     return Err(StatusCode::BAD_REQUEST);
                 }
             }
+            "aliyun" => {
+                if let crate::settings::LlmBackendSettings::Aliyun { api_key, .. } = &current_config.llm_backend {
+                    api_key.clone()
+                } else {
+                    error!("❌ No API key provided for Aliyun and none found in current config");
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
+            "volcengine" => {
+                if let crate::settings::LlmBackendSettings::Volcengine { api_key, .. } = &current_config.llm_backend {
+                    api_key.clone()
+                } else {
+                    error!("❌ No API key provided for Volcengine and none found in current config");
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
+            "tencent" => {
+                if let crate::settings::LlmBackendSettings::Tencent { api_key, .. } = &current_config.llm_backend {
+                    api_key.clone()
+                } else {
+                    error!("❌ No API key provided for Tencent and none found in current config");
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
+            "longcat" => {
+                if let crate::settings::LlmBackendSettings::Longcat { api_key, .. } = &current_config.llm_backend {
+                    api_key.clone()
+                } else {
+                    error!("❌ No API key provided for Longcat and none found in current config");
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
             "ollama" => String::new(), // Ollama 不需要 API key
             _ => {
                 error!("❌ Unsupported provider: {}", request.provider);
@@ -681,6 +739,7 @@ pub async fn switch_provider(
             "aliyun" => "qwen-turbo".to_string(),
             "volcengine" => "ep-20241023xxxxx-xxxxx".to_string(),
             "tencent" => "hunyuan-lite".to_string(),
+            "longcat" => "LongCat-Flash-Chat".to_string(),
             _ => "default-model".to_string(),
         }
     });
@@ -714,6 +773,10 @@ pub async fn switch_provider(
             model,
         },
         "tencent" => crate::settings::LlmBackendSettings::Tencent {
+            api_key,
+            model,
+        },
+        "longcat" => crate::settings::LlmBackendSettings::Longcat {
             api_key,
             model,
         },

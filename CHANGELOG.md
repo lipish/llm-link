@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Hot-Reload Configuration System
 - **Runtime API Key Updates** - Update API keys without restarting the service
   - New `POST /api/config/update-key` endpoint
-  - Supports all providers: OpenAI, Anthropic, Zhipu, Aliyun, Volcengine, Tencent, Ollama
+  - Supports all providers: OpenAI, Anthropic, Zhipu, Aliyun, Volcengine, Tencent, Longcat, Ollama
   - Secure API key masking in logs and responses
   - Input validation for provider names and API key formats
 

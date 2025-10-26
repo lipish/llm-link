@@ -110,6 +110,7 @@ llm-link 现在支持运行时热更新功能，允许在不重启服务的情�
 - `aliyun` - 阿里云通义千问
 - `volcengine` - 火山引擎
 - `tencent` - 腾讯混元
+- `longcat` - LongCat AI API
 
 ## 安全特性
 

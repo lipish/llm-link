@@ -42,6 +42,10 @@ impl Client {
             }
             LlmBackendSettings::Volcengine { api_key, .. } => LlmClient::volcengine(api_key)?,
             LlmBackendSettings::Tencent { api_key, .. } => LlmClient::tencent(api_key)?,
+            LlmBackendSettings::Longcat { api_key, .. } => {
+                // Longcat uses OpenAI compatible API
+                LlmClient::openai_compatible(api_key, "https://api.longcat.chat/v1", "longcat")?
+            }
             LlmBackendSettings::Ollama { base_url, .. } => {
                 if base_url.is_some() {
                     // For custom Ollama URLs, we might need to use openai_compatible
