@@ -196,12 +196,10 @@ pub async fn models(
     State(state): State<AppState>,
     Query(_params): Query<OpenAIModelsParams>,
 ) -> Result<impl IntoResponse, StatusCode> {
-    // API Key 校验
     enforce_api_key(&headers, &state)?;
     
     match state.llm_service.list_models().await {
         Ok(models) => {
-            // Convert to OpenAI format
             let openai_models: Vec<Value> = models.into_iter().map(|model| {
                 json!({
                     "id": model.id,
@@ -211,9 +209,20 @@ pub async fn models(
                 })
             }).collect();
 
+            let current_provider = match &state.config.llm_backend {
+                crate::settings::LlmBackendSettings::OpenAI { .. } => "openai",
+                crate::settings::LlmBackendSettings::Anthropic { .. } => "anthropic",
+                crate::settings::LlmBackendSettings::Zhipu { .. } => "zhipu",
+                crate::settings::LlmBackendSettings::Ollama { .. } => "ollama",
+                crate::settings::LlmBackendSettings::Aliyun { .. } => "aliyun",
+                crate::settings::LlmBackendSettings::Volcengine { .. } => "volcengine",
+                crate::settings::LlmBackendSettings::Tencent { .. } => "tencent",
+            };
+
             let response = json!({
                 "object": "list",
-                "data": openai_models
+                "data": openai_models,
+                "provider": current_provider,
             });
             Ok(Json(response))
         }

@@ -160,10 +160,21 @@ pub async fn models(
 ) -> Result<impl IntoResponse, StatusCode> {
     match state.llm_service.list_models().await {
         Ok(models) => {
-            // Convert to Ollama format
             let ollama_models = convert::models_to_ollama(models);
+            
+            let current_provider = match &state.config.llm_backend {
+                crate::settings::LlmBackendSettings::OpenAI { .. } => "openai",
+                crate::settings::LlmBackendSettings::Anthropic { .. } => "anthropic",
+                crate::settings::LlmBackendSettings::Zhipu { .. } => "zhipu",
+                crate::settings::LlmBackendSettings::Ollama { .. } => "ollama",
+                crate::settings::LlmBackendSettings::Aliyun { .. } => "aliyun",
+                crate::settings::LlmBackendSettings::Volcengine { .. } => "volcengine",
+                crate::settings::LlmBackendSettings::Tencent { .. } => "tencent",
+            };
+            
             let response = json!({
-                "models": ollama_models
+                "models": ollama_models,
+                "provider": current_provider,
             });
             Ok(Json(response))
         }

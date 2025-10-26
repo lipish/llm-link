@@ -286,7 +286,37 @@ fn convert_to_anthropic_stream(
 /// Anthropic Models API (占位符)
 ///
 /// 用于列出可用的 Anthropic 模型
-pub async fn models() -> &'static str {
-    "Not implemented"
+pub async fn models(
+    State(state): State<AppState>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
+    match state.llm_service.list_models().await {
+        Ok(models) => {
+            let anthropic_models: Vec<serde_json::Value> = models.into_iter().map(|model| {
+                json!({
+                    "id": model.id,
+                    "type": "model",
+                    "display_name": model.id,
+                    "created_at": chrono::Utc::now().to_rfc3339(),
+                })
+            }).collect();
+
+            let current_provider = match &state.config.llm_backend {
+                crate::settings::LlmBackendSettings::OpenAI { .. } => "openai",
+                crate::settings::LlmBackendSettings::Anthropic { .. } => "anthropic",
+                crate::settings::LlmBackendSettings::Zhipu { .. } => "zhipu",
+                crate::settings::LlmBackendSettings::Ollama { .. } => "ollama",
+                crate::settings::LlmBackendSettings::Aliyun { .. } => "aliyun",
+                crate::settings::LlmBackendSettings::Volcengine { .. } => "volcengine",
+                crate::settings::LlmBackendSettings::Tencent { .. } => "tencent",
+            };
+
+            let response = json!({
+                "data": anthropic_models,
+                "provider": current_provider,
+            });
+            Ok(Json(response))
+        }
+        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+    }
 }
 

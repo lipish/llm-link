@@ -16,7 +16,7 @@ use axum::{
 };
 use clap::Parser;
 use settings::Settings;
-use api::{AppState, health_check};
+use api::{AppState, health_check, info};
 use tower::ServiceBuilder;
 use tower_http::{
     cors::{Any, CorsLayer},
@@ -167,6 +167,7 @@ fn build_app(state: AppState, config: &Settings) -> Router {
             info!("🏥 Health check endpoint accessed");
             async { health_check().await }
         }))
+        .route("/api/info", get(info))
         .route("/debug", get(|| {
             info!("🐛 Debug endpoint accessed");
             async { api::debug_test().await }

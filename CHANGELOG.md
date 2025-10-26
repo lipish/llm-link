@@ -5,6 +5,51 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.4] - 2025-10-26
+
+### ✨ New Features
+
+#### Provider and Model Discovery API
+- **New `/api/info` endpoint** - Returns comprehensive information about:
+  - Current active provider and model
+  - All 7 supported providers (OpenAI, Anthropic, Zhipu, Aliyun, Volcengine, Tencent, Ollama)
+  - Complete model list for each provider with descriptions
+  - Enabled API endpoints configuration
+- **Enhanced models endpoints** - Added `provider` field to existing model APIs:
+  - `GET /api/tags` (Ollama API format)
+  - `GET /v1/models` (OpenAI API format)
+  - `GET /anthropic/v1/models` (Anthropic API format)
+
+### 🎯 Use Cases
+
+This feature enables:
+- **External applications** to discover available providers and models
+- **Dynamic UI generation** based on supported models
+- **Service discovery** for LLM Link capabilities
+- **Provider switching** with full visibility of available options
+
+### 📖 API Examples
+
+```bash
+# Get complete provider and model information
+curl http://localhost:11434/api/info
+
+# Get current provider's models (Ollama format)
+curl http://localhost:11434/api/tags
+
+# Get current provider's models (OpenAI format)
+curl http://localhost:8080/v1/models
+```
+
+### 🔧 Technical Details
+
+- Modified files:
+  - `src/api/mod.rs` - Added `info()` endpoint handler
+  - `src/main.rs` - Registered `/api/info` route
+  - `src/api/ollama.rs` - Enhanced models API
+  - `src/api/openai.rs` - Enhanced models API
+  - `src/api/anthropic.rs` - Implemented models API
+
 ## [0.2.1] - 2025-10-23
 
 ### 📚 Documentation Improvements
