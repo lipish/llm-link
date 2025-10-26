@@ -35,16 +35,20 @@ pub async fn chat(
     Json(request): Json<OllamaChatRequest>,
 ) -> Result<Response, StatusCode> {
     // Ollama API 通常不需要认证，但可以配置
-    if let Some(cfg) = &state.config.apis.ollama {
-        if let Some(_expected_key) = cfg.api_key.as_ref() {
-            // 如果配置了 API key，则进行验证
-            // 这里可以添加 Ollama API key 验证逻辑
+    {
+        let config = state.config.read().unwrap();
+        if let Some(cfg) = &config.apis.ollama {
+            if let Some(_expected_key) = cfg.api_key.as_ref() {
+                // 如果配置了 API key，则进行验证
+                // 这里可以添加 Ollama API key 验证逻辑
+            }
         }
     }
-    
+
     // 验证模型
     if !request.model.is_empty() {
-        match state.llm_service.validate_model(&request.model).await {
+        let llm_service = state.llm_service.read().unwrap();
+        match llm_service.validate_model(&request.model).await {
             Ok(false) => return Err(StatusCode::BAD_REQUEST),
             Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR),
             Ok(true) => {}
@@ -74,8 +78,10 @@ async fn handle_streaming_request(
     messages: Vec<llm_connector::types::Message>,
 ) -> Result<Response, StatusCode> {
     // 🎯 检测客户端类型（Zed.dev 或标准）
-    let client_adapter = detect_ollama_client(&headers, &state.config);
+    let config = state.config.read().unwrap();
+    let client_adapter = detect_ollama_client(&headers, &config);
     let (stream_format, _) = FormatDetector::determine_format(&headers);
+    drop(config); // 释放读锁
     
     // 使用检测到的格式或客户端偏好
     let final_format = if headers.get("accept").map_or(true, |v| v.to_str().unwrap_or("").contains("*/*")) {
@@ -89,14 +95,20 @@ async fn handle_streaming_request(
     info!("📡 Starting Ollama streaming response - Client: {:?}, Format: {:?} ({})",
           client_adapter, final_format, content_type);
 
-    match state.llm_service.chat_stream_ollama(model, messages.clone(), final_format).await {
+    let stream_result = {
+        let llm_service = state.llm_service.read().unwrap();
+        llm_service.chat_stream_ollama(model, messages.clone(), final_format).await
+    };
+
+    match stream_result {
         Ok(rx) => {
             info!("✅ Ollama streaming response started successfully");
 
-            let config = state.config.clone();
+            let config_clone = state.config.clone();
             let adapted_stream = rx.map(move |data| {
                 // 解析并适配响应数据
                 if let Ok(mut json_data) = serde_json::from_str::<Value>(&data) {
+                    let config = config_clone.read().unwrap();
                     client_adapter.apply_response_adaptations(&config, &mut json_data);
 
                     match final_format {
@@ -140,7 +152,12 @@ async fn handle_non_streaming_request(
     model: Option<&str>,
     messages: Vec<llm_connector::types::Message>,
 ) -> Result<Response, StatusCode> {
-    match state.llm_service.chat(model, messages, None).await {
+    let chat_result = {
+        let llm_service = state.llm_service.read().unwrap();
+        llm_service.chat(model, messages, None).await
+    };
+
+    match chat_result {
         Ok(response) => {
             let ollama_response = convert::response_to_ollama(response);
             Ok(Json(ollama_response).into_response())
@@ -158,11 +175,17 @@ pub async fn models(
     State(state): State<AppState>,
     Query(_params): Query<OllamaTagsParams>,
 ) -> Result<impl IntoResponse, StatusCode> {
-    match state.llm_service.list_models().await {
+    let models_result = {
+        let llm_service = state.llm_service.read().unwrap();
+        llm_service.list_models().await
+    };
+
+    match models_result {
         Ok(models) => {
             let ollama_models = convert::models_to_ollama(models);
             
-            let current_provider = match &state.config.llm_backend {
+            let config = state.config.read().unwrap();
+            let current_provider = match &config.llm_backend {
                 crate::settings::LlmBackendSettings::OpenAI { .. } => "openai",
                 crate::settings::LlmBackendSettings::Anthropic { .. } => "anthropic",
                 crate::settings::LlmBackendSettings::Zhipu { .. } => "zhipu",
@@ -239,8 +262,15 @@ fn detect_ollama_client(headers: &HeaderMap, config: &crate::settings::Settings)
 }
 
 /// Ollama Generate API (占位符)
-pub async fn generate() -> &'static str {
-    "Not implemented"
+pub async fn generate(
+    _headers: HeaderMap,
+    State(_state): State<AppState>,
+    Json(_request): Json<serde_json::Value>,
+) -> Result<impl IntoResponse, StatusCode> {
+    // 暂时返回未实现
+    Ok(Json(serde_json::json!({
+        "error": "Generate API not implemented yet"
+    })))
 }
 
 /// Ollama Show API - 显示模型详细信息
@@ -259,7 +289,12 @@ pub async fn show(
     info!("🔍 /api/show request for model: '{}', full request: {}", model_name, request);
 
     // Check if model exists
-    match state.llm_service.validate_model(model_name).await {
+    let validation_result = {
+        let llm_service = state.llm_service.read().unwrap();
+        llm_service.validate_model(model_name).await
+    };
+
+    match validation_result {
         Ok(true) => {
             info!("✅ Model '{}' validated successfully", model_name);
             // Return model details in Ollama format
@@ -307,6 +342,12 @@ pub async fn show(
 }
 
 /// Ollama PS API - 列出运行中的模型 (占位符)
-pub async fn ps() -> &'static str {
-    "Not implemented"
+pub async fn ps(
+    _headers: HeaderMap,
+    State(_state): State<AppState>,
+) -> Result<impl IntoResponse, StatusCode> {
+    // 暂时返回空的运行模型列表
+    Ok(Json(serde_json::json!({
+        "models": []
+    })))
 }

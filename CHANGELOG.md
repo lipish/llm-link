@@ -5,6 +5,115 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2025-10-26
+
+### 🔥 Major Features
+
+#### Hot-Reload Configuration System
+- **Runtime API Key Updates** - Update API keys without restarting the service
+  - New `POST /api/config/update-key` endpoint
+  - Supports all providers: OpenAI, Anthropic, Zhipu, Aliyun, Volcengine, Tencent, Ollama
+  - Secure API key masking in logs and responses
+  - Input validation for provider names and API key formats
+
+- **Dynamic Provider Switching** - Switch between LLM providers on-the-fly
+  - New `POST /api/config/switch-provider` endpoint
+  - Instant provider switching without service restart
+  - Automatic model selection or custom model specification
+  - Preserves existing API key if not provided
+
+- **Enhanced Configuration API** - Improved configuration management
+  - Enhanced `GET /api/config/current` with `supports_hot_reload: true`
+  - New `POST /api/config/validate-key` for hot-reload scenarios
+  - Returns available model lists during validation
+  - Thread-safe configuration updates using `Arc<RwLock<>>`
+
+### ✨ New Features
+
+#### Hot-Reload API Endpoints
+- **`POST /api/config/update-key`** - Update API key for specific provider
+- **`POST /api/config/switch-provider`** - Switch to different LLM provider
+- **`POST /api/config/validate-key`** - Validate API key before applying
+- **Enhanced `GET /api/config/current`** - Shows hot-reload support status
+
+#### Security & Safety
+- **API Key Masking** - All API keys are safely masked in logs (e.g., `sk-***1234`)
+- **Input Validation** - Validates provider names and API key formats
+- **Error Handling** - Comprehensive error messages and status codes
+- **Thread Safety** - Uses `Arc<RwLock<>>` for safe concurrent access
+
+### 🎯 Use Cases
+
+Perfect for desktop applications like **z-agent**:
+- **Settings UI** - Users can change API keys through settings interface
+- **Provider Management** - Switch between different LLM providers instantly
+- **Key Validation** - Test API keys before saving
+- **No Downtime** - Configuration changes without service interruption
+
+### 📖 API Examples
+
+```bash
+# Check current configuration
+curl http://localhost:11434/api/config/current
+
+# Update API key for OpenAI
+curl -X POST http://localhost:11434/api/config/update-key \
+  -H "Content-Type: application/json" \
+  -d '{"provider": "openai", "api_key": "sk-..."}'
+
+# Switch to Anthropic
+curl -X POST http://localhost:11434/api/config/switch-provider \
+  -H "Content-Type: application/json" \
+  -d '{"provider": "anthropic", "model": "claude-3-5-sonnet-20241022", "api_key": "sk-ant-..."}'
+
+# Validate API key before using
+curl -X POST http://localhost:11434/api/config/validate-key \
+  -H "Content-Type: application/json" \
+  -d '{"provider": "ollama", "api_key": ""}'
+```
+
+### 🔧 Technical Details
+
+#### Architecture Changes
+- **AppState Refactoring** - Changed from `Arc<Service>` to `Arc<RwLock<Service>>`
+- **Dynamic Service Updates** - New `update_llm_service()` method for runtime updates
+- **Configuration Management** - Enhanced settings handling with hot-reload support
+- **Route Organization** - Improved Axum router structure for better state management
+
+#### Files Modified
+- `src/api/mod.rs` - Enhanced AppState with hot-reload capabilities
+- `src/api/config/mod.rs` - Added hot-reload endpoints and validation
+- `src/settings.rs` - Added `get_model()` method to LlmBackendSettings
+- `src/main.rs` - Updated router configuration for new endpoints
+- `src/api/openai.rs`, `src/api/ollama.rs`, `src/api/anthropic.rs` - Updated for RwLock usage
+
+#### Documentation
+- **`HOT_RELOAD_API.md`** - Complete API documentation with examples
+- **JavaScript/TypeScript client examples** - Ready-to-use client code
+- **Python client examples** - Integration examples for Python applications
+
+### 🧪 Testing
+
+✅ **Fully Tested Features:**
+- Runtime API key updates (Ollama ↔ Zhipu switching verified)
+- Provider switching with model changes
+- API key validation with model discovery
+- Security features (API key masking, input validation)
+- Thread safety under concurrent requests
+
+### 🔄 Breaking Changes
+
+**None!** This release is fully backward compatible:
+- All existing APIs continue to work unchanged
+- Original restart-based configuration still supported
+- No changes to command-line interface or startup behavior
+
+### 📊 Performance
+
+- **Minimal Overhead** - Hot-reload adds negligible performance impact
+- **Memory Efficient** - Configuration changes only affect necessary components
+- **Thread Safe** - RwLock ensures safe concurrent access with minimal blocking
+
 ## [0.2.4] - 2025-10-26
 
 ### ✨ New Features

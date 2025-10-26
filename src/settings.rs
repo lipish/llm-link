@@ -50,6 +50,21 @@ pub enum LlmBackendSettings {
     },
 }
 
+impl LlmBackendSettings {
+    /// 获取当前配置的模型名称
+    pub fn get_model(&self) -> String {
+        match self {
+            LlmBackendSettings::OpenAI { model, .. } => model.clone(),
+            LlmBackendSettings::Anthropic { model, .. } => model.clone(),
+            LlmBackendSettings::Ollama { model, .. } => model.clone(),
+            LlmBackendSettings::Zhipu { model, .. } => model.clone(),
+            LlmBackendSettings::Aliyun { model, .. } => model.clone(),
+            LlmBackendSettings::Volcengine { model, .. } => model.clone(),
+            LlmBackendSettings::Tencent { model, .. } => model.clone(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApiSettings {
     pub ollama: Option<OllamaApiSettings>,

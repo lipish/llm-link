@@ -15,6 +15,7 @@ LLM Link provides zero-configuration access to LLM providers through multiple AP
 - **⚡ Zero Configuration**: One-command startup for common use cases
 - **🔄 Multi-Protocol**: Simultaneous OpenAI, Ollama, and Anthropic API support
 - **🔀 7 LLM Providers**: OpenAI, Anthropic, Zhipu, Aliyun, Volcengine, Tencent, Ollama
+- **🔥 Hot-Reload Configuration**: Update API keys and switch providers without restart
 - **🛠️ CLI-First**: Simple command-line interface with helpful guidance
 - **🔧 Smart Adaptation**: Automatic client detection and optimization
 - **🚀 Production Ready**: Built with Rust for performance and reliability
@@ -303,6 +304,75 @@ ALIYUN_API_KEY=your-aliyun-key
 
 ## 🔧 Advanced Usage
 
+### Runtime Configuration Updates
+
+LLM Link provides APIs for runtime configuration management, enabling desktop applications and process managers to update provider settings without manual restarts.
+
+#### Configuration Management APIs
+
+```bash
+# Get current configuration
+GET http://localhost:11434/api/config/current
+
+# Get health status and instance ID (for restart verification)
+GET http://localhost:11434/api/health
+
+# Validate API key before applying
+POST http://localhost:11434/api/config/validate
+{
+  "provider": "zhipu",
+  "api_key": "your-api-key"
+}
+
+# Prepare configuration for restart
+POST http://localhost:11434/api/config/update
+{
+  "provider": "zhipu",
+  "api_key": "your-api-key",
+  "model": "glm-4-flash"
+}
+```
+
+#### Integration Flow
+
+When integrating LLM Link into desktop applications or process managers:
+
+1. **Validate Configuration**: Call `/api/config/validate` to verify the API key
+2. **Prepare Update**: Call `/api/config/update` to get restart parameters and current `instance_id`
+3. **Restart Process**: Kill current process and start with new environment variables
+4. **Verify Success**: Poll `/api/health` until `instance_id` changes and configuration matches
+
+**Example Response**:
+```json
+{
+  "status": "success",
+  "current_instance_id": 1729900000,
+  "env_vars": {
+    "ZHIPU_API_KEY": "your-api-key"
+  },
+  "cli_args": {
+    "provider": "zhipu",
+    "model": "glm-4-flash"
+  }
+}
+```
+
+**Restart Verification**:
+```bash
+# After restart, verify new instance
+GET /api/health
+{
+  "status": "ok",
+  "instance_id": 1729900050,  // Changed - restart successful
+  "provider": "zhipu",         // Config applied
+  "model": "glm-4-flash"
+}
+```
+
+**Complete Documentation**:
+- 📖 [Configuration Update API](./docs/CONFIG_UPDATE_API.md) - Full API reference and examples
+- 📖 [Restart Verification Guide](./docs/RESTART_VERIFICATION.md) - TypeScript/Python integration examples
+
 ### Multiple Applications Simultaneously
 
 You can run multiple LLM Link instances for different applications:
@@ -325,6 +395,80 @@ You can run multiple LLM Link instances for different applications:
 | **Codex CLI** | `http://localhost:8088` | `/v1/chat/completions`, `/v1/models` |
 | **Zed** | `http://localhost:11434` | `/api/chat`, `/api/tags` |
 | **Claude Code** | `http://localhost:8089` | `/anthropic/v1/messages`, `/anthropic/v1/models` |
+
+## 🔥 Hot-Reload Configuration
+
+**New in v0.3.0**: Update API keys and switch providers without restarting the service!
+
+Perfect for desktop applications like **z-agent** where users need to change settings through a UI.
+
+### 🚀 Quick Examples
+
+```bash
+# Check current configuration
+curl http://localhost:11434/api/config/current
+
+# Update API key for OpenAI (no restart needed!)
+curl -X POST http://localhost:11434/api/config/update-key \
+  -H "Content-Type: application/json" \
+  -d '{"provider": "openai", "api_key": "sk-..."}'
+
+# Switch to Anthropic instantly
+curl -X POST http://localhost:11434/api/config/switch-provider \
+  -H "Content-Type: application/json" \
+  -d '{"provider": "anthropic", "model": "claude-3-5-sonnet-20241022", "api_key": "sk-ant-..."}'
+
+# Validate API key before using
+curl -X POST http://localhost:11434/api/config/validate-key \
+  -H "Content-Type: application/json" \
+  -d '{"provider": "ollama", "api_key": ""}'
+```
+
+### 🔧 Hot-Reload API Endpoints
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/config/current` | GET | Get current provider, model, and hot-reload status |
+| `/api/config/update-key` | POST | Update API key for specific provider |
+| `/api/config/switch-provider` | POST | Switch to different LLM provider |
+| `/api/config/validate-key` | POST | Validate API key and get model list |
+
+### ✨ Features
+
+- **🔄 Zero Downtime**: Configuration changes without service restart
+- **🔒 Secure**: API keys are safely masked in logs
+- **✅ Validation**: Test API keys before applying changes
+- **🧵 Thread Safe**: Concurrent requests handled safely
+- **📋 Model Discovery**: Get available models during validation
+
+### 📚 Integration Examples
+
+**JavaScript/TypeScript:**
+```javascript
+const client = new LlmLinkClient('http://localhost:11434');
+
+// Check if hot-reload is supported
+const config = await client.getCurrentConfig();
+if (config.supports_hot_reload) {
+  // Update API key
+  await client.updateApiKey('openai', 'sk-...');
+
+  // Switch provider
+  await client.switchProvider('anthropic', 'claude-3-5-sonnet-20241022', 'sk-ant-...');
+}
+```
+
+**Python:**
+```python
+client = LlmLinkClient('http://localhost:11434')
+
+# Validate and update
+validation = client.validate_api_key('openai', 'sk-...')
+if validation['status'] == 'valid':
+    client.update_api_key('openai', 'sk-...')
+```
+
+📖 **Complete Documentation**: [Hot-Reload API Guide](./HOT_RELOAD_API.md)
 
 ## 🛠️ CLI Reference
 

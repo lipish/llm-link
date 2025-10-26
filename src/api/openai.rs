@@ -48,7 +48,12 @@ pub async fn chat(
 
     // 验证模型
     if !request.model.is_empty() {
-        match state.llm_service.validate_model(&request.model).await {
+        let validation_result = {
+            let llm_service = state.llm_service.read().unwrap();
+            llm_service.validate_model(&request.model).await
+        };
+
+        match validation_result {
             Ok(false) => {
                 error!("❌ Model validation failed: model '{}' not found", request.model);
                 return Err(StatusCode::BAD_REQUEST);
@@ -103,8 +108,10 @@ async fn handle_streaming_request(
     tools: Option<Vec<llm_connector::types::Tool>>,
 ) -> Result<Response, StatusCode> {
     // 🎯 检测客户端类型（默认使用 OpenAI 适配器）
-    let client_adapter = detect_openai_client(&headers, &state.config);
+    let config = state.config.read().unwrap();
+    let client_adapter = detect_openai_client(&headers, &config);
     let (_stream_format, _) = FormatDetector::determine_format(&headers);
+    drop(config); // 释放读锁
     
     // 使用客户端偏好格式（SSE）
     let final_format = client_adapter.preferred_format();
@@ -112,11 +119,16 @@ async fn handle_streaming_request(
 
     info!("📡 Starting OpenAI streaming response - Format: {:?} ({})", final_format, content_type);
 
-    match state.llm_service.chat_stream_openai(model, messages.clone(), tools.clone(), final_format).await {
+    let stream_result = {
+        let llm_service = state.llm_service.read().unwrap();
+        llm_service.chat_stream_openai(model, messages.clone(), tools.clone(), final_format).await
+    };
+
+    match stream_result {
         Ok(rx) => {
             info!("✅ OpenAI streaming response started successfully");
 
-            let config = state.config.clone();
+            let config_clone = state.config.clone();
             let adapted_stream = rx.map(move |data| {
                 // SSE 格式的数据以 "data: " 开头，需要先提取 JSON 部分
                 let json_str = if data.starts_with("data: ") {
@@ -133,6 +145,7 @@ async fn handle_streaming_request(
                 // 解析并适配响应数据
                 if let Ok(mut json_data) = serde_json::from_str::<Value>(json_str) {
                     tracing::debug!("📝 Parsed JSON chunk, applying adaptations...");
+                    let config = config_clone.read().unwrap();
                     client_adapter.apply_response_adaptations(&config, &mut json_data);
 
                     match final_format {
@@ -178,7 +191,12 @@ async fn handle_non_streaming_request(
     messages: Vec<llm_connector::types::Message>,
     tools: Option<Vec<llm_connector::types::Tool>>,
 ) -> Result<Response, StatusCode> {
-    match state.llm_service.chat(model, messages, tools).await {
+    let chat_result = {
+        let llm_service = state.llm_service.read().unwrap();
+        llm_service.chat(model, messages, tools).await
+    };
+
+    match chat_result {
         Ok(response) => {
             let openai_response = convert::response_to_openai(response);
             Ok(Json(openai_response).into_response())
@@ -197,8 +215,13 @@ pub async fn models(
     Query(_params): Query<OpenAIModelsParams>,
 ) -> Result<impl IntoResponse, StatusCode> {
     enforce_api_key(&headers, &state)?;
-    
-    match state.llm_service.list_models().await {
+
+    let models_result = {
+        let llm_service = state.llm_service.read().unwrap();
+        llm_service.list_models().await
+    };
+
+    match models_result {
         Ok(models) => {
             let openai_models: Vec<Value> = models.into_iter().map(|model| {
                 json!({
@@ -209,7 +232,8 @@ pub async fn models(
                 })
             }).collect();
 
-            let current_provider = match &state.config.llm_backend {
+            let config = state.config.read().unwrap();
+            let current_provider = match &config.llm_backend {
                 crate::settings::LlmBackendSettings::OpenAI { .. } => "openai",
                 crate::settings::LlmBackendSettings::Anthropic { .. } => "anthropic",
                 crate::settings::LlmBackendSettings::Zhipu { .. } => "zhipu",
@@ -232,7 +256,8 @@ pub async fn models(
 
 /// OpenAI API Key 认证
 fn enforce_api_key(headers: &HeaderMap, state: &AppState) -> Result<(), StatusCode> {
-    if let Some(cfg) = &state.config.apis.openai {
+    let config = state.config.read().unwrap();
+    if let Some(cfg) = &config.apis.openai {
         if cfg.enabled {
             if let Some(expected_key) = cfg.api_key.as_ref() {
                 let header_name = cfg.api_key_header.as_deref().unwrap_or("authorization").to_ascii_lowercase();

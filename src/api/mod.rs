@@ -2,6 +2,7 @@ pub mod openai;
 pub mod ollama;
 pub mod anthropic;
 pub mod convert;
+pub mod config;
 
 use crate::settings::{Settings, LlmBackendSettings};
 use crate::service::Service as LlmService;
@@ -10,21 +11,49 @@ use axum::response::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
 use serde_json::json;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
+use anyhow::Result;
 
 /// 应用状态
 #[derive(Clone)]
 pub struct AppState {
-    pub llm_service: Arc<LlmService>,
-    pub config: Arc<Settings>,
+    pub llm_service: Arc<RwLock<LlmService>>,
+    pub config: Arc<RwLock<Settings>>,
 }
 
 impl AppState {
     pub fn new(llm_service: LlmService, config: Settings) -> Self {
         Self {
-            llm_service: Arc::new(llm_service),
-            config: Arc::new(config),
+            llm_service: Arc::new(RwLock::new(llm_service)),
+            config: Arc::new(RwLock::new(config)),
         }
+    }
+
+    /// 动态更新 LLM 服务配置
+    ///
+    /// 这个方法允许在运行时更新 LLM 后端配置，而无需重启服务
+    pub fn update_llm_service(&self, new_backend: &LlmBackendSettings) -> Result<()> {
+        // 创建新的 LLM 服务
+        let new_service = LlmService::new(new_backend)?;
+
+        // 更新服务
+        {
+            let mut service = self.llm_service.write().unwrap();
+            *service = new_service;
+        }
+
+        // 更新配置
+        {
+            let mut config = self.config.write().unwrap();
+            config.llm_backend = new_backend.clone();
+        }
+
+        Ok(())
+    }
+
+    /// 获取当前配置的只读副本
+    pub fn get_current_config(&self) -> Settings {
+        self.config.read().unwrap().clone()
     }
 }
 
@@ -49,8 +78,9 @@ pub async fn debug_test() -> Json<serde_json::Value> {
 pub async fn info(
     State(state): State<AppState>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let current_provider = get_provider_name(&state.config.llm_backend);
-    let current_model = get_current_model(&state.config.llm_backend);
+    let config = state.config.read().unwrap();
+    let current_provider = get_provider_name(&config.llm_backend);
+    let current_model = get_current_model(&config.llm_backend);
     
     let models_config = ModelsConfig::load_with_fallback();
     
@@ -98,8 +128,8 @@ pub async fn info(
     ];
 
     let mut api_endpoints = serde_json::Map::new();
-    
-    if let Some(ollama_config) = &state.config.apis.ollama {
+
+    if let Some(ollama_config) = &config.apis.ollama {
         if ollama_config.enabled {
             api_endpoints.insert("ollama".to_string(), json!({
                 "path": ollama_config.path,
@@ -108,8 +138,8 @@ pub async fn info(
             }));
         }
     }
-    
-    if let Some(openai_config) = &state.config.apis.openai {
+
+    if let Some(openai_config) = &config.apis.openai {
         if openai_config.enabled {
             api_endpoints.insert("openai".to_string(), json!({
                 "path": openai_config.path,
@@ -118,8 +148,8 @@ pub async fn info(
             }));
         }
     }
-    
-    if let Some(anthropic_config) = &state.config.apis.anthropic {
+
+    if let Some(anthropic_config) = &config.apis.anthropic {
         if anthropic_config.enabled {
             api_endpoints.insert("anthropic".to_string(), json!({
                 "path": anthropic_config.path,

@@ -181,7 +181,12 @@ pub async fn messages(
 
     if request.stream {
         // Streaming response
-        match state.llm_service.chat_stream_openai(Some(&request.model), llm_messages, None, llm_connector::StreamFormat::SSE).await {
+        let stream_result = {
+            let llm_service = state.llm_service.read().unwrap();
+            llm_service.chat_stream_openai(Some(&request.model), llm_messages, None, llm_connector::StreamFormat::SSE).await
+        };
+
+        match stream_result {
             Ok(stream) => {
                 info!("✅ Starting Anthropic streaming response");
                 let anthropic_stream = convert_to_anthropic_stream(stream, request.model.clone());
@@ -203,7 +208,12 @@ pub async fn messages(
         }
     } else {
         // Non-streaming response
-        match state.llm_service.chat(Some(&request.model), llm_messages, None).await {
+        let chat_result = {
+            let llm_service = state.llm_service.read().unwrap();
+            llm_service.chat(Some(&request.model), llm_messages, None).await
+        };
+
+        match chat_result {
             Ok(response) => {
                 info!("✅ Anthropic non-streaming response successful");
 
@@ -289,7 +299,12 @@ fn convert_to_anthropic_stream(
 pub async fn models(
     State(state): State<AppState>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    match state.llm_service.list_models().await {
+    let models_result = {
+        let llm_service = state.llm_service.read().unwrap();
+        llm_service.list_models().await
+    };
+
+    match models_result {
         Ok(models) => {
             let anthropic_models: Vec<serde_json::Value> = models.into_iter().map(|model| {
                 json!({
@@ -300,7 +315,8 @@ pub async fn models(
                 })
             }).collect();
 
-            let current_provider = match &state.config.llm_backend {
+            let config = state.config.read().unwrap();
+            let current_provider = match &config.llm_backend {
                 crate::settings::LlmBackendSettings::OpenAI { .. } => "openai",
                 crate::settings::LlmBackendSettings::Anthropic { .. } => "anthropic",
                 crate::settings::LlmBackendSettings::Zhipu { .. } => "zhipu",

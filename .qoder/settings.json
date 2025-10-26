@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "ask": [
+      "Read(!/Users/xinference/github/llm-link/**)",
+      "Edit(!/Users/xinference/github/llm-link/**)"
+    ],
+    "allow": [
+      "Read(/Users/xinference/github/llm-link/**)",
+      "Edit(/Users/xinference/github/llm-link/**)"
+    ]
+  },
+  "memoryImport": {},
+  "monitoring": {}
+}
