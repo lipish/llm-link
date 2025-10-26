@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.1] - 2025-10-26
+
+### 🔥 New Provider Support
+
+#### LongCat AI Integration
+- **Added LongCat Provider** - Full support for LongCat AI API in hot-reload system
+  - New provider: `longcat` with OpenAI-compatible API
+  - Supports `LongCat-Flash-Chat` and `LongCat-Flash-Thinking` models
+  - API endpoint: `https://api.longcat.chat/v1`
+
+#### Enhanced Hot-Reload Support
+- **LongCat Hot-Reload** - All hot-reload features work with LongCat
+  - Runtime API key updates via `POST /api/config/update-key`
+  - Dynamic provider switching via `POST /api/config/switch-provider`
+  - API key validation via `POST /api/config/validate-key`
+  - Model discovery and listing support
+
+### 📊 Provider Count Update
+- **8 Supported Providers** - Now supporting 8 LLM providers total:
+  - OpenAI, Anthropic, Zhipu, Aliyun, Volcengine, Tencent, **LongCat**, Ollama
+
+### 🔧 Technical Implementation
+- **Code Integration** - Added LongCat support across all modules
+  - Updated `LlmBackendSettings` enum with `Longcat` variant
+  - Enhanced provider validation in hot-reload APIs
+  - Added LongCat models to configuration system
+  - Updated all provider matching logic
+
+### 📚 Documentation Updates
+- **Updated Documentation** - Comprehensive documentation updates
+  - README updated to reflect 8 providers
+  - HOT_RELOAD_API.md includes LongCat examples
+  - Cargo.toml description updated
+  - All provider lists updated
+
+### 🧪 Testing Status
+✅ **Fully Tested LongCat Features:**
+- Provider switching to LongCat verified
+- API key validation with model discovery working
+- Configuration queries showing LongCat status
+- Hot-reload functionality confirmed working
+
 ## [0.3.0] - 2025-10-26
 
 ### 🔥 Major Features
