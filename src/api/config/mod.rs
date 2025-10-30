@@ -146,6 +146,9 @@ pub async fn get_current_config(
         LlmBackendSettings::Longcat { model, .. } => {
             ("longcat", model.clone(), true, false)
         }
+        LlmBackendSettings::Moonshot { model, .. } => {
+            ("moonshot", model.clone(), true, false)
+        }
     };
     
     Ok(Json(CurrentConfigResponse {
@@ -175,6 +178,7 @@ pub async fn get_health(
         LlmBackendSettings::Volcengine { model, .. } => ("volcengine", model.clone()),
         LlmBackendSettings::Tencent { model, .. } => ("tencent", model.clone()),
         LlmBackendSettings::Longcat { model, .. } => ("longcat", model.clone()),
+        LlmBackendSettings::Moonshot { model, .. } => ("moonshot", model.clone()),
     };
     
     Json(json!({
@@ -321,6 +325,10 @@ pub async fn validate_key(
             api_key: request.api_key.clone(),
             model,
         },
+        "moonshot" => LlmBackendSettings::Moonshot {
+            api_key: request.api_key.clone(),
+            model,
+        },
         _ => {
             error!("❌ Unsupported provider: {}", request.provider);
             return Err(StatusCode::BAD_REQUEST);
@@ -430,6 +438,10 @@ pub async fn validate_key_for_update(
             model,
         },
         "longcat" => LlmBackendSettings::Longcat {
+            api_key: request.api_key.clone(),
+            model,
+        },
+        "moonshot" => LlmBackendSettings::Moonshot {
             api_key: request.api_key.clone(),
             model,
         },
@@ -600,6 +612,19 @@ pub async fn update_key(
                 }
             }
         }
+        "moonshot" => {
+            if let crate::settings::LlmBackendSettings::Moonshot { model, .. } = &current_config.llm_backend {
+                crate::settings::LlmBackendSettings::Moonshot {
+                    api_key: request.api_key.clone(),
+                    model: model.clone(),
+                }
+            } else {
+                crate::settings::LlmBackendSettings::Moonshot {
+                    api_key: request.api_key.clone(),
+                    model: "kimi-k2-turbo-preview".to_string(),
+                }
+            }
+        }
         "ollama" => {
             if let crate::settings::LlmBackendSettings::Ollama { model, .. } = &current_config.llm_backend {
                 crate::settings::LlmBackendSettings::Ollama {
@@ -721,6 +746,14 @@ pub async fn switch_provider(
                     return Err(StatusCode::BAD_REQUEST);
                 }
             }
+            "moonshot" => {
+                if let crate::settings::LlmBackendSettings::Moonshot { api_key, .. } = &current_config.llm_backend {
+                    api_key.clone()
+                } else {
+                    error!("❌ No API key provided for Moonshot and none found in current config");
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
             "ollama" => String::new(), // Ollama 不需要 API key
             _ => {
                 error!("❌ Unsupported provider: {}", request.provider);
@@ -777,6 +810,10 @@ pub async fn switch_provider(
             model,
         },
         "longcat" => crate::settings::LlmBackendSettings::Longcat {
+            api_key,
+            model,
+        },
+        "moonshot" => crate::settings::LlmBackendSettings::Moonshot {
             api_key,
             model,
         },

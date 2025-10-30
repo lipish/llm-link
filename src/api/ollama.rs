@@ -202,6 +202,7 @@ pub async fn models(
                 crate::settings::LlmBackendSettings::Volcengine { .. } => "volcengine",
                 crate::settings::LlmBackendSettings::Tencent { .. } => "tencent",
                 crate::settings::LlmBackendSettings::Longcat { .. } => "longcat",
+                crate::settings::LlmBackendSettings::Moonshot { .. } => "moonshot",
             };
             
             let response = json!({

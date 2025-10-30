@@ -189,12 +189,18 @@ impl ConfigLoader {
                     "aliyun" => "ALIYUN_API_KEY",
                     "volcengine" => "VOLCENGINE_API_KEY",
                     "tencent" => "TENCENT_API_KEY",
+                    "longcat" => "LONGCAT_API_KEY",
+                    "moonshot" => "MOONSHOT_API_KEY",
                     _ => "API_KEY",
                 };
-                return Err(anyhow::anyhow!(
-                    "Missing API key for provider '{}'. Set {} environment variable or use --llm-api-key",
-                    provider_name, env_var
-                ));
+
+                // Warn but allow startup without API key
+                // User can set it later via hot-reload API
+                tracing::warn!("⚠️  Starting without API key for provider '{}'", provider_name);
+                tracing::warn!("⚠️  Set {} environment variable or use --llm-api-key", env_var);
+                tracing::warn!("⚠️  Or update API key dynamically via: POST /api/config/update-key");
+                tracing::warn!("⚠️  LLM requests will fail until API key is configured");
+                tracing::warn!("");
             }
 
             // Determine model
@@ -217,31 +223,42 @@ impl ConfigLoader {
             info!("🔄 Using model: {}", model_name);
 
             // Create new backend settings based on provider
+            // Use empty string as placeholder if API key is not provided
+            let api_key_value = api_key.unwrap_or_else(|| String::new());
+
             config.llm_backend = match provider_name {
                 "openai" => LlmBackendSettings::OpenAI {
-                    api_key: api_key.unwrap(),
+                    api_key: api_key_value,
                     base_url: None,
                     model: model_name,
                 },
                 "anthropic" => LlmBackendSettings::Anthropic {
-                    api_key: api_key.unwrap(),
+                    api_key: api_key_value,
                     model: model_name,
                 },
                 "zhipu" => LlmBackendSettings::Zhipu {
-                    api_key: api_key.unwrap(),
+                    api_key: api_key_value,
                     base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
                     model: model_name,
                 },
                 "aliyun" => LlmBackendSettings::Aliyun {
-                    api_key: api_key.unwrap(),
+                    api_key: api_key_value,
                     model: model_name,
                 },
                 "volcengine" => LlmBackendSettings::Volcengine {
-                    api_key: api_key.unwrap(),
+                    api_key: api_key_value,
                     model: model_name,
                 },
                 "tencent" => LlmBackendSettings::Tencent {
-                    api_key: api_key.unwrap(),
+                    api_key: api_key_value,
+                    model: model_name,
+                },
+                "longcat" => LlmBackendSettings::Longcat {
+                    api_key: api_key_value,
+                    model: model_name,
+                },
+                "moonshot" => LlmBackendSettings::Moonshot {
+                    api_key: api_key_value,
                     model: model_name,
                 },
                 "ollama" => LlmBackendSettings::Ollama {
@@ -262,6 +279,7 @@ impl ConfigLoader {
                 LlmBackendSettings::Volcengine { model, .. } => *model = model_name.to_string(),
                 LlmBackendSettings::Tencent { model, .. } => *model = model_name.to_string(),
                 LlmBackendSettings::Longcat { model, .. } => *model = model_name.to_string(),
+                LlmBackendSettings::Moonshot { model, .. } => *model = model_name.to_string(),
                 LlmBackendSettings::Ollama { model, .. } => *model = model_name.to_string(),
             }
         }

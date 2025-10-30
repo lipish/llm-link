@@ -46,6 +46,10 @@ impl Client {
                 // Longcat uses OpenAI compatible API
                 LlmClient::openai_compatible(api_key, "https://api.longcat.chat/v1", "longcat")?
             }
+            LlmBackendSettings::Moonshot { api_key, .. } => {
+                // Moonshot uses OpenAI compatible API
+                LlmClient::openai_compatible(api_key, "https://api.moonshot.cn/v1", "moonshot")?
+            }
             LlmBackendSettings::Ollama { base_url, .. } => {
                 if base_url.is_some() {
                     // For custom Ollama URLs, we might need to use openai_compatible

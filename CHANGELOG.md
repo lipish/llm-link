@@ -5,6 +5,95 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.3] - 2025-10-30
+
+### 🎉 Major Features
+
+#### Optional API Key Startup
+- **Start Without API Key** - llm-link can now start without requiring API keys
+  - Service starts normally and displays helpful warnings
+  - API keys can be set dynamically via hot-reload API after startup
+  - Perfect for containerized deployments and development workflows
+  - Supports all providers except Ollama (which doesn't need keys)
+
+#### Enhanced Moonshot Provider Support
+- **Full Moonshot Integration** - Complete support for Moonshot Kimi models
+  - Added to all configuration systems
+  - Integrated with hot-reload APIs
+  - Default model: `kimi-k2-turbo-preview`
+
+### 🔧 Technical Improvements
+
+#### Startup Behavior
+- **Before**: Required API key or service would fail to start
+  ```bash
+  Error: Missing API key for provider 'zhipu'
+  ```
+
+- **After**: Starts with warnings, allows dynamic configuration
+  ```bash
+  ⚠️  Starting without API key for provider 'zhipu'
+  ⚠️  Set ZHIPU_API_KEY or use --llm-api-key
+  ⚠️  Or update dynamically via: POST /api/config/update-key
+  ✅ Service started successfully
+  ```
+
+#### Code Changes
+- Modified `src/cli/loader.rs` to allow empty API keys
+- Updated all `LlmBackendSettings` match statements to include Moonshot
+- Added comprehensive warnings for missing API keys
+- Improved error messages with actionable suggestions
+
+### 📚 Documentation
+
+#### New Documentation
+- **[START_WITHOUT_API_KEY.md](docs/START_WITHOUT_API_KEY.md)** - Complete guide for optional API key startup
+  - Usage scenarios and best practices
+  - Security considerations
+  - Docker and Kubernetes examples
+  - Multi-provider switching workflows
+
+### 🎯 Use Cases
+
+1. **Container Deployments**
+   ```bash
+   # Start container without API key
+   docker run -p 11434:11434 llm-link --app zed --provider zhipu
+
+   # Inject API key after startup
+   curl -X POST http://localhost:11434/api/config/update-key \
+     -d '{"provider": "zhipu", "api_key": "xxx"}'
+   ```
+
+2. **Development Workflow**
+   ```bash
+   # Quick start for testing
+   ./llm-link --app zed --provider zhipu
+
+   # Set key when needed
+   curl -X POST http://localhost:11434/api/config/update-key \
+     -d '{"provider": "zhipu", "api_key": "dev-key"}'
+   ```
+
+3. **Dynamic Provider Switching**
+   ```bash
+   # Start without key
+   ./llm-link --app zed --provider zhipu
+
+   # Switch providers on the fly
+   curl -X POST http://localhost:11434/api/config/switch-provider \
+     -d '{"provider": "openai", "api_key": "openai-key"}'
+   ```
+
+### ⚠️ Breaking Changes
+
+None. This is a backward-compatible enhancement.
+
+### 🔗 Related
+
+- Hot-reload API documentation: [HOT_RELOAD_API.md](docs/HOT_RELOAD_API.md)
+- Configuration API: [CONFIG_UPDATE_API.md](docs/CONFIG_UPDATE_API.md)
+
 ## [0.3.2] - 2025-10-30
 
 ### 🎉 Major Features

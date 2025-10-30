@@ -16,6 +16,7 @@ impl Client {
             LlmBackendSettings::Volcengine { .. } => "volcengine",
             LlmBackendSettings::Tencent { .. } => "tencent",
             LlmBackendSettings::Longcat { .. } => "longcat",
+            LlmBackendSettings::Moonshot { .. } => "moonshot",
         };
 
         // Special handling for Ollama - get actual installed models
@@ -58,6 +59,7 @@ impl Client {
                 LlmBackendSettings::Volcengine { model, .. } => model.clone(),
                 LlmBackendSettings::Tencent { model, .. } => model.clone(),
                 LlmBackendSettings::Longcat { model, .. } => model.clone(),
+                LlmBackendSettings::Moonshot { model, .. } => model.clone(),
             };
 
             Ok(vec![Model { id: fallback_model }])

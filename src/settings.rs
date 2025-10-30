@@ -52,6 +52,10 @@ pub enum LlmBackendSettings {
         api_key: String,
         model: String,
     },
+    Moonshot {
+        api_key: String,
+        model: String,
+    },
 }
 
 impl LlmBackendSettings {
@@ -66,6 +70,7 @@ impl LlmBackendSettings {
             LlmBackendSettings::Volcengine { model, .. } => model.clone(),
             LlmBackendSettings::Tencent { model, .. } => model.clone(),
             LlmBackendSettings::Longcat { model, .. } => model.clone(),
+            LlmBackendSettings::Moonshot { model, .. } => model.clone(),
         }
     }
 }

@@ -133,7 +133,7 @@ pub async fn info(
 
     let response = json!({
         "service": "llm-link",
-        "version": "0.3.2",
+        "version": "0.3.3",
         "current_provider": current_provider,
         "current_model": current_model,
         "supported_providers": supported_providers,
@@ -153,6 +153,7 @@ fn get_provider_name(backend: &LlmBackendSettings) -> &str {
         LlmBackendSettings::Volcengine { .. } => "volcengine",
         LlmBackendSettings::Tencent { .. } => "tencent",
         LlmBackendSettings::Longcat { .. } => "longcat",
+        LlmBackendSettings::Moonshot { .. } => "moonshot",
     }
 }
 
@@ -166,5 +167,6 @@ fn get_current_model(backend: &LlmBackendSettings) -> String {
         LlmBackendSettings::Volcengine { model, .. } => model.clone(),
         LlmBackendSettings::Tencent { model, .. } => model.clone(),
         LlmBackendSettings::Longcat { model, .. } => model.clone(),
+        LlmBackendSettings::Moonshot { model, .. } => model.clone(),
     }
 }
