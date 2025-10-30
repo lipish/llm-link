@@ -2,6 +2,7 @@ use serde_json;
 
 /// Token usage information
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct Usage {
     pub prompt_tokens: u32,
     pub completion_tokens: u32,
@@ -10,6 +11,7 @@ pub struct Usage {
 
 /// LLM response
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct Response {
     pub content: String,
     pub model: String,

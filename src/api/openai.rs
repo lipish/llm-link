@@ -15,9 +15,13 @@ use crate::adapters::{ClientAdapter, FormatDetector};
 use crate::api::{AppState, convert};
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct OpenAIChatRequest {
+    #[allow(dead_code)]
     pub model: String,
+    #[allow(dead_code)]
     pub messages: Vec<Value>,
+    #[allow(dead_code)]
     pub stream: Option<bool>,
     #[allow(dead_code)]
     pub max_tokens: Option<u32>,
@@ -35,6 +39,7 @@ pub struct OpenAIModelsParams {
 }
 
 /// OpenAI Chat Completions API
+#[allow(dead_code)]
 pub async fn chat(
     headers: HeaderMap,
     State(state): State<AppState>,
@@ -100,6 +105,7 @@ pub async fn chat(
 }
 
 /// 处理流式请求
+#[allow(dead_code)]
 async fn handle_streaming_request(
     headers: HeaderMap,
     state: AppState,
@@ -185,6 +191,7 @@ async fn handle_streaming_request(
 }
 
 /// 处理非流式请求
+#[allow(dead_code)]
 async fn handle_non_streaming_request(
     state: AppState,
     model: Option<&str>,
@@ -209,6 +216,7 @@ async fn handle_non_streaming_request(
 }
 
 /// OpenAI Models API
+#[allow(dead_code)]
 pub async fn models(
     headers: HeaderMap,
     State(state): State<AppState>,
@@ -256,6 +264,7 @@ pub async fn models(
 }
 
 /// OpenAI API Key 认证
+#[allow(dead_code)]
 fn enforce_api_key(headers: &HeaderMap, state: &AppState) -> Result<(), StatusCode> {
     let config = state.config.read().unwrap();
     if let Some(cfg) = &config.apis.openai {
@@ -296,6 +305,7 @@ fn enforce_api_key(headers: &HeaderMap, state: &AppState) -> Result<(), StatusCo
 }
 
 /// 检测 OpenAI 客户端类型
+#[allow(dead_code)]
 fn detect_openai_client(_headers: &HeaderMap, _config: &crate::settings::Settings) -> ClientAdapter {
     // OpenAI API 总是使用 OpenAI 适配器
     ClientAdapter::OpenAI

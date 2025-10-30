@@ -5,9 +5,10 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 
 impl Client {
     /// Send a streaming chat request with specified format (Ollama-style response)
-    /// 
+    ///
     /// This method returns streaming responses in Ollama API format, which is used by
     /// Ollama-compatible clients like Zed.dev.
+    #[allow(dead_code)]
     pub async fn chat_stream_with_format(
         &self,
         model: &str,
@@ -111,12 +112,13 @@ impl Client {
     }
 
     /// Send a streaming chat request for OpenAI API (OpenAI-style response)
-    /// 
+    ///
     /// This method returns streaming responses in OpenAI API format, which is used by
     /// OpenAI-compatible clients like Codex CLI.
-    /// 
+    ///
     /// Key feature: Automatically corrects finish_reason from "stop" to "tool_calls"
     /// when tool_calls are detected in the stream.
+    #[allow(dead_code)]
     pub async fn chat_stream_openai(
         &self,
         model: &str,

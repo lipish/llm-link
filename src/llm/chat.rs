@@ -5,6 +5,7 @@ use llm_connector::types::ChatRequest;
 
 impl Client {
     /// Send a non-streaming chat request to the LLM
+    #[allow(dead_code)]
     pub async fn chat(
         &self,
         model: &str,

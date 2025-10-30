@@ -14,7 +14,8 @@ LLM Link provides zero-configuration access to LLM providers through multiple AP
 - **🎯 Application-Oriented**: Built-in configurations for popular AI coding tools
 - **⚡ Zero Configuration**: One-command startup for common use cases
 - **🔄 Multi-Protocol**: Simultaneous OpenAI, Ollama, and Anthropic API support
-- **🔀 8 LLM Providers**: OpenAI, Anthropic, Zhipu, Aliyun, Volcengine, Tencent, Longcat, Ollama
+- **🔀 9 LLM Providers**: OpenAI, Anthropic, Zhipu, Aliyun, Volcengine, Tencent, Longcat, Moonshot, Ollama
+- **📡 Dynamic Model Discovery**: REST API to query all supported providers and models
 - **🔥 Hot-Reload Configuration**: Update API keys and switch providers without restart
 - **🛠️ CLI-First**: Simple command-line interface with helpful guidance
 - **🔧 Smart Adaptation**: Automatic client detection and optimization
@@ -139,7 +140,19 @@ export ALIYUN_API_KEY="your-key"
 - `anthropic` - Anthropic Claude models (default: `claude-3-5-sonnet-20241022`)
 - `zhipu` - Zhipu GLM models (default: `glm-4-flash`)
 - `aliyun` - Aliyun Qwen models (default: `qwen-max`)
+- `volcengine` - Volcengine Doubao models (default: `doubao-pro-32k`)
+- `tencent` - Tencent Hunyuan models (default: `hunyuan-lite`)
+- `longcat` - LongCat models (default: `LongCat-Flash-Chat`)
+- `moonshot` - Moonshot Kimi models (default: `kimi-k2-turbo-preview`)
 - `ollama` - Ollama local models (default: `llama2`)
+
+**💡 Discover All Models:**
+```bash
+# Query all supported providers and their models via API
+curl http://localhost:11434/api/info | jq '.supported_providers'
+```
+
+See [API Documentation](docs/API_PROVIDERS_MODELS.md) for details.
 
 ## ⚙️ Environment Variables
 
@@ -181,6 +194,68 @@ ALIYUN_API_KEY=your-aliyun-key
 ```
 
 **Note**: The `.env` file is ignored by git for security. Never commit API keys to version control.
+
+## 📡 API Endpoints
+
+LLM Link provides REST APIs for service management and model discovery:
+
+### Get Provider and Model Information
+
+```bash
+# Get all supported providers and their models
+curl http://localhost:11434/api/info
+
+# Example response:
+{
+  "service": "llm-link",
+  "version": "0.3.2",
+  "current_provider": "zhipu",
+  "current_model": "glm-4-flash",
+  "supported_providers": [
+    {
+      "name": "zhipu",
+      "models": [
+        {
+          "id": "glm-4.6",
+          "name": "GLM-4.6",
+          "description": "Latest flagship model with 200K context"
+        },
+        ...
+      ]
+    },
+    ...
+  ]
+}
+```
+
+### Query Specific Provider Models
+
+```bash
+# Get Zhipu models
+curl -s http://localhost:11434/api/info | jq '.supported_providers[] | select(.name == "zhipu")'
+
+# List all provider names
+curl -s http://localhost:11434/api/info | jq -r '.supported_providers[].name'
+
+# Count models per provider
+curl -s http://localhost:11434/api/info | jq -r '.supported_providers[] | "\(.name): \(.models | length) models"'
+```
+
+### Hot-Reload Configuration
+
+```bash
+# Update API key without restart
+curl -X POST http://localhost:11434/api/config/update-key \
+  -H "Content-Type: application/json" \
+  -d '{"provider": "zhipu", "api_key": "new-api-key"}'
+
+# Switch provider
+curl -X POST http://localhost:11434/api/config/switch-provider \
+  -H "Content-Type: application/json" \
+  -d '{"provider": "openai", "model": "gpt-4"}'
+```
+
+📚 **Full API Documentation**: See [API_PROVIDERS_MODELS.md](docs/API_PROVIDERS_MODELS.md)
 
 ## 🎯 Application Setup Guides
 

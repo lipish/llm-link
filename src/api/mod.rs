@@ -83,49 +83,22 @@ pub async fn info(
     let current_model = get_current_model(&config.llm_backend);
     
     let models_config = ModelsConfig::load_with_fallback();
-    
-    let supported_providers = vec![
-        json!({
-            "name": "openai",
-            "models": models_config.openai.models,
-        }),
-        json!({
-            "name": "anthropic",
-            "models": models_config.anthropic.models,
-        }),
-        json!({
-            "name": "zhipu",
-            "models": models_config.zhipu.models,
-        }),
-        json!({
-            "name": "ollama",
-            "models": models_config.ollama.models,
-        }),
-        json!({
-            "name": "aliyun",
-            "models": models_config.aliyun.models,
-        }),
-        json!({
-            "name": "volcengine",
-            "models": vec![
-                json!({
-                    "id": "ep-20241023xxxxx-xxxxx",
-                    "name": "Doubao Model",
-                    "description": "Volcengine Doubao model endpoint"
-                })
-            ],
-        }),
-        json!({
-            "name": "tencent",
-            "models": vec![
-                json!({
-                    "id": "hunyuan-lite",
-                    "name": "Hunyuan Lite",
-                    "description": "Tencent Hunyuan lite model"
-                })
-            ],
-        }),
-    ];
+
+    // Build supported_providers from the dynamic HashMap
+    let mut supported_providers: Vec<serde_json::Value> = models_config.providers
+        .iter()
+        .map(|(name, provider_models)| {
+            json!({
+                "name": name,
+                "models": provider_models.models,
+            })
+        })
+        .collect();
+
+    // Sort by provider name for consistent output
+    supported_providers.sort_by(|a, b| {
+        a["name"].as_str().unwrap_or("").cmp(b["name"].as_str().unwrap_or(""))
+    });
 
     let mut api_endpoints = serde_json::Map::new();
 
@@ -160,7 +133,7 @@ pub async fn info(
 
     let response = json!({
         "service": "llm-link",
-        "version": "0.2.4",
+        "version": "0.3.2",
         "current_provider": current_provider,
         "current_model": current_model,
         "supported_providers": supported_providers,

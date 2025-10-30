@@ -17,12 +17,13 @@ use serde_json::Value;
 /// - `src/api/openai.rs::detect_openai_client()` - OpenAI API 客户端检测
 ///
 /// # 示例
-/// ```rust
+/// ```rust,ignore
 /// let adapter = detect_client(&headers, &config);
 /// let format = adapter.preferred_format();
 /// adapter.apply_response_adaptations(&config, &mut response_data);
 /// ```
 #[derive(Debug, Clone, PartialEq)]
+#[allow(dead_code)]
 pub enum ClientAdapter {
     /// 标准 Ollama 客户端
     /// - 偏好格式: NDJSON
@@ -51,7 +52,7 @@ impl ClientAdapter {
     /// - `StreamFormat::NDJSON` - Newline Delimited JSON (Ollama/Zed 偏好)
     ///
     /// # 使用场景
-    /// ```rust
+    /// ```rust,ignore
     /// let format = if headers.get("accept").contains("*/*") {
     ///     adapter.preferred_format()  // 使用偏好格式
     /// } else {
@@ -90,7 +91,7 @@ impl ClientAdapter {
     /// - `src/handlers/openai.rs` - 在流式响应的每个 chunk 中调用
     ///
     /// # 示例
-    /// ```rust
+    /// ```rust,ignore
     /// let mut response_data = serde_json::from_str(&chunk)?;
     /// adapter.apply_response_adaptations(&config, &mut response_data);
     /// // response_data 已被适配
@@ -132,6 +133,7 @@ impl ClientAdapter {
 }
 
 /// 格式检测器
+#[allow(dead_code)]
 pub struct FormatDetector;
 
 impl FormatDetector {

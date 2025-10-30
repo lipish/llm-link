@@ -1,5 +1,6 @@
 use serde::{Deserialize, Serialize};
 use anyhow::{Result, anyhow};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelInfo {
@@ -13,16 +14,12 @@ pub struct ProviderModels {
     pub models: Vec<ModelInfo>,
 }
 
+/// Models configuration using HashMap for flexible provider support
+/// This allows any provider to be added in models.yaml without code changes
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelsConfig {
-    pub openai: ProviderModels,
-    pub anthropic: ProviderModels,
-    pub zhipu: ProviderModels,
-    pub ollama: ProviderModels,
-    pub aliyun: ProviderModels,
-    pub volcengine: ProviderModels,
-    pub tencent: ProviderModels,
-    pub longcat: ProviderModels,
+    #[serde(flatten)]
+    pub providers: HashMap<String, ProviderModels>,
 }
 
 impl ModelsConfig {
@@ -40,147 +37,155 @@ impl ModelsConfig {
     /// Load models configuration with fallback to default
     pub fn load_with_fallback() -> Self {
         // Try to load from embedded YAML first
-        if let Ok(config) = Self::load_embedded() {
-            return config;
+        match Self::load_embedded() {
+            Ok(config) => {
+                tracing::info!("✅ Successfully loaded models from embedded YAML");
+                config
+            }
+            Err(e) => {
+                tracing::warn!("⚠️ Failed to load models from YAML, using defaults: {}", e);
+                Self::default()
+            }
         }
-
-        // Fallback to hardcoded default configuration
-        Self::default()
     }
 
     /// Get models for a specific provider
     pub fn get_models_for_provider(&self, provider: &str) -> Vec<ModelInfo> {
-        match provider.to_lowercase().as_str() {
-            "openai" => self.openai.models.clone(),
-            "anthropic" => self.anthropic.models.clone(),
-            "zhipu" => self.zhipu.models.clone(),
-            "ollama" => self.ollama.models.clone(),
-            "aliyun" => self.aliyun.models.clone(),
-            _ => vec![],
-        }
+        self.providers
+            .get(&provider.to_lowercase())
+            .map(|p| p.models.clone())
+            .unwrap_or_default()
+    }
+
+    /// Get all provider names
+    #[allow(dead_code)]
+    pub fn get_all_providers(&self) -> Vec<String> {
+        self.providers.keys().cloned().collect()
     }
 }
 
 impl Default for ModelsConfig {
     fn default() -> Self {
-        Self {
-            openai: ProviderModels {
-                models: vec![
-                    ModelInfo {
-                        id: "gpt-4o".to_string(),
-                        name: "GPT-4o".to_string(),
-                        description: "GPT-4 Omni model".to_string(),
-                    },
-                    ModelInfo {
-                        id: "gpt-4".to_string(),
-                        name: "GPT-4".to_string(),
-                        description: "Most capable GPT-4 model".to_string(),
-                    },
-                    ModelInfo {
-                        id: "gpt-3.5-turbo".to_string(),
-                        name: "GPT-3.5 Turbo".to_string(),
-                        description: "Fast and efficient model".to_string(),
-                    },
-                ],
-            },
-            anthropic: ProviderModels {
-                models: vec![
-                    ModelInfo {
-                        id: "claude-3-5-sonnet-20241022".to_string(),
-                        name: "Claude 3.5 Sonnet".to_string(),
-                        description: "Latest Claude 3.5 Sonnet model".to_string(),
-                    },
-                    ModelInfo {
-                        id: "claude-3-haiku-20240307".to_string(),
-                        name: "Claude 3 Haiku".to_string(),
-                        description: "Fast Claude 3 model".to_string(),
-                    },
-                ],
-            },
-            zhipu: ProviderModels {
-                models: vec![
-                    ModelInfo {
-                        id: "glm-4-flash".to_string(),
-                        name: "GLM-4 Flash".to_string(),
-                        description: "Fast GLM-4 model".to_string(),
-                    },
-                    ModelInfo {
-                        id: "glm-4".to_string(),
-                        name: "GLM-4".to_string(),
-                        description: "Standard GLM-4 model".to_string(),
-                    },
-                ],
-            },
-            ollama: ProviderModels {
-                models: vec![
-                    ModelInfo {
-                        id: "llama3.2".to_string(),
-                        name: "Llama 3.2".to_string(),
-                        description: "Latest Llama model".to_string(),
-                    },
-                    ModelInfo {
-                        id: "llama2".to_string(),
-                        name: "Llama 2".to_string(),
-                        description: "Stable Llama 2 model".to_string(),
-                    },
-                    ModelInfo {
-                        id: "codellama".to_string(),
-                        name: "Code Llama".to_string(),
-                        description: "Code-specialized model".to_string(),
-                    },
-                    ModelInfo {
-                        id: "mistral".to_string(),
-                        name: "Mistral".to_string(),
-                        description: "Mistral 7B model".to_string(),
-                    },
-                ],
-            },
-            aliyun: ProviderModels {
-                models: vec![
-                    ModelInfo {
-                        id: "qwen-turbo".to_string(),
-                        name: "Qwen Turbo".to_string(),
-                        description: "Fast Qwen model".to_string(),
-                    },
-                    ModelInfo {
-                        id: "qwen-plus".to_string(),
-                        name: "Qwen Plus".to_string(),
-                        description: "Enhanced Qwen model".to_string(),
-                    },
-                ],
-            },
-            volcengine: ProviderModels {
-                models: vec![
-                    ModelInfo {
-                        id: "ep-20241023xxxxx-xxxxx".to_string(),
-                        name: "Doubao".to_string(),
-                        description: "Volcengine Doubao model".to_string(),
-                    },
-                ],
-            },
-            tencent: ProviderModels {
-                models: vec![
-                    ModelInfo {
-                        id: "hunyuan-lite".to_string(),
-                        name: "Hunyuan Lite".to_string(),
-                        description: "Tencent Hunyuan Lite model".to_string(),
-                    },
-                ],
-            },
-            longcat: ProviderModels {
-                models: vec![
-                    ModelInfo {
-                        id: "LongCat-Flash-Chat".to_string(),
-                        name: "LongCat Flash Chat".to_string(),
-                        description: "High-performance general dialogue model".to_string(),
-                    },
-                    ModelInfo {
-                        id: "LongCat-Flash-Thinking".to_string(),
-                        name: "LongCat Flash Thinking".to_string(),
-                        description: "Deep thinking model".to_string(),
-                    },
-                ],
-            },
-        }
+        let mut providers = HashMap::new();
+
+        // OpenAI
+        providers.insert("openai".to_string(), ProviderModels {
+            models: vec![
+                ModelInfo {
+                    id: "gpt-4o".to_string(),
+                    name: "GPT-4o".to_string(),
+                    description: "GPT-4 Omni model".to_string(),
+                },
+                ModelInfo {
+                    id: "gpt-4".to_string(),
+                    name: "GPT-4".to_string(),
+                    description: "Most capable GPT-4 model".to_string(),
+                },
+                ModelInfo {
+                    id: "gpt-3.5-turbo".to_string(),
+                    name: "GPT-3.5 Turbo".to_string(),
+                    description: "Fast and efficient model".to_string(),
+                },
+            ],
+        });
+
+        // Anthropic
+        providers.insert("anthropic".to_string(), ProviderModels {
+            models: vec![
+                ModelInfo {
+                    id: "claude-3-5-sonnet-20241022".to_string(),
+                    name: "Claude 3.5 Sonnet".to_string(),
+                    description: "Latest Claude 3.5 Sonnet model".to_string(),
+                },
+                ModelInfo {
+                    id: "claude-3-haiku-20240307".to_string(),
+                    name: "Claude 3 Haiku".to_string(),
+                    description: "Fast Claude 3 model".to_string(),
+                },
+            ],
+        });
+
+        // Zhipu
+        providers.insert("zhipu".to_string(), ProviderModels {
+            models: vec![
+                ModelInfo {
+                    id: "glm-4-flash".to_string(),
+                    name: "GLM-4 Flash".to_string(),
+                    description: "Fast GLM-4 model".to_string(),
+                },
+                ModelInfo {
+                    id: "glm-4".to_string(),
+                    name: "GLM-4".to_string(),
+                    description: "Standard GLM-4 model".to_string(),
+                },
+            ],
+        });
+
+        // Ollama
+        providers.insert("ollama".to_string(), ProviderModels {
+            models: vec![
+                ModelInfo {
+                    id: "llama3.2".to_string(),
+                    name: "Llama 3.2".to_string(),
+                    description: "Latest Llama model".to_string(),
+                },
+                ModelInfo {
+                    id: "llama2".to_string(),
+                    name: "Llama 2".to_string(),
+                    description: "Stable Llama 2 model".to_string(),
+                },
+            ],
+        });
+
+        // Aliyun
+        providers.insert("aliyun".to_string(), ProviderModels {
+            models: vec![
+                ModelInfo {
+                    id: "qwen-turbo".to_string(),
+                    name: "Qwen Turbo".to_string(),
+                    description: "Fast Qwen model".to_string(),
+                },
+                ModelInfo {
+                    id: "qwen-plus".to_string(),
+                    name: "Qwen Plus".to_string(),
+                    description: "Enhanced Qwen model".to_string(),
+                },
+            ],
+        });
+
+        // Volcengine
+        providers.insert("volcengine".to_string(), ProviderModels {
+            models: vec![
+                ModelInfo {
+                    id: "doubao-pro-32k".to_string(),
+                    name: "Doubao Pro".to_string(),
+                    description: "Volcengine Doubao model".to_string(),
+                },
+            ],
+        });
+
+        // Tencent
+        providers.insert("tencent".to_string(), ProviderModels {
+            models: vec![
+                ModelInfo {
+                    id: "hunyuan-lite".to_string(),
+                    name: "Hunyuan Lite".to_string(),
+                    description: "Tencent Hunyuan Lite model".to_string(),
+                },
+            ],
+        });
+
+        // Longcat
+        providers.insert("longcat".to_string(), ProviderModels {
+            models: vec![
+                ModelInfo {
+                    id: "LongCat-Flash-Chat".to_string(),
+                    name: "LongCat Flash Chat".to_string(),
+                    description: "High-performance general dialogue model".to_string(),
+                },
+            ],
+        });
+
+        Self { providers }
     }
 }

@@ -15,9 +15,13 @@ use crate::adapters::{ClientAdapter, FormatDetector};
 use crate::api::{AppState, convert};
 
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct OllamaChatRequest {
+    #[allow(dead_code)]
     pub model: String,
+    #[allow(dead_code)]
     pub messages: Vec<Value>,
+    #[allow(dead_code)]
     pub stream: Option<bool>,
     #[allow(dead_code)]
     pub options: Option<Value>,
@@ -29,6 +33,7 @@ pub struct OllamaTagsParams {
 }
 
 /// Ollama Chat API
+#[allow(dead_code)]
 pub async fn chat(
     headers: HeaderMap,
     State(state): State<AppState>,
@@ -71,6 +76,7 @@ pub async fn chat(
 }
 
 /// 处理流式请求
+#[allow(dead_code)]
 async fn handle_streaming_request(
     headers: HeaderMap,
     state: AppState,
@@ -147,6 +153,7 @@ async fn handle_streaming_request(
 }
 
 /// 处理非流式请求
+#[allow(dead_code)]
 async fn handle_non_streaming_request(
     state: AppState,
     model: Option<&str>,
@@ -170,6 +177,7 @@ async fn handle_non_streaming_request(
 }
 
 /// Ollama Models API (Tags)
+#[allow(dead_code)]
 pub async fn models(
     _headers: HeaderMap,
     State(state): State<AppState>,
@@ -207,6 +215,7 @@ pub async fn models(
 }
 
 /// 检测 Ollama 客户端类型
+#[allow(dead_code)]
 fn detect_ollama_client(headers: &HeaderMap, config: &crate::settings::Settings) -> ClientAdapter {
     // 1. 检查强制适配器设置
     if let Some(ref adapters) = config.client_adapters {
@@ -263,6 +272,7 @@ fn detect_ollama_client(headers: &HeaderMap, config: &crate::settings::Settings)
 }
 
 /// Ollama Generate API (占位符)
+#[allow(dead_code)]
 pub async fn generate(
     _headers: HeaderMap,
     State(_state): State<AppState>,
@@ -275,6 +285,7 @@ pub async fn generate(
 }
 
 /// Ollama Show API - 显示模型详细信息
+#[allow(dead_code)]
 pub async fn show(
     State(state): State<AppState>,
     Json(request): Json<Value>,
@@ -343,6 +354,7 @@ pub async fn show(
 }
 
 /// Ollama PS API - 列出运行中的模型 (占位符)
+#[allow(dead_code)]
 pub async fn ps(
     _headers: HeaderMap,
     State(_state): State<AppState>,

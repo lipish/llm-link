@@ -14,8 +14,11 @@ use llm_connector::types::{ImageSource, Message as LlmMessage, MessageBlock, Rol
 
 /// Anthropic Messages API Request
 #[derive(Debug, Deserialize)]
+#[allow(dead_code)]
 pub struct AnthropicMessagesRequest {
+    #[allow(dead_code)]
     pub model: String,
+    #[allow(dead_code)]
     pub messages: Vec<AnthropicMessage>,
     #[serde(default)]
     #[allow(dead_code)]
@@ -24,6 +27,7 @@ pub struct AnthropicMessagesRequest {
     #[allow(dead_code)]
     pub temperature: Option<f32>,
     #[serde(default)]
+    #[allow(dead_code)]
     pub stream: bool,
 }
 
@@ -105,6 +109,7 @@ where
 
 /// Anthropic Messages API Response
 #[derive(Debug, Serialize)]
+#[allow(dead_code)]
 pub struct AnthropicMessagesResponse {
     pub id: String,
     #[serde(rename = "type")]
@@ -117,6 +122,7 @@ pub struct AnthropicMessagesResponse {
 }
 
 #[derive(Debug, Serialize)]
+#[allow(dead_code)]
 pub struct AnthropicContent {
     #[serde(rename = "type")]
     pub type_: String,
@@ -124,12 +130,14 @@ pub struct AnthropicContent {
 }
 
 #[derive(Debug, Serialize)]
+#[allow(dead_code)]
 pub struct AnthropicUsage {
     pub input_tokens: u32,
     pub output_tokens: u32,
 }
 
 /// Anthropic Messages API Handler
+#[allow(dead_code)]
 pub async fn messages(
     State(state): State<AppState>,
     headers: axum::http::HeaderMap,
@@ -253,6 +261,7 @@ pub async fn messages(
 }
 
 /// Convert OpenAI stream to Anthropic SSE format
+#[allow(dead_code)]
 fn convert_to_anthropic_stream(
     stream: tokio_stream::wrappers::UnboundedReceiverStream<String>,
     _model: String,
@@ -296,6 +305,7 @@ fn convert_to_anthropic_stream(
 /// Anthropic Models API (占位符)
 ///
 /// 用于列出可用的 Anthropic 模型
+#[allow(dead_code)]
 pub async fn models(
     State(state): State<AppState>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {

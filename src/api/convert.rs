@@ -4,6 +4,7 @@ use llm_connector::types::{Function, Message as LlmMessage, MessageBlock, Role a
 use serde_json::Value;
 
 /// Convert OpenAI messages format to llm-connector format
+#[allow(dead_code)]
 pub fn openai_messages_to_llm(messages: Vec<Value>) -> Result<Vec<LlmMessage>> {
     let mut llm_messages = Vec::new();
 
@@ -85,6 +86,7 @@ pub fn openai_messages_to_llm(messages: Vec<Value>) -> Result<Vec<LlmMessage>> {
 }
 
 /// Convert Response to OpenAI format
+#[allow(dead_code)]
 pub fn response_to_openai(response: Response) -> Value {
     let mut message = serde_json::json!({
         "role": "assistant",
@@ -115,6 +117,7 @@ pub fn response_to_openai(response: Response) -> Value {
 }
 
 /// Convert Response to Ollama format
+#[allow(dead_code)]
 pub fn response_to_ollama(response: Response) -> Value {
     serde_json::json!({
         "model": response.model,
@@ -134,6 +137,7 @@ pub fn response_to_ollama(response: Response) -> Value {
 }
 
 /// Convert OpenAI tools format to llm-connector format
+#[allow(dead_code)]
 pub fn openai_tools_to_llm(tools: Vec<Value>) -> Vec<Tool> {
     tools
         .into_iter()
@@ -157,6 +161,7 @@ pub fn openai_tools_to_llm(tools: Vec<Value>) -> Vec<Tool> {
 }
 
 /// Convert model list to Ollama format
+#[allow(dead_code)]
 pub fn models_to_ollama(models: Vec<crate::llm::Model>) -> Vec<Value> {
     models
         .into_iter()

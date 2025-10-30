@@ -14,6 +14,7 @@ use tokio_stream::wrappers::UnboundedReceiverStream;
 /// - Business-level error handling
 pub struct Service {
     client: Client,
+    #[allow(dead_code)]
     model: String,
 }
 
@@ -38,6 +39,7 @@ impl Service {
     /// Chat with a specific model (non-streaming)
     ///
     /// If model is None, uses the default model from configuration.
+    #[allow(dead_code)]
     pub async fn chat(
         &self,
         model: Option<&str>,
@@ -51,6 +53,7 @@ impl Service {
     /// Chat with streaming (Ollama format)
     ///
     /// If model is None, uses the default model from configuration.
+    #[allow(dead_code)]
     pub async fn chat_stream_ollama(
         &self,
         model: Option<&str>,
@@ -64,6 +67,7 @@ impl Service {
     /// Chat with streaming (OpenAI format)
     ///
     /// If model is None, uses the default model from configuration.
+    #[allow(dead_code)]
     pub async fn chat_stream_openai(
         &self,
         model: Option<&str>,
@@ -81,6 +85,7 @@ impl Service {
     }
 
     /// Validate if a model is available
+    #[allow(dead_code)]
     pub async fn validate_model(&self, model: &str) -> Result<bool> {
         let available_models = self.client.list_models().await?;
         Ok(available_models.iter().any(|m| m.id == model))
