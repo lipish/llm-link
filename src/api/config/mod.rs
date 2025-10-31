@@ -67,7 +67,7 @@ pub fn init_instance_id() {
     use std::time::{SystemTime, UNIX_EPOCH};
     let timestamp = SystemTime::now()
         .duration_since(UNIX_EPOCH)
-        .unwrap()
+        .expect("System time went backwards")
         .as_secs();
     INSTANCE_ID.store(timestamp, Ordering::SeqCst);
 }
@@ -120,7 +120,8 @@ pub async fn get_current_config(
 ) -> Result<Json<CurrentConfigResponse>, StatusCode> {
     use crate::settings::LlmBackendSettings;
 
-    let config = state.config.read().unwrap();
+    let config = state.config.read()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let (provider, model, has_api_key, has_base_url) = match &config.llm_backend {
         LlmBackendSettings::OpenAI { model, base_url, .. } => {
             ("openai", model.clone(), true, base_url.is_some())
@@ -165,10 +166,11 @@ pub async fn get_current_config(
 /// 用于验证服务是否重启成功
 pub async fn get_health(
     State(state): State<AppState>,
-) -> Json<serde_json::Value> {
+) -> Result<Json<serde_json::Value>, StatusCode> {
     use crate::settings::LlmBackendSettings;
 
-    let config = state.config.read().unwrap();
+    let config = state.config.read()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let (provider, model) = match &config.llm_backend {
         LlmBackendSettings::OpenAI { model, .. } => ("openai", model.clone()),
         LlmBackendSettings::Anthropic { model, .. } => ("anthropic", model.clone()),
@@ -181,13 +183,13 @@ pub async fn get_health(
         LlmBackendSettings::Moonshot { model, .. } => ("moonshot", model.clone()),
     };
     
-    Json(json!({
+    Ok(Json(json!({
         "status": "ok",
         "instance_id": get_instance_id(),
         "pid": std::process::id(),
         "provider": provider,
         "model": model,
-    }))
+    })))
 }
 
 /// 更新配置并请求重启
@@ -207,29 +209,26 @@ pub async fn update_config_for_restart(
     info!("🔧 Preparing config update for provider: {}", request.provider);
     
     // 验证 provider 和生成默认 model
-    let default_model = request.model.clone().or_else(|| {
+    let model = if let Some(model) = request.model {
+        model
+    } else {
         match request.provider.as_str() {
-            "openai" => Some("gpt-4o".to_string()),
-            "anthropic" => Some("claude-3-5-sonnet-20241022".to_string()),
-            "zhipu" => Some("glm-4-flash".to_string()),
-            "ollama" => Some("llama2".to_string()),
-            "aliyun" => Some("qwen-turbo".to_string()),
-            "volcengine" => Some("ep-20241023xxxxx-xxxxx".to_string()),
-            "tencent" => Some("hunyuan-lite".to_string()),
-            _ => None,
-        }
-    });
-    
-    let model = match default_model {
-        Some(m) => m,
-        None => {
-            error!("❌ Unknown provider: {}", request.provider);
-            return Err(StatusCode::BAD_REQUEST);
+            "openai" => "gpt-4o".to_string(),
+            "anthropic" => "claude-3-5-sonnet-20241022".to_string(),
+            "zhipu" => "glm-4-flash".to_string(),
+            "ollama" => "llama2".to_string(),
+            "aliyun" => "qwen-turbo".to_string(),
+            "volcengine" => "ep-20241023xxxxx-xxxxx".to_string(),
+            "tencent" => "hunyuan-lite".to_string(),
+            _ => {
+                error!("❌ Unknown provider: {}", request.provider);
+                return Err(StatusCode::BAD_REQUEST);
+            }
         }
     };
     
     // 构建环境变量
-    let mut env_vars = serde_json::Map::new();
+    let mut env_vars = serde_json::Map::with_capacity(3);
     
     // 添加 provider 对应的 API key 环境变量
     let api_key_var = match request.provider.as_str() {
@@ -288,7 +287,11 @@ pub async fn validate_key(
     info!("🔍 Validating API key for provider: {} (key: {})", request.provider, mask_api_key(&request.api_key));
     
     // 构建测试用的 backend settings
-    let model = request.model.clone().unwrap_or_else(|| "test-model".to_string());
+    let model = if let Some(model) = request.model {
+        model
+    } else {
+        "test-model".to_string()
+    };
     
     let test_backend = match request.provider.as_str() {
         "openai" => LlmBackendSettings::OpenAI {
@@ -512,7 +515,8 @@ pub async fn update_key(
     info!("🔧 Updating API key for provider: {} (key: {})", request.provider, mask_api_key(&request.api_key));
 
     // 获取当前配置
-    let current_config = state.get_current_config();
+    let current_config = state.get_current_config()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     // 构建新的 backend settings
     let new_backend = match request.provider.as_str() {
@@ -682,7 +686,8 @@ pub async fn switch_provider(
     info!("🔄 Switching to provider: {} (key: {})", request.provider, masked_key);
 
     // 获取当前配置
-    let current_config = state.get_current_config();
+    let current_config = state.get_current_config()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     // 确定 API key
     let api_key = if let Some(key) = request.api_key {

@@ -116,10 +116,9 @@ impl ClientAdapter {
                 if should_add_images {
                     if let Some(message) = data.get_mut("message") {
                         if message.get("images").is_none() {
-                            message
-                                .as_object_mut()
-                                .unwrap()
-                                .insert("images".to_string(), Value::Null);
+                            if let Some(msg_obj) = message.as_object_mut() {
+                                msg_obj.insert("images".to_string(), Value::Null);
+                            }
                         }
                     }
                 }

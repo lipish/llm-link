@@ -142,7 +142,7 @@ pub async fn messages(
     State(state): State<AppState>,
     headers: axum::http::HeaderMap,
     Json(mut request): Json<AnthropicMessagesRequest>,
-) -> Response {
+) -> Result<Response, StatusCode> {
     info!("📨 Anthropic Messages API request: client_model={}, stream={}", request.model, request.stream);
     info!("📋 Request details: messages_count={}, max_tokens={:?}, temperature={:?}",
           request.messages.len(), request.max_tokens, request.temperature);
@@ -189,37 +189,26 @@ pub async fn messages(
 
     if request.stream {
         // Streaming response
-        let stream_result = {
-            let llm_service = state.llm_service.read().unwrap();
-            llm_service.chat_stream_openai(Some(&request.model), llm_messages, None, llm_connector::StreamFormat::SSE).await
-        };
+        let llm_service = state.llm_service.read()
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        let stream_result = llm_service.chat_stream_openai(Some(&request.model), llm_messages, None, llm_connector::StreamFormat::SSE).await;
 
         match stream_result {
             Ok(stream) => {
                 info!("✅ Starting Anthropic streaming response");
-                let anthropic_stream = convert_to_anthropic_stream(stream, request.model.clone());
-                Sse::new(anthropic_stream).into_response()
+                let anthropic_stream = convert_to_anthropic_stream(stream, &request.model);
+                Ok(Sse::new(anthropic_stream).into_response())
             }
             Err(e) => {
                 error!("❌ Streaming error: {}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(json!({
-                        "error": {
-                            "type": "api_error",
-                            "message": e.to_string()
-                        }
-                    })),
-                )
-                    .into_response()
+                Err(StatusCode::INTERNAL_SERVER_ERROR)
             }
         }
     } else {
         // Non-streaming response
-        let chat_result = {
-            let llm_service = state.llm_service.read().unwrap();
-            llm_service.chat(Some(&request.model), llm_messages, None).await
-        };
+        let llm_service = state.llm_service.read()
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        let chat_result = llm_service.chat(Some(&request.model), llm_messages, None).await;
 
         match chat_result {
             Ok(response) => {
@@ -231,7 +220,7 @@ pub async fn messages(
                     role: "assistant".to_string(),
                     content: vec![AnthropicContent {
                         type_: "text".to_string(),
-                        text: response.content.clone(),
+                        text: response.content,
                     }],
                     model: request.model,
                     stop_reason: Some("end_turn".to_string()),
@@ -241,20 +230,11 @@ pub async fn messages(
                     },
                 };
 
-                Json(anthropic_response).into_response()
+                Ok(Json(anthropic_response).into_response())
             }
             Err(e) => {
                 error!("❌ Chat error: {}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    Json(json!({
-                        "error": {
-                            "type": "api_error",
-                            "message": e.to_string()
-                        }
-                    })),
-                )
-                    .into_response()
+                Err(StatusCode::INTERNAL_SERVER_ERROR)
             }
         }
     }
@@ -264,7 +244,7 @@ pub async fn messages(
 #[allow(dead_code)]
 fn convert_to_anthropic_stream(
     stream: tokio_stream::wrappers::UnboundedReceiverStream<String>,
-    _model: String,
+    _model: &str,
 ) -> impl Stream<Item = Result<axum::response::sse::Event, std::convert::Infallible>> {
     use futures_util::StreamExt;
 
@@ -309,10 +289,9 @@ fn convert_to_anthropic_stream(
 pub async fn models(
     State(state): State<AppState>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let models_result = {
-        let llm_service = state.llm_service.read().unwrap();
-        llm_service.list_models().await
-    };
+    let llm_service = state.llm_service.read()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let models_result = llm_service.list_models().await;
 
     match models_result {
         Ok(models) => {
@@ -325,7 +304,8 @@ pub async fn models(
                 })
             }).collect();
 
-            let config = state.config.read().unwrap();
+            let config = state.config.read()
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
             let current_provider = match &config.llm_backend {
                 crate::settings::LlmBackendSettings::OpenAI { .. } => "openai",
                 crate::settings::LlmBackendSettings::Anthropic { .. } => "anthropic",

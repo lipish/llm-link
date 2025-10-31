@@ -38,22 +38,26 @@ impl AppState {
 
         // 更新服务
         {
-            let mut service = self.llm_service.write().unwrap();
+            let mut service = self.llm_service.write()
+                .map_err(|e| anyhow::anyhow!("Failed to acquire write lock for llm_service: {}", e))?;
             *service = new_service;
         }
 
         // 更新配置
         {
-            let mut config = self.config.write().unwrap();
+            let mut config = self.config.write()
+                .map_err(|e| anyhow::anyhow!("Failed to acquire write lock for config: {}", e))?;
             config.llm_backend = new_backend.clone();
         }
 
         Ok(())
     }
 
-    /// 获取当前配置的只读副本
-    pub fn get_current_config(&self) -> Settings {
-        self.config.read().unwrap().clone()
+    /// 获取当前配置的副本
+    pub fn get_current_config(&self) -> Result<Settings> {
+        self.config.read()
+            .map_err(|e| anyhow::anyhow!("Failed to acquire read lock for config: {}", e))
+            .map(|config| config.clone())
     }
 }
 
@@ -78,7 +82,8 @@ pub async fn debug_test() -> Json<serde_json::Value> {
 pub async fn info(
     State(state): State<AppState>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let config = state.config.read().unwrap();
+    let config = state.config.read()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let current_provider = get_provider_name(&config.llm_backend);
     let current_model = get_current_model(&config.llm_backend);
     
@@ -100,7 +105,7 @@ pub async fn info(
         a["name"].as_str().unwrap_or("").cmp(b["name"].as_str().unwrap_or(""))
     });
 
-    let mut api_endpoints = serde_json::Map::new();
+    let mut api_endpoints = serde_json::Map::with_capacity(3);
 
     if let Some(ollama_config) = &config.apis.ollama {
         if ollama_config.enabled {

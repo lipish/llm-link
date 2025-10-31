@@ -1,167 +1,112 @@
-# LLM Link Documentation
+# LLM Link 文档中心
 
-欢迎来到 LLM Link 文档中心！这里包含了所有的使用指南、API 文档和发布说明。
+欢迎来到 LLM Link 文档中心！这里包含了所有的使用指南、API 文档和开发资料。
 
 ## 📚 文档索引
 
-### 🚀 快速开始
+### 🚀 用户指南
 
-- **[Quick Start Guide](QUICK_START.md)** - 快速开始指南（中文）
+- **[快速开始指南](guides/QUICK_START.md)** - 快速上手 LLM Link
   - 基本使用方法
   - 常见场景示例
   - 快速参考
 
-### 🔌 应用集成
+- **[应用集成指南](guides/INTEGRATION.md)** - 与各种 AI 编码工具集成
+  - Zed IDE 集成
+  - Claude Code 集成
+  - Codex CLI 集成
+  - 提供商对比和选择
 
-- **[Zed Integration](ZED_INTEGRATION.md)** - Zed 编辑器集成指南
-  - Zed 配置方法
+- **[配置指南](guides/CONFIGURATION.md)** - 详细的配置说明
+  - 命令行配置
+  - 配置文件使用
+  - 无 API Key 启动
+  - 热重载配置
+  - 安全配置最佳实践
+
+### 🔌 API 文档
+
+- **[提供商支持](api/PROVIDERS.md)** - 支持的 LLM 提供商和模型
+  - 9 大提供商详细介绍
+  - 模型列表和规格
+  - API Key 获取方式
+
+- **[热重载 API](api/HOT_RELOAD.md)** - 动态配置 API
+  - 配置更新接口
+  - API 验证接口
   - 使用示例
-  - 故障排除
 
-- **[Claude Code Integration](CLAUDE_CODE_INTEGRATION.md)** - Claude Code 集成指南
-  - Claude Code 配置
-  - 使用说明
-  - 最佳实践
+- **[配置更新 API](api/CONFIG_UPDATE.md)** - 配置管理 API
+  - z-agent 兼容接口
+  - 环境变量生成
+  - 重启验证
 
-### 📡 API 文档
+### 🛠️ 开发文档
 
-- **[API Providers and Models](API_PROVIDERS_MODELS.md)** - Provider 和 Model 发现 API
-  - `/api/info` 端点使用
-  - 查询所有 providers 和 models
-  - API 响应格式
-  - 使用示例
+- **[文件结构](development/FILE_STRUCTURE.md)** - 项目结构说明
+  - 源码组织
+  - 模块说明
+  - 架构概览
 
-- **[Hot-Reload API](HOT_RELOAD_API.md)** - 热重载 API 文档
-  - 动态更新 API Key
-  - 切换 Provider
-  - 无需重启服务
+- **[发布检查清单](development/RELEASE_CHECKLIST.md)** - 发布流程
+  - 版本发布步骤
+  - 测试验证
+  - 文档更新
 
-- **[Configuration Update API](CONFIG_UPDATE_API.md)** - 配置更新 API
-  - 完整的 API 参考
-  - TypeScript/Python 集成示例
-  - 错误处理
+### 📦 其他资源
 
-### 📦 发布相关
+- **[模型市场](MODEL_MARKETPLACE.md)** - 模型选择指南
+- **[发布指南](PUBLISHING.md)** - 发布到 crates.io
+- **[Git 提交规范](GIT_COMMIT_GUIDE.md)** - 代码提交规范
+- **[主 README](../README.md)** - 项目主页
 
-- **[Release Summary](RELEASE_SUMMARY.md)** - v0.3.2 发布总结
-  - 主要功能
-  - Bug 修复
-  - 统计数据
+## 🗂️ 归档文档
 
-- **[Release Checklist](RELEASE_CHECKLIST.md)** - 发布检查清单
-  - 发布前检查项
-  - 发布步骤
-  - 验证方法
+### 旧版本发布文档
+- [v0.1.0 发布说明](archive/old-releases/RELEASE_v0.1.0.md)
+- [v0.2.0 发布说明](archive/old-releases/RELEASE_v0.2.0.md)
+- [v0.5.1 升级指南](archive/old-releases/UPGRADE_v0.5.1.md)
 
-- **[Git Commit Guide](GIT_COMMIT_GUIDE.md)** - Git 提交和发布指南
-  - 提交步骤
-  - 标签创建
-  - 发布流程
+### 测试报告
+- [v0.4.20 测试报告](archive/test-reports/TESTING_REPORT_v0.4.20.md)
+- [提供商测试报告](archive/test-reports/PROVIDER_TEST_REPORT.md)
+- [重启验证测试](archive/test-reports/RESTART_VERIFICATION.md)
 
-### 📖 历史发布说明
+### 其他归档
+- [无 API Key 启动](archive/START_WITHOUT_API_KEY.md) - 已合并到配置指南
 
-- **[Release v0.2.0](RELEASE_v0.2.0.md)** - v0.2.0 发布说明
-- **[Release v0.1.0](RELEASE_v0.1.0.md)** - v0.1.0 发布说明
-- **[Upgrade v0.5.1](UPGRADE_v0.5.1.md)** - v0.5.1 升级指南
+## 🎯 快速导航
 
-### 🧪 测试和验证
+### 新用户
+1. 阅读 [快速开始指南](guides/QUICK_START.md)
+2. 选择适合的 [应用集成](guides/INTEGRATION.md) 方式
+3. 参考 [配置指南](guides/CONFIGURATION.md) 进行详细配置
 
-- **[Provider Test Report](PROVIDER_TEST_REPORT.md)** - Provider 测试报告
-  - 各 provider 测试结果
-  - 兼容性验证
-  - 已知问题
+### 开发者
+1. 了解 [文件结构](development/FILE_STRUCTURE.md)
+2. 查看 [API 文档](api/) 了解接口
+3. 参考 [发布检查清单](development/RELEASE_CHECKLIST.md)
 
-- **[Testing Report v0.4.20](TESTING_REPORT_v0.4.20.md)** - v0.4.20 测试报告
-- **[Restart Verification](RESTART_VERIFICATION.md)** - 重启验证指南
+### 运维人员
+1. 学习 [配置指南](guides/CONFIGURATION.md) 中的安全配置
+2. 使用 [热重载 API](api/HOT_RELOAD.md) 进行动态管理
+3. 查看 [提供商支持](api/PROVIDERS.md) 选择合适的模型
 
-### 📝 其他文档
+## 📝 文档贡献
 
-- **[Model Marketplace](MODEL_MARKETPLACE.md)** - 模型市场
-  - 各 provider 的官方文档链接
-  - 模型列表
-  - 定价信息
+如果您发现文档有错误或需要补充，欢迎：
 
-- **[Publishing Guide](PUBLISHING.md)** - 发布指南
-  - 发布到 crates.io
-  - 发布到 GitHub
-  - 版本管理
+1. 提交 Issue 报告问题
+2. 提交 Pull Request 改进文档
+3. 在讨论区提出建议
 
-- **[File Structure](FILE_STRUCTURE.md)** - 项目文件结构
-  - 完整的目录树
-  - 文件说明
-  - 组织原则
+## 🔗 外部链接
 
-## 🗂️ 文档分类
-
-### 按用户类型
-
-#### 👤 普通用户
-1. [Quick Start Guide](QUICK_START.md) - 开始使用
-2. [Zed Integration](ZED_INTEGRATION.md) - Zed 集成
-3. [Claude Code Integration](CLAUDE_CODE_INTEGRATION.md) - Claude Code 集成
-4. [API Providers and Models](API_PROVIDERS_MODELS.md) - 查询可用模型
-
-#### 🔧 开发者
-1. [Hot-Reload API](HOT_RELOAD_API.md) - API 集成
-2. [Configuration Update API](CONFIG_UPDATE_API.md) - 配置 API
-3. [Provider Test Report](PROVIDER_TEST_REPORT.md) - 测试报告
-4. [Restart Verification](RESTART_VERIFICATION.md) - 集成验证
-
-#### 📦 维护者
-1. [Release Checklist](RELEASE_CHECKLIST.md) - 发布检查
-2. [Git Commit Guide](GIT_COMMIT_GUIDE.md) - 提交指南
-3. [Publishing Guide](PUBLISHING.md) - 发布流程
-4. [Release Summary](RELEASE_SUMMARY.md) - 发布总结
-
-### 按主题
-
-#### 🎯 配置和使用
-- Quick Start Guide
-- Zed Integration
-- Claude Code Integration
-- Model Marketplace
-
-#### 🔌 API 和集成
-- API Providers and Models
-- Hot-Reload API
-- Configuration Update API
-- Restart Verification
-
-#### 📦 发布和维护
-- Release Summary
-- Release Checklist
-- Git Commit Guide
-- Publishing Guide
-
-#### 🧪 测试和验证
-- Provider Test Report
-- Testing Report
-- Restart Verification
-
-## 🔗 快速链接
-
-- [主 README](../README.md) - 项目主页
-- [CHANGELOG](../CHANGELOG.md) - 更新日志
-- [GitHub Repository](https://github.com/lipish/llm-link) - 源代码
-- [Crates.io](https://crates.io/crates/llm-link) - Rust 包
-
-## 💡 贡献文档
-
-如果你想改进文档：
-
-1. Fork 项目
-2. 在 `docs/` 目录下编辑或添加文档
-3. 更新此 README.md 索引
-4. 提交 Pull Request
-
-## 📧 获取帮助
-
-- 📖 查看相关文档
-- 🐛 [提交 Issue](https://github.com/lipish/llm-link/issues)
-- 💬 [讨论区](https://github.com/lipish/llm-link/discussions)
+- [LLM Link GitHub 仓库](https://github.com/your-username/llm-link)
+- [LLM Link on crates.io](https://crates.io/crates/llm-link)
+- [API 文档 on docs.rs](https://docs.rs/llm-link)
 
 ---
 
-**最后更新**: 2025-10-30  
-**版本**: v0.3.2
+**🚀 让 LLM Link 助力您的 AI 开发之旅！**
 

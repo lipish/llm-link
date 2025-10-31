@@ -6,7 +6,7 @@ use serde_json::Value;
 /// Convert OpenAI messages format to llm-connector format
 #[allow(dead_code)]
 pub fn openai_messages_to_llm(messages: Vec<Value>) -> Result<Vec<LlmMessage>> {
-    let mut llm_messages = Vec::new();
+    let mut llm_messages = Vec::with_capacity(messages.len());
 
     for msg in messages {
         let role = msg["role"]
@@ -32,7 +32,7 @@ pub fn openai_messages_to_llm(messages: Vec<Value>) -> Result<Vec<LlmMessage>> {
         } else if let Some(content_array) = msg["content"].as_array() {
             // Array content (e.g., from Codex with text and images)
             // Extract text parts and concatenate them
-            let mut text_parts = Vec::new();
+            let mut text_parts = Vec::with_capacity(content_array.len());
             for part in content_array {
                 if let Some(text) = part["text"].as_str() {
                     text_parts.push(text);

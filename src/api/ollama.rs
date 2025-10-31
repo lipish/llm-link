@@ -41,7 +41,8 @@ pub async fn chat(
 ) -> Result<Response, StatusCode> {
     // Ollama API 通常不需要认证，但可以配置
     {
-        let config = state.config.read().unwrap();
+        let config = state.config.read()
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
         if let Some(cfg) = &config.apis.ollama {
             if let Some(_expected_key) = cfg.api_key.as_ref() {
                 // 如果配置了 API key，则进行验证
@@ -52,7 +53,8 @@ pub async fn chat(
 
     // 验证模型
     if !request.model.is_empty() {
-        let llm_service = state.llm_service.read().unwrap();
+        let llm_service = state.llm_service.read()
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
         match llm_service.validate_model(&request.model).await {
             Ok(false) => return Err(StatusCode::BAD_REQUEST),
             Err(_) => return Err(StatusCode::INTERNAL_SERVER_ERROR),
@@ -84,7 +86,8 @@ async fn handle_streaming_request(
     messages: Vec<llm_connector::types::Message>,
 ) -> Result<Response, StatusCode> {
     // 🎯 检测客户端类型（Zed.dev 或标准）
-    let config = state.config.read().unwrap();
+    let config = state.config.read()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
     let client_adapter = detect_ollama_client(&headers, &config);
     let (stream_format, _) = FormatDetector::determine_format(&headers);
     drop(config); // 释放读锁
@@ -101,10 +104,10 @@ async fn handle_streaming_request(
     info!("📡 Starting Ollama streaming response - Client: {:?}, Format: {:?} ({})",
           client_adapter, final_format, content_type);
 
-    let stream_result = {
-        let llm_service = state.llm_service.read().unwrap();
-        llm_service.chat_stream_ollama(model, messages.clone(), final_format).await
-    };
+    let llm_service = state.llm_service.read()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let stream_result = llm_service.chat_stream_ollama(model, messages.clone(), final_format).await;
+    drop(llm_service); // 显式释放锁
 
     match stream_result {
         Ok(rx) => {
@@ -114,8 +117,11 @@ async fn handle_streaming_request(
             let adapted_stream = rx.map(move |data| {
                 // 解析并适配响应数据
                 if let Ok(mut json_data) = serde_json::from_str::<Value>(&data) {
-                    let config = config_clone.read().unwrap();
-                    client_adapter.apply_response_adaptations(&config, &mut json_data);
+                    if let Ok(config) = config_clone.read() {
+                        client_adapter.apply_response_adaptations(&config, &mut json_data);
+                    } else {
+                        warn!("Failed to acquire read lock for config in stream, skipping adaptations");
+                    }
 
                     match final_format {
                         llm_connector::StreamFormat::SSE => {
@@ -141,7 +147,7 @@ async fn handle_streaming_request(
                 .header("content-type", content_type)
                 .header("cache-control", "no-cache")
                 .body(body)
-                .unwrap();
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
             Ok(response)
         }
@@ -159,10 +165,9 @@ async fn handle_non_streaming_request(
     model: Option<&str>,
     messages: Vec<llm_connector::types::Message>,
 ) -> Result<Response, StatusCode> {
-    let chat_result = {
-        let llm_service = state.llm_service.read().unwrap();
-        llm_service.chat(model, messages, None).await
-    };
+    let llm_service = state.llm_service.read()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let chat_result = llm_service.chat(model, messages, None).await;
 
     match chat_result {
         Ok(response) => {
@@ -183,16 +188,16 @@ pub async fn models(
     State(state): State<AppState>,
     Query(_params): Query<OllamaTagsParams>,
 ) -> Result<impl IntoResponse, StatusCode> {
-    let models_result = {
-        let llm_service = state.llm_service.read().unwrap();
-        llm_service.list_models().await
-    };
+    let llm_service = state.llm_service.read()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let models_result = llm_service.list_models().await;
 
     match models_result {
         Ok(models) => {
             let ollama_models = convert::models_to_ollama(models);
             
-            let config = state.config.read().unwrap();
+            let config = state.config.read()
+            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
             let current_provider = match &config.llm_backend {
                 crate::settings::LlmBackendSettings::OpenAI { .. } => "openai",
                 crate::settings::LlmBackendSettings::Anthropic { .. } => "anthropic",
@@ -302,10 +307,9 @@ pub async fn show(
     info!("🔍 /api/show request for model: '{}', full request: {}", model_name, request);
 
     // Check if model exists
-    let validation_result = {
-        let llm_service = state.llm_service.read().unwrap();
-        llm_service.validate_model(model_name).await
-    };
+    let llm_service = state.llm_service.read()
+        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let validation_result = llm_service.validate_model(model_name).await;
 
     match validation_result {
         Ok(true) => {

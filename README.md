@@ -945,8 +945,12 @@ llm-link/
 
 ## 📚 Documentation
 
-- [Quick Start Guide](docs/QUICK_START.md) - Fast reference for common use cases (中文)
-- [Changelog](CHANGELOG.md) - Version history and updates
+- [📖 文档中心](docs/README.md) - 完整的文档索引
+- [🚀 快速开始](docs/guides/QUICK_START.md) - 快速上手指南 (中文)
+- [🔌 应用集成](docs/guides/INTEGRATION.md) - Zed、Claude Code、Codex CLI 集成
+- [⚙️ 配置指南](docs/guides/CONFIGURATION.md) - 详细的配置说明
+- [📡 API 文档](docs/api/) - API 接口文档
+- [📋 变更日志](CHANGELOG.md) - 版本历史和更新
 
 ## 📄 License
 
