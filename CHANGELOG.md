@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4] - 2025-10-31
+
+### 🛠️ Code Quality Improvements
+
+#### Robust Error Handling
+- **Eliminated All unwrap() Calls** - Replaced all `unwrap()` calls with proper error handling
+  - `RwLock` poisoning errors now return `StatusCode::INTERNAL_SERVER_ERROR`
+  - Optional values use safe pattern matching (`if let Some`)
+  - SystemTime operations use descriptive `expect()` messages
+  - Streaming data locks handle failures gracefully with warnings
+
+#### Performance Optimizations
+- **Reduced Unnecessary Clones** - Optimized memory usage and performance
+  - Function parameters now use `&str` instead of `String` where possible
+  - Improved string handling to avoid unnecessary allocations
+  - Pre-allocated container capacities using `Vec::with_capacity()` and `Map::with_capacity()`
+  - Maintained necessary clones for error handling and ownership transfers
+
+#### Documentation Restructuring
+- **Organized Documentation Hierarchy** - Clear and maintainable documentation structure
+  - Created `docs/guides/` for user guides (Quick Start, Integration, Configuration)
+  - Created `docs/api/` for API documentation (Providers, Hot Reload, Config Update)
+  - Created `docs/development/` for development docs (File Structure, Release Checklist)
+  - Created `docs/archive/` for historical documents (old releases, test reports)
+  - Merged duplicate integration guides (Zed and Claude Code) into unified documentation
+  - Updated main README.md with improved documentation links
+
+### 🔧 Technical Improvements
+- Fixed borrow checker issues in streaming response handling
+- Improved error propagation in API endpoints
+- Enhanced memory efficiency in message conversion functions
+- Better separation of concerns in documentation organization
+
 ## [0.3.3] - 2025-10-30
 
 ### 🎉 Major Features
