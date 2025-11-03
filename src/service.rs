@@ -32,6 +32,7 @@ impl Service {
             LlmBackendSettings::Tencent { model, .. } => model.clone(),
             LlmBackendSettings::Longcat { model, .. } => model.clone(),
             LlmBackendSettings::Moonshot { model, .. } => model.clone(),
+            LlmBackendSettings::Minimax { model, .. } => model.clone(),
         };
 
         Ok(Self { client, model })

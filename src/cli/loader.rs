@@ -175,6 +175,9 @@ impl ConfigLoader {
                     "aliyun" => std::env::var("ALIYUN_API_KEY").ok(),
                     "volcengine" => std::env::var("VOLCENGINE_API_KEY").ok(),
                     "tencent" => std::env::var("TENCENT_API_KEY").ok(),
+                    "longcat" => std::env::var("LONGCAT_API_KEY").ok(),
+                    "moonshot" => std::env::var("MOONSHOT_API_KEY").ok(),
+                    "minimax" => std::env::var("MINIMAX_API_KEY").ok(),
                     "ollama" => None,
                     _ => return Err(anyhow::anyhow!("Unknown provider: {}", provider_name)),
                 }
@@ -191,6 +194,7 @@ impl ConfigLoader {
                     "tencent" => "TENCENT_API_KEY",
                     "longcat" => "LONGCAT_API_KEY",
                     "moonshot" => "MOONSHOT_API_KEY",
+                    "minimax" => "MINIMAX_API_KEY",
                     _ => "API_KEY",
                 };
 
@@ -215,6 +219,9 @@ impl ConfigLoader {
                     "aliyun" => "qwen-max".to_string(),
                     "volcengine" => "doubao-pro-32k".to_string(),
                     "tencent" => "hunyuan-lite".to_string(),
+                    "longcat" => "LongCat-Flash-Chat".to_string(),
+                    "moonshot" => "kimi-k2-turbo-preview".to_string(),
+                    "minimax" => "MiniMax-M2".to_string(),
                     "ollama" => "llama2".to_string(),
                     _ => return Err(anyhow::anyhow!("Unknown provider: {}", provider_name)),
                 }
@@ -261,6 +268,10 @@ impl ConfigLoader {
                     api_key: api_key_value,
                     model: model_name,
                 },
+                "minimax" => LlmBackendSettings::Minimax {
+                    api_key: api_key_value,
+                    model: model_name,
+                },
                 "ollama" => LlmBackendSettings::Ollama {
                     base_url: std::env::var("OLLAMA_BASE_URL").ok()
                         .or(Some("http://localhost:11434".to_string())),
@@ -280,6 +291,7 @@ impl ConfigLoader {
                 LlmBackendSettings::Tencent { model, .. } => *model = model_name.to_string(),
                 LlmBackendSettings::Longcat { model, .. } => *model = model_name.to_string(),
                 LlmBackendSettings::Moonshot { model, .. } => *model = model_name.to_string(),
+                LlmBackendSettings::Minimax { model, .. } => *model = model_name.to_string(),
                 LlmBackendSettings::Ollama { model, .. } => *model = model_name.to_string(),
             }
         }

@@ -56,6 +56,10 @@ pub enum LlmBackendSettings {
         api_key: String,
         model: String,
     },
+    Minimax {
+        api_key: String,
+        model: String,
+    },
 }
 
 impl LlmBackendSettings {
@@ -71,6 +75,7 @@ impl LlmBackendSettings {
             LlmBackendSettings::Tencent { model, .. } => model.clone(),
             LlmBackendSettings::Longcat { model, .. } => model.clone(),
             LlmBackendSettings::Moonshot { model, .. } => model.clone(),
+            LlmBackendSettings::Minimax { model, .. } => model.clone(),
         }
     }
 }

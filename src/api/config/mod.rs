@@ -55,7 +55,7 @@ fn validate_api_key(provider: &str, api_key: &str) -> Result<(), String> {
 /// 验证 provider 名称
 fn validate_provider(provider: &str) -> Result<(), String> {
     match provider {
-        "openai" | "anthropic" | "zhipu" | "ollama" | "aliyun" | "volcengine" | "tencent" | "longcat" => Ok(()),
+        "openai" | "anthropic" | "zhipu" | "ollama" | "aliyun" | "volcengine" | "tencent" | "longcat" | "moonshot" | "minimax" => Ok(()),
         _ => Err(format!("Unsupported provider: {}", provider)),
     }
 }
@@ -150,6 +150,9 @@ pub async fn get_current_config(
         LlmBackendSettings::Moonshot { model, .. } => {
             ("moonshot", model.clone(), true, false)
         }
+        LlmBackendSettings::Minimax { model, .. } => {
+            ("minimax", model.clone(), true, false)
+        }
     };
     
     Ok(Json(CurrentConfigResponse {
@@ -181,6 +184,7 @@ pub async fn get_health(
         LlmBackendSettings::Tencent { model, .. } => ("tencent", model.clone()),
         LlmBackendSettings::Longcat { model, .. } => ("longcat", model.clone()),
         LlmBackendSettings::Moonshot { model, .. } => ("moonshot", model.clone()),
+        LlmBackendSettings::Minimax { model, .. } => ("minimax", model.clone()),
     };
     
     Ok(Json(json!({
@@ -220,6 +224,7 @@ pub async fn update_config_for_restart(
             "aliyun" => "qwen-turbo".to_string(),
             "volcengine" => "ep-20241023xxxxx-xxxxx".to_string(),
             "tencent" => "hunyuan-lite".to_string(),
+            "minimax" => "MiniMax-M2".to_string(),
             _ => {
                 error!("❌ Unknown provider: {}", request.provider);
                 return Err(StatusCode::BAD_REQUEST);
@@ -238,6 +243,9 @@ pub async fn update_config_for_restart(
         "aliyun" => "ALIYUN_API_KEY",
         "volcengine" => "VOLCENGINE_API_KEY",
         "tencent" => "TENCENT_API_KEY",
+        "longcat" => "LONGCAT_API_KEY",
+        "moonshot" => "MOONSHOT_API_KEY",
+        "minimax" => "MINIMAX_API_KEY",
         "ollama" => "", // Ollama 不需要 API key
         _ => return Err(StatusCode::BAD_REQUEST),
     };
@@ -403,6 +411,7 @@ pub async fn validate_key_for_update(
         "volcengine" => "ep-20241023xxxxx-xxxxx".to_string(),
         "tencent" => "hunyuan-lite".to_string(),
         "longcat" => "LongCat-Flash-Chat".to_string(),
+        "minimax" => "MiniMax-M2".to_string(),
         _ => {
             error!("❌ Unsupported provider: {}", request.provider);
             return Err(StatusCode::BAD_REQUEST);
@@ -445,6 +454,10 @@ pub async fn validate_key_for_update(
             model,
         },
         "moonshot" => LlmBackendSettings::Moonshot {
+            api_key: request.api_key.clone(),
+            model,
+        },
+        "minimax" => LlmBackendSettings::Minimax {
             api_key: request.api_key.clone(),
             model,
         },
@@ -629,6 +642,19 @@ pub async fn update_key(
                 }
             }
         }
+        "minimax" => {
+            if let crate::settings::LlmBackendSettings::Minimax { model, .. } = &current_config.llm_backend {
+                crate::settings::LlmBackendSettings::Minimax {
+                    api_key: request.api_key.clone(),
+                    model: model.clone(),
+                }
+            } else {
+                crate::settings::LlmBackendSettings::Minimax {
+                    api_key: request.api_key.clone(),
+                    model: "MiniMax-M2".to_string(),
+                }
+            }
+        }
         "ollama" => {
             if let crate::settings::LlmBackendSettings::Ollama { model, .. } = &current_config.llm_backend {
                 crate::settings::LlmBackendSettings::Ollama {
@@ -759,6 +785,14 @@ pub async fn switch_provider(
                     return Err(StatusCode::BAD_REQUEST);
                 }
             }
+            "minimax" => {
+                if let crate::settings::LlmBackendSettings::Minimax { api_key, .. } = &current_config.llm_backend {
+                    api_key.clone()
+                } else {
+                    error!("❌ No API key provided for Minimax and none found in current config");
+                    return Err(StatusCode::BAD_REQUEST);
+                }
+            }
             "ollama" => String::new(), // Ollama 不需要 API key
             _ => {
                 error!("❌ Unsupported provider: {}", request.provider);
@@ -778,6 +812,7 @@ pub async fn switch_provider(
             "volcengine" => "ep-20241023xxxxx-xxxxx".to_string(),
             "tencent" => "hunyuan-lite".to_string(),
             "longcat" => "LongCat-Flash-Chat".to_string(),
+            "minimax" => "MiniMax-M2".to_string(),
             _ => "default-model".to_string(),
         }
     });
@@ -819,6 +854,10 @@ pub async fn switch_provider(
             model,
         },
         "moonshot" => crate::settings::LlmBackendSettings::Moonshot {
+            api_key,
+            model,
+        },
+        "minimax" => crate::settings::LlmBackendSettings::Minimax {
             api_key,
             model,
         },

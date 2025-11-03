@@ -159,6 +159,7 @@ fn get_provider_name(backend: &LlmBackendSettings) -> &str {
         LlmBackendSettings::Tencent { .. } => "tencent",
         LlmBackendSettings::Longcat { .. } => "longcat",
         LlmBackendSettings::Moonshot { .. } => "moonshot",
+        LlmBackendSettings::Minimax { .. } => "minimax",
     }
 }
 
@@ -173,5 +174,6 @@ fn get_current_model(backend: &LlmBackendSettings) -> String {
         LlmBackendSettings::Tencent { model, .. } => model.clone(),
         LlmBackendSettings::Longcat { model, .. } => model.clone(),
         LlmBackendSettings::Moonshot { model, .. } => model.clone(),
+        LlmBackendSettings::Minimax { model, .. } => model.clone(),
     }
 }

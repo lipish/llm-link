@@ -11,6 +11,7 @@
 # - Longcat: https://longcat.chat/platform/docs/zh/#%E6%94%AF%E6%8C%81%E7%9A%84%E6%A8%A1%E5%9E%8B
 # - Tencent: https://cloud.tencent.com/document/product/1729/104753
 # - Volcengine: https://www.volcengine.com/docs/82379/1330310
+# - Minimax: https://platform.minimaxi.com/docs/guides/text-generation
 
 openai:
   models:
@@ -118,6 +119,12 @@ moonshot:
     - id: "kimi-k2-0711-preview"
       name: "Kimi K2 0711 Preview"
       description: "131K context model"
+
+minimax:
+  models:
+    - id: "MiniMax-M2"
+      name: "MiniMax M2"
+      description: "Flagship model with MoE architecture, 230B total parameters, 10B activated, 204K context window"
 
 longcat:
   models:

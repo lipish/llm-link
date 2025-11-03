@@ -208,6 +208,7 @@ pub async fn models(
                 crate::settings::LlmBackendSettings::Tencent { .. } => "tencent",
                 crate::settings::LlmBackendSettings::Longcat { .. } => "longcat",
                 crate::settings::LlmBackendSettings::Moonshot { .. } => "moonshot",
+                crate::settings::LlmBackendSettings::Minimax { .. } => "minimax",
             };
             
             let response = json!({

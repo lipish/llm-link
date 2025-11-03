@@ -50,6 +50,10 @@ impl Client {
                 // Moonshot uses OpenAI compatible API
                 LlmClient::openai_compatible(api_key, "https://api.moonshot.cn/v1", "moonshot")?
             }
+            LlmBackendSettings::Minimax { api_key, .. } => {
+                // Minimax uses OpenAI compatible API
+                LlmClient::openai_compatible(api_key, "https://api.minimaxi.com/v1", "minimax")?
+            }
             LlmBackendSettings::Ollama { base_url, .. } => {
                 if base_url.is_some() {
                     // For custom Ollama URLs, we might need to use openai_compatible

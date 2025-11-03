@@ -17,6 +17,7 @@ impl Client {
             LlmBackendSettings::Tencent { .. } => "tencent",
             LlmBackendSettings::Longcat { .. } => "longcat",
             LlmBackendSettings::Moonshot { .. } => "moonshot",
+            LlmBackendSettings::Minimax { .. } => "minimax",
         };
 
         // Special handling for Ollama - get actual installed models
@@ -60,6 +61,7 @@ impl Client {
                 LlmBackendSettings::Tencent { model, .. } => model.clone(),
                 LlmBackendSettings::Longcat { model, .. } => model.clone(),
                 LlmBackendSettings::Moonshot { model, .. } => model.clone(),
+                LlmBackendSettings::Minimax { model, .. } => model.clone(),
             };
 
             Ok(vec![Model { id: fallback_model }])
