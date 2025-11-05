@@ -30,8 +30,8 @@ GitHub Actions 会自动创建 `github-pages` 环境，但你可以自定义：
 ## 📋 工作流特性
 
 ### 触发条件
-- ✅ 推送到 `main` 分支（仅当文档文件变更时）
-- ✅ 针对 `main` 分支的 Pull Request
+- ✅ 推送到 `master` 分支（仅当文档文件变更时）
+- ✅ 针对 `master` 分支的 Pull Request
 - ✅ 手动触发 (`workflow_dispatch`)
 
 ### 优化特性

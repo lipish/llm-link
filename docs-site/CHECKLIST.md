@@ -4,7 +4,7 @@
 
 ### 1. 仓库基本设置
 - [ ] 仓库为公开（public）或私有（private）状态
-- [ ] main 分支存在且为默认分支
+- [ ] master 分支存在且为默认分支
 - [ ] `.github/workflows/deploy-docs.yml` 文件已提交
 
 ### 2. GitHub Pages 设置
@@ -36,8 +36,8 @@
 git add .
 git commit -m "Add documentation site with GitHub Pages deployment"
 
-# 推送到 main 分支
-git push origin main
+# 推送到 master 分支
+git push origin master
 ```
 
 ### 监控部署
