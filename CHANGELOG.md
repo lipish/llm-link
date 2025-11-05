@@ -5,6 +5,39 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5] - 2025-11-05
+
+### 🎉 New Features
+
+#### Minimax Provider Support
+- **Added Minimax Provider** - Now supports Minimax's powerful AI models
+  - OpenAI-compatible API integration
+  - Default model: MiniMax-M2
+  - Environment variable: `MINIMAX_API_KEY`
+  - Base URL: `https://api.minimaxi.com/v1`
+  - Full hot-reload configuration support
+
+#### Documentation Site
+- **Modern Documentation Site** - Built with Svelte + shadcn/ui
+  - Replaced lengthy README with interactive documentation
+  - Homepage with hero section and key features
+  - Comprehensive documentation pages for installation and usage
+  - Detailed provider information for all 10 supported LLM providers
+  - Automatic GitHub Pages deployment
+  - Modern, responsive design matching shadcn/ui style
+
+### 🔧 Technical Improvements
+- Updated provider count from 9 to 10 in all documentation
+- Enhanced provider registry with Minimax integration
+- Improved GitHub Actions deployment configuration
+- Fixed branch name compatibility (master vs main)
+
+### 📚 Documentation Updates
+- Added complete provider documentation for Minimax
+- Updated all provider counts and descriptions
+- Enhanced installation and configuration guides
+- Added deployment checklist and troubleshooting guide
+
 ## [0.3.4] - 2025-10-31
 
 ### 🛠️ Code Quality Improvements
