@@ -128,6 +128,137 @@ curl -X GET http://localhost:8088/api/provider-list
   "available_providers": 10
 }`,
 		
+		currentConfig: `# Get current configuration
+curl -X GET http://localhost:8088/api/config/current
+
+# Response example
+{
+  "provider": "openai",
+  "model": "gpt-4",
+  "has_api_key": true,
+  "has_base_url": false,
+  "supports_hot_reload": true
+}`,
+		
+		validateKey: `# Validate API key before applying
+curl -X POST http://localhost:8088/api/config/validate-key \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "provider": "openai",
+    "api_key": "sk-new-key-here",
+    "base_url": "https://api.openai.com/v1"
+  }'
+
+# Response example
+{
+  "status": "valid",
+  "message": "API key is valid and ready for hot update",
+  "provider": "openai",
+  "models": [
+    {
+      "id": "gpt-4",
+      "name": "GPT-4",
+      "description": "Most capable GPT-4 model"
+    }
+  ],
+  "supports_hot_reload": true
+}`,
+		
+		updateKey: `# Update API key without restart (hot reload)
+curl -X POST http://localhost:8088/api/config/update-key \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "provider": "openai",
+    "api_key": "sk-new-key-here",
+    "base_url": "https://api.openai.com/v1"
+  }'
+
+# Response example
+{
+  "status": "success",
+  "message": "API key updated for provider: openai",
+  "provider": "openai",
+  "restart_required": false
+}`,
+		
+		switchProvider: `# Switch to different provider dynamically
+curl -X POST http://localhost:8088/api/config/switch-provider \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "provider": "anthropic",
+    "model": "claude-3-5-sonnet-20241022",
+    "api_key": "sk-ant-new-key-here"
+  }'
+
+# Response example
+{
+  "status": "success",
+  "message": "Provider switched to: anthropic",
+  "provider": "anthropic",
+  "model": "claude-3-5-sonnet-20241022",
+  "restart_required": false
+}`,
+		
+		processManagement: `# Get process PID
+curl -X GET http://localhost:8088/api/config/pid
+
+# Response example
+{
+  "pid": 12345,
+  "message": "Use this PID to restart the service"
+}
+
+# Trigger graceful shutdown
+curl -X POST http://localhost:8088/api/config/shutdown
+
+# Response example
+{
+  "status": "success",
+  "message": "Shutdown signal sent. Please restart with new configuration."
+}`,
+		
+		serviceInfo: `# Get comprehensive service information
+curl -X GET http://localhost:8088/api/info
+
+# Response example
+{
+  "service": "llm-link",
+  "version": "0.3.3",
+  "current_provider": "openai",
+  "current_model": "gpt-4",
+  "supported_providers": [
+    {
+      "name": "openai",
+      "models": [
+        {
+          "id": "gpt-4",
+          "name": "GPT-4",
+          "description": "Most capable GPT-4 model"
+        }
+      ]
+    }
+  ],
+  "api_endpoints": {
+    "openai": {
+      "path": "/v1",
+      "enabled": true,
+      "auth_required": true
+    }
+  }
+}
+
+# Get health status with instance info
+curl -X GET http://localhost:8088/api/health
+
+# Response example
+{
+  "status": "ok",
+  "instance_id": 1729900050,
+  "pid": 12345,
+  "provider": "openai",
+  "model": "gpt-4"
+}`,
+		
 		providers: `# Get all provider status
 curl -X GET http://localhost:8088/api/providers
 
@@ -482,6 +613,111 @@ curl -X POST http://localhost:8088/api/chat \\
 								<h4 class="font-medium mb-2">Example Usage</h4>
 								<div class="bg-muted rounded-md p-4">
 									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.providerList}</code>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Configuration Management APIs -->
+					<div>
+						<h3 class="text-lg font-medium mb-3 flex items-center">
+							<Key class="h-4 w-4 mr-2" />
+							Configuration Management APIs
+						</h3>
+						<p class="text-sm text-muted-foreground mb-4">
+							Runtime configuration management without service restart
+						</p>
+						
+						<div class="space-y-6">
+							<!-- Current Config -->
+							<div>
+								<h4 class="font-medium mb-2">Get Current Configuration</h4>
+								<div class="bg-muted rounded p-3 mb-3">
+									<code class="text-xs font-mono">GET /api/config/current</code>
+								</div>
+								<div class="bg-muted rounded-md p-4">
+									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.currentConfig}</code>
+								</div>
+							</div>
+
+							<!-- Validate API Key -->
+							<div>
+								<h4 class="font-medium mb-2">Validate API Key</h4>
+								<div class="bg-muted rounded p-3 mb-3">
+									<code class="text-xs font-mono">POST /api/config/validate-key</code>
+								</div>
+								<div class="bg-muted rounded-md p-4">
+									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.validateKey}</code>
+								</div>
+							</div>
+
+							<!-- Update API Key -->
+							<div>
+								<h4 class="font-medium mb-2">Update API Key (Hot Reload)</h4>
+								<div class="bg-muted rounded p-3 mb-3">
+									<code class="text-xs font-mono">POST /api/config/update-key</code>
+								</div>
+								<div class="bg-muted rounded-md p-4">
+									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.updateKey}</code>
+								</div>
+							</div>
+
+							<!-- Switch Provider -->
+							<div>
+								<h4 class="font-medium mb-2">Switch Provider</h4>
+								<div class="bg-muted rounded p-3 mb-3">
+									<code class="text-xs font-mono">POST /api/config/switch-provider</code>
+								</div>
+								<div class="bg-muted rounded-md p-4">
+									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.switchProvider}</code>
+								</div>
+							</div>
+
+							<!-- Process Management -->
+							<div>
+								<h4 class="font-medium mb-2">Process Management</h4>
+								<div class="grid gap-2 md:grid-cols-2 mb-3">
+									<div class="bg-muted rounded p-3">
+										<code class="text-xs font-mono">GET /api/config/pid</code>
+									</div>
+									<div class="bg-muted rounded p-3">
+										<code class="text-xs font-mono">POST /api/config/shutdown</code>
+									</div>
+								</div>
+								<div class="bg-muted rounded-md p-4">
+									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.processManagement}</code>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Service Info API -->
+					<div>
+						<h3 class="text-lg font-medium mb-3 flex items-center">
+							<BookOpen class="h-4 w-4 mr-2" />
+							Service Info API
+						</h3>
+						<p class="text-sm text-muted-foreground mb-4">
+							Get comprehensive service information and status
+						</p>
+						
+						<div class="space-y-4">
+							<div>
+								<h4 class="font-medium mb-2">Endpoints</h4>
+								<div class="grid gap-2 md:grid-cols-2">
+									<div class="bg-muted rounded p-3">
+										<code class="text-xs font-mono">GET /api/info</code>
+									</div>
+									<div class="bg-muted rounded p-3">
+										<code class="text-xs font-mono">GET /api/health</code>
+									</div>
+								</div>
+							</div>
+							
+							<div>
+								<h4 class="font-medium mb-2">Example Usage</h4>
+								<div class="bg-muted rounded-md p-4">
+									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.serviceInfo}</code>
 								</div>
 							</div>
 						</div>

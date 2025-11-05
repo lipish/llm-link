@@ -147,6 +147,131 @@ curl -X GET http://localhost:8088/api/provider-list
   "total_providers": 10,
   "available_providers": 10
 }`,
+    currentConfig: `# Get current configuration
+curl -X GET http://localhost:8088/api/config/current
+
+# Response example
+{
+  "provider": "openai",
+  "model": "gpt-4",
+  "has_api_key": true,
+  "has_base_url": false,
+  "supports_hot_reload": true
+}`,
+    validateKey: `# Validate API key before applying
+curl -X POST http://localhost:8088/api/config/validate-key \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "provider": "openai",
+    "api_key": "sk-new-key-here",
+    "base_url": "https://api.openai.com/v1"
+  }'
+
+# Response example
+{
+  "status": "valid",
+  "message": "API key is valid and ready for hot update",
+  "provider": "openai",
+  "models": [
+    {
+      "id": "gpt-4",
+      "name": "GPT-4",
+      "description": "Most capable GPT-4 model"
+    }
+  ],
+  "supports_hot_reload": true
+}`,
+    updateKey: `# Update API key without restart (hot reload)
+curl -X POST http://localhost:8088/api/config/update-key \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "provider": "openai",
+    "api_key": "sk-new-key-here",
+    "base_url": "https://api.openai.com/v1"
+  }'
+
+# Response example
+{
+  "status": "success",
+  "message": "API key updated for provider: openai",
+  "provider": "openai",
+  "restart_required": false
+}`,
+    switchProvider: `# Switch to different provider dynamically
+curl -X POST http://localhost:8088/api/config/switch-provider \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "provider": "anthropic",
+    "model": "claude-3-5-sonnet-20241022",
+    "api_key": "sk-ant-new-key-here"
+  }'
+
+# Response example
+{
+  "status": "success",
+  "message": "Provider switched to: anthropic",
+  "provider": "anthropic",
+  "model": "claude-3-5-sonnet-20241022",
+  "restart_required": false
+}`,
+    processManagement: `# Get process PID
+curl -X GET http://localhost:8088/api/config/pid
+
+# Response example
+{
+  "pid": 12345,
+  "message": "Use this PID to restart the service"
+}
+
+# Trigger graceful shutdown
+curl -X POST http://localhost:8088/api/config/shutdown
+
+# Response example
+{
+  "status": "success",
+  "message": "Shutdown signal sent. Please restart with new configuration."
+}`,
+    serviceInfo: `# Get comprehensive service information
+curl -X GET http://localhost:8088/api/info
+
+# Response example
+{
+  "service": "llm-link",
+  "version": "0.3.3",
+  "current_provider": "openai",
+  "current_model": "gpt-4",
+  "supported_providers": [
+    {
+      "name": "openai",
+      "models": [
+        {
+          "id": "gpt-4",
+          "name": "GPT-4",
+          "description": "Most capable GPT-4 model"
+        }
+      ]
+    }
+  ],
+  "api_endpoints": {
+    "openai": {
+      "path": "/v1",
+      "enabled": true,
+      "auth_required": true
+    }
+  }
+}
+
+# Get health status with instance info
+curl -X GET http://localhost:8088/api/health
+
+# Response example
+{
+  "status": "ok",
+  "instance_id": 1729900050,
+  "pid": 12345,
+  "provider": "openai",
+  "model": "gpt-4"
+}`,
     providers: `# Get all provider status
 curl -X GET http://localhost:8088/api/providers
 
@@ -330,6 +455,8 @@ curl -X POST http://localhost:8088/api/chat \\
 							Providers API</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-quw76s">Get status and configuration of all providers</p> <div class="space-y-4"><div data-svelte-h="svelte-kz8v0x"><h4 class="font-medium mb-2">Endpoints</h4> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /api/providers</code></div></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-nkj2fj">Example Usage</h4> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.providers)}</code></div></div></div></div>  <div><h3 class="text-lg font-medium mb-3 flex items-center">${validate_component(Code, "Code").$$render($$result, { class: "h-4 w-4 mr-2" }, {}, {})}
 							Supported Models API</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-12fxrzb">Get static list of all supported models with detailed information</p> <div class="space-y-4"><div data-svelte-h="svelte-q1jqfm"><h4 class="font-medium mb-2">Endpoints</h4> <div class="grid gap-2 md:grid-cols-2"><div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /api/supported-models</code></div> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /api/supported-models?provider=openai</code></div></div></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-nkj2fj">Example Usage</h4> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.supportedModels)}</code></div></div></div></div>  <div><h3 class="text-lg font-medium mb-3 flex items-center">${validate_component(Globe, "Globe").$$render($$result, { class: "h-4 w-4 mr-2" }, {}, {})}
 							Provider List API</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-qnfcy1">Get list of all supported providers with their capabilities</p> <div class="space-y-4"><div data-svelte-h="svelte-s7238n"><h4 class="font-medium mb-2">Endpoints</h4> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /api/provider-list</code></div></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-nkj2fj">Example Usage</h4> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.providerList)}</code></div></div></div></div>  <div><h3 class="text-lg font-medium mb-3 flex items-center">${validate_component(Key, "Key").$$render($$result, { class: "h-4 w-4 mr-2" }, {}, {})}
+							Configuration Management APIs</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-fdnhn8">Runtime configuration management without service restart</p> <div class="space-y-6"> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-4dtjw1">Get Current Configuration</h4> <div class="bg-muted rounded p-3 mb-3" data-svelte-h="svelte-1bgj05n"><code class="text-xs font-mono">GET /api/config/current</code></div> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.currentConfig)}</code></div></div>  <div><h4 class="font-medium mb-2" data-svelte-h="svelte-55c1r5">Validate API Key</h4> <div class="bg-muted rounded p-3 mb-3" data-svelte-h="svelte-7pxt5i"><code class="text-xs font-mono">POST /api/config/validate-key</code></div> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.validateKey)}</code></div></div>  <div><h4 class="font-medium mb-2" data-svelte-h="svelte-bty523">Update API Key (Hot Reload)</h4> <div class="bg-muted rounded p-3 mb-3" data-svelte-h="svelte-1hv2035"><code class="text-xs font-mono">POST /api/config/update-key</code></div> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.updateKey)}</code></div></div>  <div><h4 class="font-medium mb-2" data-svelte-h="svelte-1pmqm7">Switch Provider</h4> <div class="bg-muted rounded p-3 mb-3" data-svelte-h="svelte-zkg31u"><code class="text-xs font-mono">POST /api/config/switch-provider</code></div> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.switchProvider)}</code></div></div>  <div><h4 class="font-medium mb-2" data-svelte-h="svelte-y95rme">Process Management</h4> <div class="grid gap-2 md:grid-cols-2 mb-3" data-svelte-h="svelte-9lbkdi"><div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /api/config/pid</code></div> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">POST /api/config/shutdown</code></div></div> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.processManagement)}</code></div></div></div></div>  <div><h3 class="text-lg font-medium mb-3 flex items-center">${validate_component(BookOpen, "BookOpen").$$render($$result, { class: "h-4 w-4 mr-2" }, {}, {})}
+							Service Info API</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-ydgcin">Get comprehensive service information and status</p> <div class="space-y-4"><div data-svelte-h="svelte-19ehzvn"><h4 class="font-medium mb-2">Endpoints</h4> <div class="grid gap-2 md:grid-cols-2"><div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /api/info</code></div> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /api/health</code></div></div></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-nkj2fj">Example Usage</h4> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.serviceInfo)}</code></div></div></div></div>  <div><h3 class="text-lg font-medium mb-3 flex items-center">${validate_component(Key, "Key").$$render($$result, { class: "h-4 w-4 mr-2" }, {}, {})}
 							Configuration API</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-1xl09sv">Update provider configurations without restarting the service</p> <div class="space-y-4"><div data-svelte-h="svelte-1ytj6v"><h4 class="font-medium mb-2">Endpoints</h4> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">POST /api/config/update</code></div></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-nkj2fj">Example Usage</h4> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.config)}</code></div></div></div></div>  <div><h3 class="text-lg font-medium mb-3 flex items-center">${validate_component(Zap, "Zap").$$render($$result, { class: "h-4 w-4 mr-2" }, {}, {})}
 							Health API</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-1pp5eqi">Check service health and system status</p> <div class="space-y-4"><div data-svelte-h="svelte-1aymo75"><h4 class="font-medium mb-2">Endpoints</h4> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /api/health</code></div></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-nkj2fj">Example Usage</h4> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.health)}</code></div></div></div></div></div></div></section>  <section class="mb-12"><div class="rounded-lg border bg-card p-6"><div class="flex items-center mb-6">${validate_component(Terminal, "Terminal").$$render($$result, { class: "h-6 w-6 mr-2 text-primary" }, {}, {})} <h2 class="text-2xl font-semibold" data-svelte-h="svelte-1j4ijhn">Protocol APIs</h2></div> <p class="text-sm text-muted-foreground mb-6" data-svelte-h="svelte-z7y22e">LLM Link provides native API compatibility for major LLM providers. 
 					Use the same endpoints and authentication as the original services.</p> <div class="space-y-8"> <div><h3 class="text-lg font-medium mb-3" data-svelte-h="svelte-13fg7im">OpenAI Compatible API</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-1cmrc6k">Compatible with OpenAI&#39;s API format for OpenAI, Zhipu AI, Longcat, Moonshot, and Minimax providers</p> <div class="space-y-4"><div data-svelte-h="svelte-dsp2r9"><h4 class="font-medium mb-2">Endpoints</h4> <div class="grid gap-2 md:grid-cols-2"><div class="bg-muted rounded p-3"><code class="text-xs font-mono">POST /v1/chat/completions</code></div> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /v1/models</code></div></div></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-nkj2fj">Example Usage</h4> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.openai)}</code></div></div></div></div>  <div><h3 class="text-lg font-medium mb-3" data-svelte-h="svelte-1x6ey2x">Anthropic Native API</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-f1bevk">Native Anthropic Claude API compatibility</p> <div class="space-y-4"><div data-svelte-h="svelte-1fhyldj"><h4 class="font-medium mb-2">Endpoints</h4> <div class="grid gap-2 md:grid-cols-2"><div class="bg-muted rounded p-3"><code class="text-xs font-mono">POST /v1/messages</code></div> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /v1/models</code></div></div></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-nkj2fj">Example Usage</h4> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.anthropic)}</code></div></div></div></div>  <div><h3 class="text-lg font-medium mb-3" data-svelte-h="svelte-z5u8wu">Ollama Compatible API</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-g9g3va">Compatible with Ollama&#39;s API format for local model deployment</p> <div class="space-y-4"><div data-svelte-h="svelte-o4om0y"><h4 class="font-medium mb-2">Endpoints</h4> <div class="grid gap-2 md:grid-cols-3"><div class="bg-muted rounded p-3"><code class="text-xs font-mono">POST /api/generate</code></div> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">POST /api/chat</code></div> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /api/tags</code></div></div></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-nkj2fj">Example Usage</h4> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.ollama)}</code></div></div></div></div></div></div></section>  <section class="mb-12"><div class="rounded-lg border bg-card p-6"><h2 class="text-2xl font-semibold mb-6" data-svelte-h="svelte-fojgu5">Error Handling</h2> <div class="space-y-4"><div class="border-l-4 border-red-400 pl-4" data-svelte-h="svelte-1p7zcuu"><h3 class="font-medium mb-2">HTTP Status Codes</h3> <div class="space-y-2"><div class="flex justify-between"><code class="text-xs font-mono">200</code> <span class="text-sm">Success</span></div> <div class="flex justify-between"><code class="text-xs font-mono">400</code> <span class="text-sm">Bad Request</span></div> <div class="flex justify-between"><code class="text-xs font-mono">401</code> <span class="text-sm">Unauthorized</span></div> <div class="flex justify-between"><code class="text-xs font-mono">404</code> <span class="text-sm">Not Found</span></div> <div class="flex justify-between"><code class="text-xs font-mono">500</code> <span class="text-sm">Internal Server Error</span></div></div></div> <div class="border-l-4 border-yellow-400 pl-4"><h3 class="font-medium mb-2" data-svelte-h="svelte-1i4szvk">Error Response Format</h3> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono">${escape(apiExamples.error)}</code></div></div></div></div></section>  <section class="mb-12" data-svelte-h="svelte-i3reia"><div class="rounded-lg border bg-card p-6"><h2 class="text-2xl font-semibold mb-6">Rate Limiting</h2> <div class="space-y-4"><p class="text-sm text-muted-foreground">LLM Link respects the rate limits of each provider. Limits are applied per provider 
