@@ -2,6 +2,8 @@
 	import Button from '$lib/components/ui/button.svelte';
 	import { Github, Download, Zap, Shield, Code, Layers } from 'lucide-svelte';
 	import { base } from '$app/paths';
+	
+	const basePath = base;
 </script>
 
 <section class="space-y-6 pb-8 pt-6 md:pb-12 md:pt-10 lg:py-32">
@@ -29,7 +31,7 @@
 				<Github class="mr-2 h-4 w-4" />
 				GitHub
 			</Button>
-			<Button variant="outline" size="lg" href="/docs">
+			<Button variant="outline" size="lg" href="{basePath}/docs">
 				Documentation
 			</Button>
 		</div>

@@ -1,14 +1,5 @@
 import { c as create_ssr_component, a as setContext, v as validate_component, m as missing_component } from "./ssr.js";
-let base = "";
-let assets = base;
-const initial = { base, assets };
-function reset() {
-  base = initial.base;
-  assets = initial.assets;
-}
-function set_assets(path) {
-  assets = initial.assets = path;
-}
+import "./paths.js";
 let public_env = {};
 function set_private_env(environment) {
 }
@@ -106,7 +97,7 @@ const options = {
   root: Root,
   service_worker: false,
   templates: {
-    app: ({ head, body, assets: assets2, nonce, env }) => '<!DOCTYPE html>\n<html lang="en">\n	<head>\n		<meta charset="utf-8" />\n		<meta name="viewport" content="width=device-width" />\n		<title>LLM Link - Universal LLM Proxy Service</title>\n		<meta name="description" content="A universal LLM proxy service providing zero-configuration access to 10 major providers through multiple API formats, with built-in optimizations for AI coding tools." />\n		' + head + '\n	</head>\n	<body data-sveltekit-preload-data="hover">\n		<div style="display: contents">' + body + "</div>\n	</body>\n</html>\n",
+    app: ({ head, body, assets, nonce, env }) => '<!DOCTYPE html>\n<html lang="en">\n	<head>\n		<meta charset="utf-8" />\n		<meta name="viewport" content="width=device-width" />\n		<title>LLM Link - Universal LLM Proxy Service</title>\n		<meta name="description" content="A universal LLM proxy service providing zero-configuration access to 10 major providers through multiple API formats, with built-in optimizations for AI coding tools." />\n		' + head + '\n	</head>\n	<body data-sveltekit-preload-data="hover">\n		<div style="display: contents">' + body + "</div>\n	</body>\n</html>\n",
     error: ({ status, message }) => '<!doctype html>\n<html lang="en">\n	<head>\n		<meta charset="utf-8" />\n		<title>' + message + `</title>
 
 		<style>
@@ -178,20 +169,16 @@ const options = {
 		<div class="error">
 			<span class="status">` + status + '</span>\n			<div class="message">\n				<h1>' + message + "</h1>\n			</div>\n		</div>\n	</body>\n</html>\n"
   },
-  version_hash: "1hnxsql"
+  version_hash: "cceie7"
 };
 function get_hooks() {
   return {};
 }
 export {
-  assets as a,
-  base as b,
-  set_public_env as c,
-  set_assets as d,
-  set_building as e,
+  set_public_env as a,
+  set_building as b,
   get_hooks as g,
   options as o,
   public_env as p,
-  reset as r,
   set_private_env as s
 };

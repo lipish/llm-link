@@ -1,40 +1,43 @@
 <script>
 	import { page } from '$app/stores';
+	import { base } from '$app/paths';
 	import Button from '$lib/components/ui/button.svelte';
 	import { Github, ExternalLink } from 'lucide-svelte';
 	import { cn } from '$lib/utils.ts';
+	
+	const basePath = base;
 </script>
 
 <header class="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
 	<div class="container flex h-14 items-center">
 		<div class="mr-4 hidden md:flex">
-			<a href="/" class="mr-6 flex items-center space-x-2">
+			<a href="{basePath}/" class="mr-6 flex items-center space-x-2">
 				<span class="hidden font-bold sm:inline-block text-xl">LLM Link</span>
 			</a>
 			<nav class="flex items-center space-x-6 text-sm font-medium">
 				<a
-					href="/"
+					href="{basePath}/"
 					class={cn(
 						"transition-colors hover:text-foreground/80",
-						$page.url.pathname === "/" ? "text-foreground" : "text-foreground/60"
+						$page.url.pathname === "{basePath}/" ? "text-foreground" : "text-foreground/60"
 					)}
 				>
 					Home
 				</a>
 				<a
-					href="/docs"
+					href="{basePath}/docs"
 					class={cn(
 						"transition-colors hover:text-foreground/80",
-						$page.url.pathname.startsWith("/docs") ? "text-foreground" : "text-foreground/60"
+						$page.url.pathname.startsWith("{basePath}/docs") ? "text-foreground" : "text-foreground/60"
 					)}
 				>
 					Documentation
 				</a>
 				<a
-					href="/providers"
+					href="{basePath}/providers"
 					class={cn(
 						"transition-colors hover:text-foreground/80",
-						$page.url.pathname === "/providers" ? "text-foreground" : "text-foreground/60"
+						$page.url.pathname === "{basePath}/providers" ? "text-foreground" : "text-foreground/60"
 					)}
 				>
 					Providers

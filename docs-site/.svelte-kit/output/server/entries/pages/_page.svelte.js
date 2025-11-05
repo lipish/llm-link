@@ -1,5 +1,6 @@
 import { c as create_ssr_component, v as validate_component } from "../../chunks/ssr.js";
 import { I as Icon, B as Button, G as Github } from "../../chunks/github.js";
+import { b as base } from "../../chunks/paths.js";
 import { Z as Zap } from "../../chunks/zap.js";
 const Code = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   const iconNode = [
@@ -84,6 +85,7 @@ const Shield = create_ssr_component(($$result, $$props, $$bindings, slots) => {
 });
 const Shield$1 = Shield;
 const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+  const basePath = base;
   return `<section class="space-y-6 pb-8 pt-6 md:pb-12 md:pt-10 lg:py-32"><div class="container flex max-w-[64rem] flex-col items-center gap-4 text-center"><a href="https://github.com/lipish/llm-link" target="_blank" rel="noreferrer" class="rounded-2xl bg-muted px-4 py-1.5 text-sm font-medium" data-svelte-h="svelte-119ax5f">🚀 Star us on GitHub</a> <h1 class="font-heading text-4xl font-bold sm:text-5xl md:text-6xl lg:text-7xl bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent" data-svelte-h="svelte-7eva05">LLM Link</h1> <p class="max-w-[42rem] leading-normal text-muted-foreground sm:text-xl sm:leading-8" data-svelte-h="svelte-10rfs9o">Universal LLM proxy service providing zero-configuration access to 9 major providers through multiple API formats, with built-in optimizations for AI coding tools.</p> <div class="space-x-4">${validate_component(Button, "Button").$$render(
     $$result,
     {
@@ -102,7 +104,7 @@ const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
     {
       variant: "outline",
       size: "lg",
-      href: "/docs"
+      href: basePath + "/docs"
     },
     {},
     {
