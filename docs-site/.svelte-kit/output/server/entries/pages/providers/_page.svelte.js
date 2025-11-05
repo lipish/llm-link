@@ -77,6 +77,14 @@ const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
       website: "https://moonshot.cn"
     },
     {
+      name: "Minimax",
+      description: "Powerful AI models with OpenAI-compatible API",
+      models: ["MiniMax-M2", "MiniMax-H2", "MiniMax-T2"],
+      envVar: "MINIMAX_API_KEY",
+      apiType: "OpenAI Compatible",
+      website: "https://minimaxi.com"
+    },
+    {
       name: "Ollama",
       description: "Local and open-source models",
       models: ["Llama 2", "Mistral", "Code Llama", "Custom Models"],
@@ -85,7 +93,7 @@ const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
       website: "https://ollama.ai"
     }
   ];
-  return `<div class="container py-8"><div class="max-w-6xl mx-auto"><div class="text-center mb-12" data-svelte-h="svelte-xxr1m"><h1 class="text-4xl font-bold tracking-tight mb-4">Supported Providers</h1> <p class="text-lg text-muted-foreground">LLM Link supports 9 major LLM providers with unified API access and automatic format conversion.</p></div> <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">${each(providers, (provider) => {
+  return `<div class="container py-8"><div class="max-w-6xl mx-auto"><div class="text-center mb-12" data-svelte-h="svelte-dvhoe6"><h1 class="text-4xl font-bold tracking-tight mb-4">Supported Providers</h1> <p class="text-lg text-muted-foreground">LLM Link supports 10 major LLM providers with unified API access and automatic format conversion.</p></div> <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">${each(providers, (provider) => {
     return `<div class="rounded-lg border bg-card p-6 hover:shadow-lg transition-shadow"><div class="flex items-start justify-between mb-4"><h3 class="text-xl font-semibold">${escape(provider.name)}</h3> <a${add_attribute("href", provider.website, 0)} target="_blank" rel="noopener noreferrer" class="text-muted-foreground hover:text-foreground">${validate_component(ExternalLink, "ExternalLink").$$render($$result, { class: "h-4 w-4" }, {}, {})} </a></div> <p class="text-sm text-muted-foreground mb-4">${escape(provider.description)}</p> <div class="space-y-3"><div><h4 class="text-sm font-medium mb-1" data-svelte-h="svelte-j8gz6s">Popular Models</h4> <div class="flex flex-wrap gap-1">${each(provider.models.slice(0, 3), (model) => {
       return `<span class="bg-muted px-2 py-1 rounded text-xs">${escape(model)}</span>`;
     })} ${provider.models.length > 3 ? `<span class="text-xs text-muted-foreground">+${escape(provider.models.length - 3)} more</span>` : ``} </div></div> <div class="space-y-1"><div class="flex items-center text-sm"><span class="font-medium mr-2" data-svelte-h="svelte-1h8w5kb">API Key:</span> <code class="bg-muted px-2 py-0.5 rounded text-xs">${escape(provider.envVar)}</code></div> <div class="flex items-center text-sm"><span class="font-medium mr-2" data-svelte-h="svelte-przt3s">API Type:</span> <span class="bg-muted px-2 py-0.5 rounded text-xs">${escape(provider.apiType)}</span></div> </div></div> </div>`;

@@ -1,6 +1,7 @@
 <script>
 	import Button from '$lib/components/ui/button.svelte';
 	import { Github, Download, Zap, Shield, Code, Layers } from 'lucide-svelte';
+	import { base } from '$app/paths';
 </script>
 
 <section class="space-y-6 pb-8 pt-6 md:pb-12 md:pt-10 lg:py-32">

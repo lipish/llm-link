@@ -68,6 +68,14 @@
 			website: 'https://moonshot.cn'
 		},
 		{
+			name: 'Minimax',
+			description: 'Powerful AI models with OpenAI-compatible API',
+			models: ['MiniMax-M2', 'MiniMax-H2', 'MiniMax-T2'],
+			envVar: 'MINIMAX_API_KEY',
+			apiType: 'OpenAI Compatible',
+			website: 'https://minimaxi.com'
+		},
+		{
 			name: 'Ollama',
 			description: 'Local and open-source models',
 			models: ['Llama 2', 'Mistral', 'Code Llama', 'Custom Models'],
@@ -83,7 +91,7 @@
 		<div class="text-center mb-12">
 			<h1 class="text-4xl font-bold tracking-tight mb-4">Supported Providers</h1>
 			<p class="text-lg text-muted-foreground">
-				LLM Link supports 9 major LLM providers with unified API access and automatic format conversion.
+				LLM Link supports 10 major LLM providers with unified API access and automatic format conversion.
 			</p>
 		</div>
 

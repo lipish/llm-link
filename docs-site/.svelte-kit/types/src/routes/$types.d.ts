@@ -17,6 +17,8 @@ type LayoutParams = RouteParams & {  }
 type LayoutParentData = EnsureDefined<{}>;
 
 export type PageServerData = null;
-export type PageData = Expand<PageParentData>;
+export type PageLoad<OutputData extends OutputDataShape<PageParentData> = OutputDataShape<PageParentData>> = Kit.Load<RouteParams, PageServerData, PageParentData, OutputData, RouteId>;
+export type PageLoadEvent = Parameters<PageLoad>[0];
+export type PageData = Expand<Omit<PageParentData, keyof PageParentData & EnsureDefined<PageServerData>> & OptionalUnion<EnsureDefined<PageParentData & EnsureDefined<PageServerData>>>>;
 export type LayoutServerData = null;
 export type LayoutData = Expand<LayoutParentData>;

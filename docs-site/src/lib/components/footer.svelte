@@ -16,7 +16,6 @@
 				<ul class="space-y-2 text-sm">
 					<li><a href="/docs" class="text-muted-foreground hover:text-foreground">Documentation</a></li>
 					<li><a href="/providers" class="text-muted-foreground hover:text-foreground">Providers</a></li>
-					<li><a href="/examples" class="text-muted-foreground hover:text-foreground">Examples</a></li>
 				</ul>
 			</div>
 			<div class="space-y-3">

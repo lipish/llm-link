@@ -17,11 +17,11 @@ const config = {
 			strict: false
 		}),
 		paths: {
-			base: process.env.NODE_ENV === 'production' ? '/llm-link' : ''
+			base: process.env.NODE_ENV === 'production' ? '' : ''
 		},
 		prerender: {
 			handleMissingId: 'warn',
-			entries: ['*']
+			entries: ['*', '/docs', '/providers']
 		}
 	}
 };

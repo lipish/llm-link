@@ -1,5 +1,11 @@
 {
-	"/": [],
-	"/docs": [],
-	"/providers": []
+	"/": [
+		"src/routes/+page.js"
+	],
+	"/docs": [
+		"src/routes/docs/+page.js"
+	],
+	"/providers": [
+		"src/routes/providers/+page.js"
+	]
 }
