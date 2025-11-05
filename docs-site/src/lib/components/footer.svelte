@@ -18,6 +18,7 @@
 				<h4 class="text-sm font-semibold">Product</h4>
 				<ul class="space-y-2 text-sm">
 					<li><a href="{basePath}/docs" class="text-muted-foreground hover:text-foreground">Documentation</a></li>
+					<li><a href="{basePath}/api" class="text-muted-foreground hover:text-foreground">API Reference</a></li>
 					<li><a href="{basePath}/providers" class="text-muted-foreground hover:text-foreground">Providers</a></li>
 				</ul>
 			</div>

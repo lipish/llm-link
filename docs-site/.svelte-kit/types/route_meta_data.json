@@ -2,6 +2,7 @@
 	"/": [
 		"src/routes/+page.js"
 	],
+	"/api": [],
 	"/docs": [
 		"src/routes/docs/+page.js"
 	],

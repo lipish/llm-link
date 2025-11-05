@@ -34,6 +34,15 @@
 					Documentation
 				</a>
 				<a
+					href="{basePath}/api"
+					class={cn(
+						"transition-colors hover:text-foreground/80",
+						$page.url.pathname.startsWith("{basePath}/api") ? "text-foreground" : "text-foreground/60"
+					)}
+				>
+					API Reference
+				</a>
+				<a
 					href="{basePath}/providers"
 					class={cn(
 						"transition-colors hover:text-foreground/80",

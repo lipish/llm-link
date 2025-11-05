@@ -8,6 +8,13 @@
     "isEntry": true,
     "src": ".svelte-kit/generated/server/internal.js"
   },
+  "_check.js": {
+    "file": "chunks/check.js",
+    "imports": [
+      "_ssr.js",
+      "_github.js"
+    ]
+  },
   "_external-link.js": {
     "file": "chunks/external-link.js",
     "imports": [
@@ -40,6 +47,13 @@
       "_ssr.js"
     ]
   },
+  "_terminal.js": {
+    "file": "chunks/terminal.js",
+    "imports": [
+      "_ssr.js",
+      "_github.js"
+    ]
+  },
   "_zap.js": {
     "file": "chunks/zap.js",
     "imports": [
@@ -67,12 +81,12 @@
     "src": "node_modules/@sveltejs/kit/src/runtime/server/index.js"
   },
   "src/routes/+layout.css": {
-    "file": "_app/immutable/assets/_layout.07c8f752.css",
+    "file": "_app/immutable/assets/_layout.2d85b940.css",
     "src": "src/routes/+layout.css"
   },
   "src/routes/+layout.svelte": {
     "css": [
-      "_app/immutable/assets/_layout.07c8f752.css"
+      "_app/immutable/assets/_layout.2d85b940.css"
     ],
     "file": "entries/pages/_layout.svelte.js",
     "imports": [
@@ -101,6 +115,18 @@
     "isEntry": true,
     "src": "src/routes/+page.svelte"
   },
+  "src/routes/api/+page.svelte": {
+    "file": "entries/pages/api/_page.svelte.js",
+    "imports": [
+      "_ssr.js",
+      "_github.js",
+      "_paths.js",
+      "_terminal.js",
+      "_zap.js"
+    ],
+    "isEntry": true,
+    "src": "src/routes/api/+page.svelte"
+  },
   "src/routes/docs/+page.js": {
     "file": "entries/pages/docs/_page.js",
     "isEntry": true,
@@ -111,7 +137,10 @@
     "imports": [
       "_ssr.js",
       "_github.js",
-      "_zap.js"
+      "_paths.js",
+      "_check.js",
+      "_zap.js",
+      "_terminal.js"
     ],
     "isEntry": true,
     "src": "src/routes/docs/+page.svelte"
@@ -126,7 +155,8 @@
     "imports": [
       "_ssr.js",
       "_github.js",
-      "_external-link.js"
+      "_external-link.js",
+      "_check.js"
     ],
     "isEntry": true,
     "src": "src/routes/providers/+page.svelte"
