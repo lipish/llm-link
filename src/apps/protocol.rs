@@ -5,13 +5,13 @@ use crate::settings::{
 };
 use super::AppConfigGenerator;
 
-/// 生成协议组合配置
+/// Generate protocol combination configuration
 pub fn generate_protocol_config(protocols: &[String], cli_api_key: Option<&str>) -> Settings {
     let mut openai_config = None;
     let mut ollama_config = None;
     let mut anthropic_config = None;
 
-    // 根据协议列表启用相应的 API
+    // Enable corresponding APIs based on protocol list
     for protocol in protocols {
         match protocol.to_lowercase().as_str() {
             "openai" => {

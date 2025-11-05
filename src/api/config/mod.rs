@@ -352,10 +352,35 @@ pub async fn validate_key(
             match service.list_models().await {
                 Ok(models) => {
                     info!("✅ API key validated successfully, found {} models", models.len());
+                    
+                    // 从配置中获取完整的模型信息（包含 name 和 description）
+                    use crate::models::ModelsConfig;
+                    let models_config = ModelsConfig::load_with_fallback();
+                    let model_infos = models_config.get_models_for_provider(&request.provider);
+                    
+                    // 构建模型列表，优先使用配置中的完整信息
+                    let models_list: Vec<serde_json::Value> = models.iter().map(|model| {
+                        // 尝试从配置中找到匹配的模型信息
+                        if let Some(model_info) = model_infos.iter().find(|mi| mi.id == model.id) {
+                            json!({
+                                "id": model_info.id,
+                                "name": model_info.name,
+                                "description": model_info.description,
+                            })
+                        } else {
+                            // 如果配置中没有，只返回 ID
+                            json!({
+                                "id": model.id,
+                                "name": model.id.clone(),
+                                "description": "",
+                            })
+                        }
+                    }).collect();
+                    
                     Ok(Json(json!({
                         "status": "valid",
                         "message": "API key is valid",
-                        "models": models.iter().map(|m| &m.id).collect::<Vec<_>>(),
+                        "models": models_list,
                     })))
                 }
                 Err(e) => {
@@ -473,11 +498,36 @@ pub async fn validate_key_for_update(
             match service.list_models().await {
                 Ok(models) => {
                     info!("✅ API key validated successfully for hot update, found {} models", models.len());
+                    
+                    // 从配置中获取完整的模型信息（包含 name 和 description）
+                    use crate::models::ModelsConfig;
+                    let models_config = ModelsConfig::load_with_fallback();
+                    let model_infos = models_config.get_models_for_provider(&request.provider);
+                    
+                    // 构建模型列表，优先使用配置中的完整信息
+                    let models_list: Vec<serde_json::Value> = models.iter().map(|model| {
+                        // 尝试从配置中找到匹配的模型信息
+                        if let Some(model_info) = model_infos.iter().find(|mi| mi.id == model.id) {
+                            json!({
+                                "id": model_info.id,
+                                "name": model_info.name,
+                                "description": model_info.description,
+                            })
+                        } else {
+                            // 如果配置中没有，只返回 ID
+                            json!({
+                                "id": model.id,
+                                "name": model.id.clone(),
+                                "description": "",
+                            })
+                        }
+                    }).collect();
+                    
                     Ok(Json(json!({
                         "status": "valid",
                         "message": "API key is valid and ready for hot update",
                         "provider": request.provider,
-                        "models": models.iter().map(|m| &m.id).collect::<Vec<_>>(),
+                        "models": models_list,
                         "supports_hot_reload": true,
                     })))
                 }

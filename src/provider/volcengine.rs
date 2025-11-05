@@ -1,0 +1,34 @@
+use super::{ApiType, Provider, ProviderConfig};
+use anyhow::Result;
+use llm_connector::LlmClient;
+
+/// Volcengine Provider implementation
+#[allow(dead_code)]
+pub struct VolcengineProvider;
+
+impl Provider for VolcengineProvider {
+    fn name() -> &'static str {
+        "volcengine"
+    }
+    
+    fn create_client(config: &ProviderConfig) -> Result<LlmClient> {
+        Ok(LlmClient::volcengine(&config.api_key)?)
+    }
+    
+    fn default_model() -> &'static str {
+        "doubao-pro-32k"
+    }
+    
+    fn env_var_name() -> &'static str {
+        "VOLCENGINE_API_KEY"
+    }
+    
+    fn api_type() -> ApiType {
+        ApiType::Native
+    }
+    
+    fn requires_api_key() -> bool {
+        true
+    }
+}
+

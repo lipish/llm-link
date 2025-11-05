@@ -14,19 +14,19 @@ pub use codex::CodexApp;
 pub use claude::ClaudeApp;
 pub use zed::ZedApp;
 
-/// 支持的应用类型
+/// Supported application types
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub enum SupportedApp {
-    /// Codex CLI - OpenAI API 客户端
+    /// Codex CLI - OpenAI API client
     CodexCLI,
-    /// Claude Code - Anthropic 客户端
+    /// Claude Code - Anthropic client
     ClaudeCode,
-    /// Zed - Ollama API 客户端
+    /// Zed - Ollama API client
     Zed,
 }
 
 impl SupportedApp {
-    /// 从字符串解析应用类型
+    /// Parse application type from string
     pub fn from_str(s: &str) -> Option<Self> {
         match s.to_lowercase().as_str() {
             "codex-cli" | "codex" => Some(Self::CodexCLI),
@@ -36,7 +36,7 @@ impl SupportedApp {
         }
     }
 
-    /// 获取应用名称
+    /// Get application name
     pub fn name(&self) -> &'static str {
         match self {
             Self::CodexCLI => "codex-cli",
@@ -45,7 +45,7 @@ impl SupportedApp {
         }
     }
 
-    /// 获取所有支持的应用
+    /// Get all supported applications
     pub fn all() -> Vec<Self> {
         vec![
             Self::CodexCLI,
@@ -55,11 +55,11 @@ impl SupportedApp {
     }
 }
 
-/// 应用配置生成器
+/// Application configuration generator
 pub struct AppConfigGenerator;
 
 impl AppConfigGenerator {
-    /// 为指定应用生成配置
+    /// Generate configuration for specified application
     pub fn generate_config(app: &SupportedApp, cli_api_key: Option<&str>) -> Settings {
         match app {
             SupportedApp::CodexCLI => CodexApp::generate_config(cli_api_key),
@@ -68,24 +68,24 @@ impl AppConfigGenerator {
         }
     }
 
-    /// 生成协议组合配置
+    /// Generate protocol combination configuration
     pub fn generate_protocol_config(protocols: &[String], cli_api_key: Option<&str>) -> Settings {
         protocol::generate_protocol_config(protocols, cli_api_key)
     }
 
-    /// 解析环境变量模板，支持 CLI 参数覆盖
+    /// Resolve environment variable template, supporting CLI parameter override
     pub(crate) fn resolve_env_var(template: &str, cli_api_key: Option<&str>) -> String {
         if template.starts_with("${") && template.ends_with("}") {
             let var_name = &template[2..template.len()-1];
 
-            // 如果是 LLM_LINK_API_KEY 且提供了 CLI 参数，优先使用 CLI 参数
+            // If it's LLM_LINK_API_KEY and CLI parameter is provided, prioritize CLI parameter
             if var_name == "LLM_LINK_API_KEY" {
                 if let Some(cli_key) = cli_api_key {
                     return cli_key.to_string();
                 }
             }
 
-            // 否则尝试从环境变量获取
+            // Otherwise try to get from environment variable
             std::env::var(var_name).unwrap_or_else(|_| {
                 eprintln!("Warning: Environment variable '{}' not found, using placeholder", var_name);
                 template.to_string()

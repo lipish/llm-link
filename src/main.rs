@@ -6,6 +6,7 @@ mod llm;
 mod api;
 mod models;
 mod cli;
+mod provider;
 
 use anyhow::Result;
 use axum::{
@@ -68,7 +69,7 @@ async fn main() -> Result<()> {
     Ok(())
 }
 
-/// 初始化日志系统
+/// Initialize logging system
 fn initialize_logging(args: &Args) {
     let log_level = args.log_level.clone()
         .or_else(|| std::env::var("LLM_LINK_LOG_LEVEL").ok())
@@ -83,7 +84,7 @@ fn initialize_logging(args: &Args) {
         .init();
 }
 
-/// 记录配置信息
+/// Log configuration information
 fn log_configuration(config: &Settings, config_source: &str) {
     info!("🚀 Starting LLM Link proxy service");
     info!("🌐 Server will bind to {}:{}", config.server.host, config.server.port);
@@ -102,7 +103,7 @@ fn log_configuration(config: &Settings, config_source: &str) {
     }
 }
 
-/// 初始化 LLM 服务
+/// Initialize LLM service
 fn initialize_llm_service(config: &Settings) -> Result<service::Service> {
     info!("🔧 Initializing LLM service...");
     let llm_service = service::Service::new(&config.llm_backend)?;
@@ -110,7 +111,7 @@ fn initialize_llm_service(config: &Settings) -> Result<service::Service> {
     Ok(llm_service)
 }
 
-/// 构建应用并添加中间件
+/// Build application and add middleware
 fn build_app_with_middleware(app_state: AppState, config: &Settings) -> Router {
     info!("🏗️ Building application routes...");
 
@@ -147,7 +148,7 @@ fn build_app_with_middleware(app_state: AppState, config: &Settings) -> Router {
         )
 }
 
-/// 启动服务器
+/// Start server
 async fn start_server(app: Router, config: &Settings) -> Result<()> {
     let bind_addr = format!("{}:{}", config.server.host, config.server.port);
     info!("🔌 Binding to address: {}", bind_addr);
@@ -162,7 +163,7 @@ async fn start_server(app: Router, config: &Settings) -> Result<()> {
 }
 
 fn build_app(state: AppState, config: &Settings) -> Router {
-    // 创建基础路由（不需要状态的）
+    // Create basic routes (no state required)
     let basic_routes = Router::new()
         .route("/", get(|| {
             info!("🏠 Root endpoint accessed");
@@ -177,7 +178,7 @@ fn build_app(state: AppState, config: &Settings) -> Router {
             async { api::debug_test().await }
         }));
 
-    // 创建需要状态的路由
+    // Create routes that require state
     let stateful_routes = Router::new()
         .route("/api/health", get(get_health))
         .route("/api/info", get(info))
@@ -191,7 +192,7 @@ fn build_app(state: AppState, config: &Settings) -> Router {
         .route("/api/config/shutdown", post(shutdown))
         .with_state(state.clone());
 
-    // 合并路由
+    // Merge routes
     let mut app = basic_routes.merge(stateful_routes);
 
     // Add Ollama API endpoints (temporarily disabled for compilation)

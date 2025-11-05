@@ -63,7 +63,7 @@ pub enum LlmBackendSettings {
 }
 
 impl LlmBackendSettings {
-    /// 获取当前配置的模型名称
+    /// Get the currently configured model name
     pub fn get_model(&self) -> String {
         match self {
             LlmBackendSettings::OpenAI { model, .. } => model.clone(),
@@ -89,21 +89,21 @@ pub struct ApiSettings {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ClientAdapterSettings {
-    /// 默认客户端适配模式
+    /// Default client adapter mode
     pub default_adapter: Option<String>,
-    /// 强制客户端适配模式（忽略自动检测）
+    /// Force client adapter mode (ignore auto-detection)
     pub force_adapter: Option<String>,
-    /// Zed.dev 特定配置
+    /// Zed.dev specific configuration
     pub zed: Option<ZedAdapterSettings>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ZedAdapterSettings {
-    /// 是否启用 Zed.dev 适配
+    /// Whether to enable Zed.dev adapter
     pub enabled: bool,
-    /// 是否强制添加 images 字段
+    /// Whether to force add images field
     pub force_images_field: Option<bool>,
-    /// 首选响应格式
+    /// Preferred response format
     pub preferred_format: Option<String>,
 }
 

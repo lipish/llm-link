@@ -16,6 +16,7 @@ LLM Link provides zero-configuration access to LLM providers through multiple AP
 - **🔄 Multi-Protocol**: Simultaneous OpenAI, Ollama, and Anthropic API support
 - **🔀 9 LLM Providers**: OpenAI, Anthropic, Zhipu, Aliyun, Volcengine, Tencent, Longcat, Moonshot, Ollama
 - **📡 Dynamic Model Discovery**: REST API to query all supported providers and models
+- **📦 Rust Library**: Use as a crate for direct access to provider and model information
 - **🔥 Hot-Reload Configuration**: Update API keys and switch providers without restart
 - **🛠️ CLI-First**: Simple command-line interface with helpful guidance
 - **🔧 Smart Adaptation**: Automatic client detection and optimization
@@ -194,6 +195,89 @@ ALIYUN_API_KEY=your-aliyun-key
 ```
 
 **Note**: The `.env` file is ignored by git for security. Never commit API keys to version control.
+
+## 📦 As a Rust Library
+
+Besides running as a standalone service, llm-link can also be used as a Rust library to access provider and model information directly in your applications.
+
+### Add Dependency
+
+Add llm-link to your `Cargo.toml`:
+
+```toml
+[dependencies]
+llm-link = "0.3.4"
+```
+
+### Get Providers and Models
+
+Use the library APIs to access supported providers and their models without starting a service:
+
+```rust
+use llm_link::models::ModelsConfig;
+use llm_link::provider::ProviderRegistry;
+
+fn main() {
+    println!("🚀 LLM Link Providers & Models");
+    println!("================================");
+    
+    // Get all supported providers
+    let providers = ProviderRegistry::list_providers();
+    println!("📋 Supported providers ({}):", providers.len());
+    for provider in &providers {
+        println!("  • {}", provider);
+    }
+    
+    // Load models configuration
+    let models_config = ModelsConfig::load_with_fallback();
+    
+    // Get models for specific providers
+    for provider in &providers {
+        let models = models_config.get_models_for_provider(provider);
+        if !models.is_empty() {
+            println!("\n🔹 {} ({} models):", provider, models.len());
+            for model in models.iter().take(3) {
+                println!("    • {} - {}", model.name, model.id);
+            }
+            if models.len() > 3 {
+                println!("    ... and {} more models", models.len() - 3);
+            }
+        }
+    }
+    
+    // Get provider information
+    if let Some(info) = ProviderRegistry::get_provider_info("openai") {
+        println!("\n📊 OpenAI Provider Info:");
+        println!("  Default Model: {}", info.default_model);
+        println!("  Environment Variable: {}", info.env_var);
+        println!("  Requires API Key: {}", info.requires_api_key);
+    }
+}
+```
+
+### Library Features
+
+- **🔍 Provider Discovery**: List all available LLM providers
+- **📋 Model Information**: Get detailed model specifications for each provider
+- **⚡ No Network Overhead**: Direct access without HTTP requests
+- **🛠️ Type Safe**: Full Rust type safety and compile-time checks
+- **🔄 Dynamic Loading**: Automatically loads from embedded configuration
+
+### Use Cases
+
+- **Model Selection UI**: Build dynamic interfaces for model selection
+- **Configuration Tools**: Create setup utilities for different providers
+- **Monitoring Applications**: Track available models and providers
+- **Integration Libraries**: Build higher-level abstractions on top of llm-link
+
+### Example
+
+Check out the [library usage example](examples/library_usage.rs) for a complete demonstration of how to use llm-link as a library.
+
+Run the example with:
+```bash
+cargo run --example library_usage
+```
 
 ## 📡 API Endpoints
 
@@ -945,12 +1029,12 @@ llm-link/
 
 ## 📚 Documentation
 
-- [📖 文档中心](docs/README.md) - 完整的文档索引
-- [🚀 快速开始](docs/guides/QUICK_START.md) - 快速上手指南 (中文)
-- [🔌 应用集成](docs/guides/INTEGRATION.md) - Zed、Claude Code、Codex CLI 集成
-- [⚙️ 配置指南](docs/guides/CONFIGURATION.md) - 详细的配置说明
-- [📡 API 文档](docs/api/) - API 接口文档
-- [📋 变更日志](CHANGELOG.md) - 版本历史和更新
+- [📖 Documentation Center](docs/README.md) - Complete documentation index
+- [🚀 Quick Start](docs/guides/QUICK_START.md) - Quick getting started guide
+- [🔌 Application Integration](docs/guides/INTEGRATION.md) - Zed, Claude Code, Codex CLI integration
+- [⚙️ Configuration Guide](docs/guides/CONFIGURATION.md) - Detailed configuration instructions
+- [📡 API Documentation](docs/api/) - API interface documentation
+- [📋 Changelog](CHANGELOG.md) - Version history and updates
 
 ## 📄 License
 

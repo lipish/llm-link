@@ -3,20 +3,20 @@ use axum::http::HeaderMap;
 use llm_connector::StreamFormat;
 use serde_json::Value;
 
-/// 客户端适配器类型
+/// Client adapter type
 ///
-/// 用于识别不同的客户端并应用相应的响应转换。
+/// Used to identify different clients and apply corresponding response transformations.
 ///
-/// # 工作流程
-/// 1. 检测客户端类型（通过 HTTP 头、User-Agent、配置等）
-/// 2. 确定偏好的流式格式（SSE/NDJSON/JSON）
-/// 3. 应用客户端特定的响应适配（字段添加、格式调整等）
+/// # Workflow
+/// 1. Detect client type (through HTTP headers, User-Agent, configuration, etc.)
+/// 2. Determine preferred streaming format (SSE/NDJSON/JSON)
+/// 3. Apply client-specific response adaptations (field addition, format adjustment, etc.)
 ///
-/// # 使用位置
-/// - `src/api/ollama.rs::detect_ollama_client()` - Ollama API 客户端检测
-/// - `src/api/openai.rs::detect_openai_client()` - OpenAI API 客户端检测
+/// # Usage Locations
+/// - `src/api/ollama.rs::detect_ollama_client()` - Ollama API client detection
+/// - `src/api/openai.rs::detect_openai_client()` - OpenAI API client detection
 ///
-/// # 示例
+/// # Example
 /// ```rust,ignore
 /// let adapter = detect_client(&headers, &config);
 /// let format = adapter.preferred_format();
@@ -25,19 +25,19 @@ use serde_json::Value;
 #[derive(Debug, Clone, PartialEq)]
 #[allow(dead_code)]
 pub enum ClientAdapter {
-    /// 标准 Ollama 客户端
-    /// - 偏好格式: NDJSON
-    /// - 特殊处理: 无
+    /// Standard Ollama client
+    /// - Preferred format: NDJSON
+    /// - Special handling: None
     Standard,
 
-    /// Zed 编辑器适配
-    /// - 偏好格式: NDJSON
-    /// - 特殊处理: 添加 `images` 字段
+    /// Zed editor adapter
+    /// - Preferred format: NDJSON
+    /// - Special handling: Add `images` field
     Zed,
 
-    /// OpenAI API 客户端适配（包括 Codex CLI）
-    /// - 偏好格式: SSE
-    /// - 特殊处理: finish_reason 修正（在 llm/stream.rs 中处理）
+    /// OpenAI API client adapter (including Codex CLI)
+    /// - Preferred format: SSE
+    /// - Special handling: finish_reason correction (handled in llm/stream.rs)
     OpenAI,
 }
 

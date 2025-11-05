@@ -5,11 +5,11 @@ use crate::settings::{
 };
 use super::AppConfigGenerator;
 
-/// Codex CLI 应用配置
+/// Codex CLI application configuration
 pub struct CodexApp;
 
 impl CodexApp {
-    /// 生成 Codex CLI 配置
+    /// Generate Codex CLI configuration
     pub fn generate_config(cli_api_key: Option<&str>) -> Settings {
         Settings {
             server: ServerSettings {

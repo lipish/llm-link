@@ -14,7 +14,7 @@ use serde_json::json;
 use std::sync::{Arc, RwLock};
 use anyhow::Result;
 
-/// 应用状态
+/// Application state
 #[derive(Clone)]
 pub struct AppState {
     pub llm_service: Arc<RwLock<LlmService>>,
@@ -29,21 +29,21 @@ impl AppState {
         }
     }
 
-    /// 动态更新 LLM 服务配置
+    /// Dynamically update LLM service configuration
     ///
-    /// 这个方法允许在运行时更新 LLM 后端配置，而无需重启服务
+    /// This method allows updating LLM backend configuration at runtime without restarting the service
     pub fn update_llm_service(&self, new_backend: &LlmBackendSettings) -> Result<()> {
-        // 创建新的 LLM 服务
+        // Create new LLM service
         let new_service = LlmService::new(new_backend)?;
 
-        // 更新服务
+        // Update service
         {
             let mut service = self.llm_service.write()
                 .map_err(|e| anyhow::anyhow!("Failed to acquire write lock for llm_service: {}", e))?;
             *service = new_service;
         }
 
-        // 更新配置
+        // Update configuration
         {
             let mut config = self.config.write()
                 .map_err(|e| anyhow::anyhow!("Failed to acquire write lock for config: {}", e))?;
@@ -53,7 +53,7 @@ impl AppState {
         Ok(())
     }
 
-    /// 获取当前配置的副本
+    /// Get a copy of the current configuration
     pub fn get_current_config(&self) -> Result<Settings> {
         self.config.read()
             .map_err(|e| anyhow::anyhow!("Failed to acquire read lock for config: {}", e))
@@ -61,7 +61,7 @@ impl AppState {
     }
 }
 
-/// 健康检查端点
+/// Health check endpoint
 pub async fn health_check() -> Json<serde_json::Value> {
     Json(json!({
         "status": "ok",
@@ -70,7 +70,7 @@ pub async fn health_check() -> Json<serde_json::Value> {
     }))
 }
 
-/// 调试测试端点
+/// Debug test endpoint
 pub async fn debug_test() -> Json<serde_json::Value> {
     Json(json!({
         "debug": "test",
@@ -78,7 +78,7 @@ pub async fn debug_test() -> Json<serde_json::Value> {
     }))
 }
 
-/// 获取完整的 provider 和 model 信息
+/// Get complete provider and model information
 pub async fn info(
     State(state): State<AppState>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {

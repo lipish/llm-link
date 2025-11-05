@@ -1,6 +1,6 @@
 use super::SupportedApp;
 
-/// 应用信息结构
+/// Application information structure
 #[derive(Debug, Clone)]
 pub struct AppInfo {
     pub name: String,
@@ -11,11 +11,11 @@ pub struct AppInfo {
     pub auth_required: bool,
 }
 
-/// 应用信息提供器
+/// Application information provider
 pub struct AppInfoProvider;
 
 impl AppInfoProvider {
-    /// 获取应用信息
+    /// Get application information
     pub fn get_app_info(app: &SupportedApp) -> AppInfo {
         match app {
             SupportedApp::CodexCLI => AppInfo {

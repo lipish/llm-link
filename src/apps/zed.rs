@@ -5,11 +5,11 @@ use crate::settings::{
 };
 use super::AppConfigGenerator;
 
-/// Zed.dev 应用配置
+/// Zed.dev application configuration
 pub struct ZedApp;
 
 impl ZedApp {
-    /// 生成 Zed.dev 配置
+    /// Generate Zed.dev configuration
     pub fn generate_config(cli_api_key: Option<&str>) -> Settings {
         Settings {
             server: ServerSettings {

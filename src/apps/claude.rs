@@ -5,11 +5,11 @@ use crate::settings::{
 };
 use super::AppConfigGenerator;
 
-/// Claude Code 应用配置
+/// Claude Code application configuration
 pub struct ClaudeApp;
 
 impl ClaudeApp {
-    /// 生成 Claude Code 配置
+    /// Generate Claude Code configuration
     pub fn generate_config(cli_api_key: Option<&str>) -> Settings {
         Settings {
             server: ServerSettings {
