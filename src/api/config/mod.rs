@@ -120,8 +120,7 @@ pub async fn get_current_config(
 ) -> Result<Json<CurrentConfigResponse>, StatusCode> {
     use crate::settings::LlmBackendSettings;
 
-    let config = state.config.read()
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let config = state.config.read().await;
     let (provider, model, has_api_key, has_base_url) = match &config.llm_backend {
         LlmBackendSettings::OpenAI { model, base_url, .. } => {
             ("openai", model.clone(), true, base_url.is_some())
@@ -172,8 +171,7 @@ pub async fn get_health(
 ) -> Result<Json<serde_json::Value>, StatusCode> {
     use crate::settings::LlmBackendSettings;
 
-    let config = state.config.read()
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let config = state.config.read().await;
     let (provider, model) = match &config.llm_backend {
         LlmBackendSettings::OpenAI { model, .. } => ("openai", model.clone()),
         LlmBackendSettings::Anthropic { model, .. } => ("anthropic", model.clone()),
@@ -578,7 +576,7 @@ pub async fn update_key(
     info!("🔧 Updating API key for provider: {} (key: {})", request.provider, mask_api_key(&request.api_key));
 
     // 获取当前配置
-    let current_config = state.get_current_config()
+    let current_config = state.get_current_config().await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     // 构建新的 backend settings
@@ -725,7 +723,7 @@ pub async fn update_key(
     };
 
     // 尝试更新服务
-    match state.update_llm_service(&new_backend) {
+    match state.update_llm_service(&new_backend).await {
         Ok(()) => {
             info!("✅ API key updated successfully for provider: {}", request.provider);
             Ok(Json(json!({
@@ -762,7 +760,7 @@ pub async fn switch_provider(
     info!("🔄 Switching to provider: {} (key: {})", request.provider, masked_key);
 
     // 获取当前配置
-    let current_config = state.get_current_config()
+    let current_config = state.get_current_config().await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
     // 确定 API key
@@ -918,7 +916,7 @@ pub async fn switch_provider(
     };
 
     // 尝试更新服务
-    match state.update_llm_service(&new_backend) {
+    match state.update_llm_service(&new_backend).await {
         Ok(()) => {
             info!("✅ Provider switched successfully to: {}", request.provider);
             Ok(Json(json!({

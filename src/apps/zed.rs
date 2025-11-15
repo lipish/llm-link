@@ -24,13 +24,13 @@ impl ZedApp {
             },
             apis: ApiSettings {
                 openai: Some(OpenAiApiSettings {
-                    enabled: false,
+                    enabled: false,  // Disabled by default - use --protocols openai to enable
                     path: "/v1".to_string(),
-                    api_key_header: None,
+                    api_key_header: Some("Authorization".to_string()),
                     api_key: None,
                 }),
                 ollama: Some(OllamaApiSettings {
-                    enabled: true,
+                    enabled: false,  // Disabled by default - use --protocols ollama to enable
                     path: "".to_string(),  // Empty path so routes become /api/tags directly
                     api_key_header: None,
                     api_key: None,

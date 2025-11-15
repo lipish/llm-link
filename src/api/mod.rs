@@ -11,7 +11,8 @@ use axum::response::Json;
 use axum::extract::State;
 use axum::http::StatusCode;
 use serde_json::json;
-use std::sync::{Arc, RwLock};
+use std::sync::Arc;
+use tokio::sync::RwLock;
 use anyhow::Result;
 
 /// Application state
@@ -32,21 +33,19 @@ impl AppState {
     /// Dynamically update LLM service configuration
     ///
     /// This method allows updating LLM backend configuration at runtime without restarting the service
-    pub fn update_llm_service(&self, new_backend: &LlmBackendSettings) -> Result<()> {
+    pub async fn update_llm_service(&self, new_backend: &LlmBackendSettings) -> Result<()> {
         // Create new LLM service
         let new_service = LlmService::new(new_backend)?;
 
         // Update service
         {
-            let mut service = self.llm_service.write()
-                .map_err(|e| anyhow::anyhow!("Failed to acquire write lock for llm_service: {}", e))?;
+            let mut service = self.llm_service.write().await;
             *service = new_service;
         }
 
         // Update configuration
         {
-            let mut config = self.config.write()
-                .map_err(|e| anyhow::anyhow!("Failed to acquire write lock for config: {}", e))?;
+            let mut config = self.config.write().await;
             config.llm_backend = new_backend.clone();
         }
 
@@ -54,10 +53,9 @@ impl AppState {
     }
 
     /// Get a copy of the current configuration
-    pub fn get_current_config(&self) -> Result<Settings> {
-        self.config.read()
-            .map_err(|e| anyhow::anyhow!("Failed to acquire read lock for config: {}", e))
-            .map(|config| config.clone())
+    pub async fn get_current_config(&self) -> Result<Settings> {
+        let config = self.config.read().await;
+        Ok(config.clone())
     }
 }
 
@@ -82,8 +80,7 @@ pub async fn debug_test() -> Json<serde_json::Value> {
 pub async fn info(
     State(state): State<AppState>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let config = state.config.read()
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let config = state.config.read().await;
     let current_provider = get_provider_name(&config.llm_backend);
     let current_model = get_current_model(&config.llm_backend);
     

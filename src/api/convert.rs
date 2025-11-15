@@ -136,6 +136,42 @@ pub fn response_to_ollama(response: Response) -> Value {
     })
 }
 
+/// Convert MiniMax API response to Ollama format
+#[allow(dead_code)]
+pub fn response_to_ollama_from_minimax(minimax_response: Value) -> Value {
+    // Extract content from MiniMax response
+    let content = minimax_response
+        .get("choices")
+        .and_then(|c| c.get(0))
+        .and_then(|c| c.get("message"))
+        .and_then(|m| m.get("content"))
+        .and_then(|c| c.as_str())
+        .unwrap_or("No response")
+        .to_string();
+
+    let model = minimax_response
+        .get("model")
+        .and_then(|m| m.as_str())
+        .unwrap_or("MiniMax-M2")
+        .to_string();
+
+    serde_json::json!({
+        "model": model,
+        "created_at": chrono::Utc::now().to_rfc3339(),
+        "message": {
+            "role": "assistant",
+            "content": content
+        },
+        "done": true,
+        "total_duration": 0,
+        "load_duration": 0,
+        "prompt_eval_count": 0,
+        "prompt_eval_duration": 0,
+        "eval_count": 0,
+        "eval_duration": 0
+    })
+}
+
 /// Convert OpenAI tools format to llm-connector format
 #[allow(dead_code)]
 pub fn openai_tools_to_llm(tools: Vec<Value>) -> Vec<Tool> {

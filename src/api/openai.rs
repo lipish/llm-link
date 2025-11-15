@@ -46,7 +46,7 @@ pub async fn chat(
     Json(request): Json<OpenAIChatRequest>,
 ) -> Result<Response, StatusCode> {
     // API Key 校验
-    enforce_api_key(&headers, &state)?;
+    enforce_api_key(&headers, &state).await?;
 
     info!("📝 Received request - model: {}, stream: {:?}, messages count: {}",
           request.model, request.stream, request.messages.len());
@@ -54,8 +54,7 @@ pub async fn chat(
     // 验证模型
     if !request.model.is_empty() {
         let validation_result = {
-            let llm_service = state.llm_service.read()
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            let llm_service = state.llm_service.read().await;
             llm_service.validate_model(&request.model).await
         };
 
@@ -115,8 +114,7 @@ async fn handle_streaming_request(
     tools: Option<Vec<llm_connector::types::Tool>>,
 ) -> Result<Response, StatusCode> {
     // 🎯 检测客户端类型（默认使用 OpenAI 适配器）
-    let config = state.config.read()
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let config = state.config.read().await;
     let client_adapter = detect_openai_client(&headers, &config);
     let (_stream_format, _) = FormatDetector::determine_format(&headers);
     drop(config); // 释放读锁
@@ -127,8 +125,7 @@ async fn handle_streaming_request(
 
     info!("📡 Starting OpenAI streaming response - Format: {:?} ({})", final_format, content_type);
 
-    let llm_service = state.llm_service.read()
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let llm_service = state.llm_service.read().await;
     let stream_result = llm_service.chat_stream_openai(model, messages.clone(), tools.clone(), final_format).await;
     drop(llm_service); // 显式释放锁
 
@@ -136,7 +133,8 @@ async fn handle_streaming_request(
         Ok(rx) => {
             info!("✅ OpenAI streaming response started successfully");
 
-            let config_clone = state.config.clone();
+            // Get config before entering the map closure and clone it for the closure
+            let config = state.config.read().await.clone();
             let adapted_stream = rx.map(move |data| {
                 // SSE 格式的数据以 "data: " 开头，需要先提取 JSON 部分
                 let json_str = if data.starts_with("data: ") {
@@ -153,11 +151,7 @@ async fn handle_streaming_request(
                 // 解析并适配响应数据
                 if let Ok(mut json_data) = serde_json::from_str::<Value>(json_str) {
                     tracing::debug!("📝 Parsed JSON chunk, applying adaptations...");
-                    if let Ok(config) = config_clone.read() {
-                        client_adapter.apply_response_adaptations(&config, &mut json_data);
-                    } else {
-                        warn!("Failed to acquire read lock for config in OpenAI stream, skipping adaptations");
-                    }
+                    client_adapter.apply_response_adaptations(&config, &mut json_data);
 
                     match final_format {
                         llm_connector::StreamFormat::SSE => {
@@ -203,8 +197,7 @@ async fn handle_non_streaming_request(
     messages: Vec<llm_connector::types::Message>,
     tools: Option<Vec<llm_connector::types::Tool>>,
 ) -> Result<Response, StatusCode> {
-    let llm_service = state.llm_service.read()
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let llm_service = state.llm_service.read().await;
     let chat_result = llm_service.chat(model, messages, tools).await;
 
     match chat_result {
@@ -226,10 +219,9 @@ pub async fn models(
     State(state): State<AppState>,
     Query(_params): Query<OpenAIModelsParams>,
 ) -> Result<impl IntoResponse, StatusCode> {
-    enforce_api_key(&headers, &state)?;
+    enforce_api_key(&headers, &state).await?;
 
-    let llm_service = state.llm_service.read()
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let llm_service = state.llm_service.read().await;
     let models_result = llm_service.list_models().await;
 
     match models_result {
@@ -243,8 +235,7 @@ pub async fn models(
                 })
             }).collect();
 
-            let config = state.config.read()
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            let config = state.config.read().await;
             let current_provider = match &config.llm_backend {
                 crate::settings::LlmBackendSettings::OpenAI { .. } => "openai",
                 crate::settings::LlmBackendSettings::Anthropic { .. } => "anthropic",
@@ -271,9 +262,8 @@ pub async fn models(
 
 /// OpenAI API Key 认证
 #[allow(dead_code)]
-fn enforce_api_key(headers: &HeaderMap, state: &AppState) -> Result<(), StatusCode> {
-    let config = state.config.read()
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+async fn enforce_api_key(headers: &HeaderMap, state: &AppState) -> Result<(), StatusCode> {
+    let config = state.config.read().await;
     if let Some(cfg) = &config.apis.openai {
         if cfg.enabled {
             if let Some(expected_key) = cfg.api_key.as_ref() {

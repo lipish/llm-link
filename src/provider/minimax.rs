@@ -13,8 +13,9 @@ impl Provider for MinimaxProvider {
     
     fn create_client(config: &ProviderConfig) -> Result<LlmClient> {
         // Minimax uses OpenAI compatible API
+        // Use the global endpoint (api.minimax.io) instead of mainland (api.minimaxi.com)
         let base_url = config.base_url.as_deref()
-            .unwrap_or("https://api.minimaxi.com/v1");
+            .unwrap_or("https://api.minimax.io/v1");
         Ok(LlmClient::openai_compatible(&config.api_key, base_url, Self::name())?)
     }
     
@@ -39,7 +40,7 @@ impl Provider for MinimaxProvider {
     }
     
     fn default_base_url() -> Option<&'static str> {
-        Some("https://api.minimaxi.com/v1")
+        Some("https://api.minimax.io/v1")
     }
 }
 

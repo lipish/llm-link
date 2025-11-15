@@ -25,7 +25,7 @@ pub fn generate_protocol_config(protocols: &[String], cli_api_key: Option<&str>)
             "ollama" => {
                 ollama_config = Some(OllamaApiSettings {
                     enabled: true,
-                    path: "/ollama".to_string(),
+                    path: "".to_string(),  // Empty path so routes become /api/tags directly
                     api_key_header: None,
                     api_key: None,
                 });

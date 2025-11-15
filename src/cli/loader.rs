@@ -26,11 +26,38 @@ impl ConfigLoader {
     fn load_app_config(app_name: &str, args: &Args) -> Result<(Settings, String)> {
         let app = SupportedApp::from_str(app_name)
             .ok_or_else(|| anyhow::anyhow!(
-                "Unknown application: {}. Use --list-apps to see available applications.", 
+                "Unknown application: {}. Use --list-apps to see available applications.",
                 app_name
             ))?;
 
         info!("🚀 Starting in {} mode", app.name());
+
+        // If --protocols is specified, use protocol config instead
+        if let Some(protocols_str) = &args.protocols {
+            info!("🔄 Using protocols: {}", protocols_str);
+            let protocols: Vec<String> = protocols_str
+                .split(',')
+                .map(|s| s.trim().to_string())
+                .collect();
+
+            // Check environment variables for protocol combination
+            Self::check_protocol_env_vars(&protocols, args)?;
+
+            let mut config = AppConfigGenerator::generate_protocol_config(&protocols, args.api_key.as_deref());
+
+            // Apply provider/model overrides if specified
+            if let Some(provider) = &args.provider {
+                config = Self::apply_provider_overrides(
+                    config,
+                    Some(provider.as_str()),
+                    args.model.as_deref(),
+                    args.llm_api_key.as_deref()
+                )?;
+            }
+
+            let config_source = format!("app: {} with protocols: {}", app.name(), protocols.join(", "));
+            return Ok((config, config_source));
+        }
 
         // Require --provider parameter
         let provider = Self::require_provider(app_name, args)?;
@@ -83,10 +110,11 @@ impl ConfigLoader {
                 error!("   --provider anthropic   (requires ANTHROPIC_API_KEY)");
                 error!("   --provider zhipu       (requires ZHIPU_API_KEY)");
                 error!("   --provider aliyun      (requires ALIYUN_API_KEY)");
+                error!("   --provider minimax     (requires MINIMAX_API_KEY)");
                 error!("   --provider ollama      (no API key needed)");
                 error!("");
                 error!("💡 Example:");
-                error!("   ./llm-link --app {} --provider openai", app_name);
+                error!("   ./llm-link --app {} --provider minimax", app_name);
                 error!("");
                 error!("📚 For more information:");
                 error!("   ./llm-link --app-info {}", app_name);

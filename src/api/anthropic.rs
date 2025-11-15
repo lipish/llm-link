@@ -189,8 +189,7 @@ pub async fn messages(
 
     if request.stream {
         // Streaming response
-        let llm_service = state.llm_service.read()
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        let llm_service = state.llm_service.read().await;
         let stream_result = llm_service.chat_stream_openai(Some(&request.model), llm_messages, None, llm_connector::StreamFormat::SSE).await;
 
         match stream_result {
@@ -206,8 +205,7 @@ pub async fn messages(
         }
     } else {
         // Non-streaming response
-        let llm_service = state.llm_service.read()
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        let llm_service = state.llm_service.read().await;
         let chat_result = llm_service.chat(Some(&request.model), llm_messages, None).await;
 
         match chat_result {
@@ -289,8 +287,7 @@ fn convert_to_anthropic_stream(
 pub async fn models(
     State(state): State<AppState>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
-    let llm_service = state.llm_service.read()
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    let llm_service = state.llm_service.read().await;
     let models_result = llm_service.list_models().await;
 
     match models_result {
@@ -304,8 +301,7 @@ pub async fn models(
                 })
             }).collect();
 
-            let config = state.config.read()
-                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+            let config = state.config.read().await;
             let current_provider = match &config.llm_backend {
                 crate::settings::LlmBackendSettings::OpenAI { .. } => "openai",
                 crate::settings::LlmBackendSettings::Anthropic { .. } => "anthropic",

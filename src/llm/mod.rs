@@ -2,6 +2,7 @@ mod chat;
 mod models;
 mod stream;
 mod types;
+pub mod minimax_client;
 
 pub use types::{Model, Response};
 
@@ -52,7 +53,8 @@ impl Client {
             }
             LlmBackendSettings::Minimax { api_key, .. } => {
                 // Minimax uses OpenAI compatible API
-                LlmClient::openai_compatible(api_key, "https://api.minimaxi.com/v1", "minimax")?
+                // Use the global endpoint (api.minimax.io) instead of mainland (api.minimaxi.com)
+                LlmClient::openai_compatible(api_key, "https://api.minimax.io/v1", "minimax")?
             }
             LlmBackendSettings::Ollama { base_url, .. } => {
                 if base_url.is_some() {
