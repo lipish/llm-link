@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.6] - 2025-11-16
+
+### 🔥 Volcengine Doubao Improvements
+
+- Upgraded `llm-connector` to **0.5.3**, fixing the Volcengine Doubao streaming issue where chunks had empty `content`, and improving reasoning model support.
+- Unified Ollama `/api/chat` streaming through the **Normalizer** layer so that all providers, including Volcengine Doubao, work correctly with Ollama-compatible clients such as Zed.
+- Introduced a clear separation between **logical model names** and **endpoint IDs (`ep-...`)** for Volcengine Doubao:
+  - Logical model names (e.g. `doubao-seed-code-preview-latest`) are used at the protocol/UI layer.
+  - Actual requests to Volcengine use endpoint IDs, resolved centrally by the Normalizer `ModelResolver`.
+
+### 🧱 Architecture & Maintainability
+
+- Added a new `ModelResolver` in `src/normalizer/` to centralize provider-specific model resolution logic.
+  - Supports local overrides via [model-overrides.yaml](cci:7://file:///Users/mac-m4/github/llm-link/model-overrides.yaml:0:0-0:0).
+  - Applies Volcengine-specific rules (logical name → default endpoint, `ep-...` passthrough).
+- Completed the internal refactor from the old `llm` module to the **`normalizer`** module:
+  - Moved [chat.rs](cci:7://file:///Users/mac-m4/github/llm-link/src/normalizer/chat.rs:0:0-0:0), [stream.rs](cci:7://file:///Users/mac-m4/github/llm-link/src/normalizer/stream.rs:0:0-0:0), `types.rs`, `models.rs` and `minimax_client.rs` under `src/normalizer/`.
+  - Service layer now consistently depends on [normalizer::Client](cci:2://file:///Users/mac-m4/github/llm-link/src/normalizer/mod.rs:14:0-18:1).
+
+### 📚 Docs, Examples & Tests
+
+- Updated the main [README.md](cci:7://file:///Users/mac-m4/github/llm-link/README.md:0:0-0:0) with a **“Volcengine Doubao: Logical Models vs Endpoint IDs”** section explaining:
+  - How logical model names relate to endpoint IDs.
+  - How the Normalizer `ModelResolver` works.
+  - How to configure [model-overrides.yaml](cci:7://file:///Users/mac-m4/github/llm-link/model-overrides.yaml:0:0-0:0) for per-user logical model → endpoint mappings.
+- Added [examples/model-overrides.example.yaml](cci:7://file:///Users/mac-m4/github/llm-link/examples/model-overrides.example.yaml:0:0-0:0) as a template for local [model-overrides.yaml](cci:7://file:///Users/mac-m4/github/llm-link/model-overrides.yaml:0:0-0:0) configuration.
+- Cleaned up the Volcengine streaming test script:
+  - Removed hard-coded API keys and endpoint IDs.
+  - Tests now require `VOLCENGINE_API_KEY` and `VOLCENGINE_ENDPOINT` to be provided via environment variables.
+
 ## [0.3.5] - 2025-11-05
 
 ### 🎉 New Features
