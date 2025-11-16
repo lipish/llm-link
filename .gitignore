@@ -21,6 +21,11 @@ model-overrides.yaml
 
 # Build artifacts
 /target
+python/dist/
+python/build/
+python/.pytest_cache/
+python/.mypy_cache/
+python/.venv/
 
 # IDE and editor files
 /.claude

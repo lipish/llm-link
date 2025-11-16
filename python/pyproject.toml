@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "llm-link"
+version = "0.3.8"
+description = "Python wrapper that downloads and launches the llm-link binary"
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = []
+authors = [{ name = "LLM Link Maintainers" }]
+license = { text = "MIT" }
+keywords = ["llm", "proxy", "cli"]
+classifiers = [
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "License :: OSI Approved :: MIT License",
+  "Operating System :: MacOS",
+  "Operating System :: POSIX :: Linux",
+  "Topic :: Software Development :: Libraries"
+]
+
+[project.urls]
+Homepage = "https://github.com/lipish/llm-link"
+Repository = "https://github.com/lipish/llm-link"
+Issues = "https://github.com/lipish/llm-link/issues"
+
+[project.scripts]
+llm-link = "llmlink.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+

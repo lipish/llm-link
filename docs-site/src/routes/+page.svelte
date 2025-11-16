@@ -27,6 +27,11 @@
 			command: 'brew tap lipish/llm-link\nbrew install llm-link'
 		},
 		{
+			title: 'Install via pip (macOS / Linux)',
+			description: 'Python wrapper fetches the right prebuilt binary on first run.',
+			command: 'pip install llm-link'
+		},
+		{
 			title: 'Install via cargo (recommended)',
 			description: 'Once Rust toolchain is ready, install the latest binary with:',
 			command: 'cargo install llm-link'

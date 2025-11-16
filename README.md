@@ -50,6 +50,15 @@ brew install llm-link
 cargo install llm-link
 ```
 
+#### Option 1.5: Install via pip (macOS / Linux)
+
+```bash
+pip install llm-link
+# First run downloads the matching prebuilt binary into ~/.cache/llm-link
+```
+
+> 🐍 环境变量：`LLM_LINK_CACHE` 可重定向缓存目录，`LLM_LINK_DOWNLOAD_BASE` 可指向自建 release 镜像。
+
 #### Option 2: Build from source
 
 ```bash
