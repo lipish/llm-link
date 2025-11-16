@@ -1,6 +1,10 @@
 use super::Client;
 use anyhow::{anyhow, Result};
-use llm_connector::{types::ChatRequest, StreamFormat};
+use llm_connector::{
+    types::{ChatRequest, Usage as ConnectorUsage},
+    StreamFormat,
+};
+use serde_json::{Map, Value};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 
 impl Client {
@@ -33,6 +37,9 @@ impl Client {
 
         let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
         let model_name = model.to_string();
+        let mut last_finish_reason: Option<String> = None;
+        let mut last_usage: Option<ConnectorUsage> = None;
+        let mut thinking_buffer = String::new();
 
         tokio::spawn(async move {
             tracing::debug!("🔄 Starting to process stream chunks (Ollama format)...");
@@ -43,45 +50,87 @@ impl Client {
 
                 match chunk {
                     Ok(stream_chunk) => {
-                        tracing::debug!("✅ Chunk OK, checking for content...");
+                        tracing::debug!("✅ Chunk OK, checking for content/tool_calls...");
 
-                        // Check for content
-                        if let Some(content) = stream_chunk.get_content() {
-                            if !content.is_empty() {
-                                chunk_count += 1;
-                                if chunk_count == 1 {
-                                    tracing::info!("📦 Received first streaming chunk ({} chars)", content.len());
-                                } else {
-                                    tracing::debug!("📦 Received chunk #{} ({} chars)", chunk_count, content.len());
-                                }
-
-                                // Build Ollama-format streaming response
-                                let response_chunk = serde_json::json!({
-                                    "model": &model_name,
-                                    "created_at": chrono::Utc::now().to_rfc3339(),
-                                    "message": {
-                                        "role": "assistant",
-                                        "content": content,
-                                        "images": null
-                                    },
-                                    "done": false
-                                });
-
-                                let formatted_data = match format {
-                                    StreamFormat::SSE => format!("data: {}\n\n", response_chunk),
-                                    StreamFormat::NDJSON => format!("{}\n", response_chunk),
-                                    StreamFormat::Json => response_chunk.to_string(),
-                                };
-
-                                if tx.send(formatted_data).is_err() {
-                                    tracing::warn!("⚠️ Failed to send chunk to receiver (client disconnected?)");
-                                    break;
-                                }
-                                tracing::debug!("✅ Sent chunk #{} to client", chunk_count);
-                            }
-                        } else {
-                            tracing::debug!("⚠️ Chunk has no content (likely metadata or finish chunk)");
+                        if let Some(usage) = stream_chunk.usage.clone() {
+                            last_usage = Some(usage);
                         }
+
+                        if let Some(first_choice) = stream_chunk.choices.get(0) {
+                            if let Some(reason) = first_choice.finish_reason.clone() {
+                                last_finish_reason = Some(reason);
+                            }
+                        }
+
+                        let mut message = Map::new();
+                        message.insert("role".to_string(), Value::String("assistant".to_string()));
+                        message.insert("content".to_string(), Value::String(String::new()));
+                        message.insert("images".to_string(), Value::Null);
+
+                        let mut has_payload = false;
+                        let mut content_text = String::new();
+
+                        if let Some(content) = stream_chunk.get_content() {
+                            content_text = content.to_string();
+                        }
+
+                        if !content_text.is_empty() {
+                            chunk_count += 1;
+                            has_payload = true;
+                            if chunk_count == 1 {
+                                tracing::info!("📦 Received first streaming chunk ({} chars)", content_text.len());
+                            } else {
+                                tracing::debug!("📦 Received chunk #{} ({} chars)", chunk_count, content_text.len());
+                            }
+                        }
+
+                        message.insert("content".to_string(), Value::String(content_text));
+
+                        if let Some(first_choice) = stream_chunk.choices.get(0) {
+                            if let Some(tool_calls) = &first_choice.delta.tool_calls {
+                                if !tool_calls.is_empty() {
+                                    if let Ok(tool_calls_value) = serde_json::to_value(tool_calls) {
+                                        message.insert("tool_calls".to_string(), tool_calls_value);
+                                        has_payload = true;
+                                        tracing::debug!("🔧 Chunk includes {} tool call(s)", tool_calls.len());
+                                    }
+                                }
+                            }
+
+                            if let Some(reason_text) = first_choice.delta.reasoning_any() {
+                                if !reason_text.is_empty() {
+                                    if !thinking_buffer.is_empty() {
+                                        thinking_buffer.push(' ');
+                                    }
+                                    thinking_buffer.push_str(reason_text);
+                                }
+                            }
+                        }
+
+                        if !has_payload {
+                            tracing::debug!("⚠️ Chunk has no content/tool_calls (likely metadata or finish chunk)");
+                            continue;
+                        }
+
+                        // Build Ollama-format streaming response
+                        let response_chunk = serde_json::json!({
+                            "model": &model_name,
+                            "created_at": chrono::Utc::now().to_rfc3339(),
+                            "message": Value::Object(message.clone()),
+                            "done": false
+                        });
+
+                        let formatted_data = match format {
+                            StreamFormat::SSE => format!("data: {}\n\n", response_chunk),
+                            StreamFormat::NDJSON => format!("{}\n", response_chunk),
+                            StreamFormat::Json => response_chunk.to_string(),
+                        };
+
+                        if tx.send(formatted_data).is_err() {
+                            tracing::warn!("⚠️ Failed to send chunk to receiver (client disconnected?)");
+                            break;
+                        }
+                        tracing::debug!("✅ Sent chunk #{} to client", chunk_count);
                     }
                     Err(e) => {
                         tracing::error!("❌ Stream error: {:?}", e);
@@ -93,20 +142,48 @@ impl Client {
             tracing::info!("✅ Stream processing completed. Total chunks: {}", chunk_count);
 
             // Send final message
-            let final_chunk = serde_json::json!({
-                "model": model_name,
-                "created_at": chrono::Utc::now().to_rfc3339(),
-                "message": {
-                    "role": "assistant",
-                    "content": ""
-                },
-                "done": true
-            });
+            let mut final_message = Map::new();
+            final_message.insert("role".to_string(), Value::String("assistant".to_string()));
+            let final_content = String::new();
+            if !thinking_buffer.is_empty() {
+                final_message.insert(
+                    "thinking".to_string(),
+                    Value::String(thinking_buffer.clone()),
+                );
+                thinking_buffer.clear();
+            }
+            final_message.insert("content".to_string(), Value::String(final_content));
+            final_message.insert("images".to_string(), Value::Null);
+
+            let mut final_chunk = Map::new();
+            final_chunk.insert("model".to_string(), Value::String(model_name.clone()));
+            final_chunk.insert(
+                "created_at".to_string(),
+                Value::String(chrono::Utc::now().to_rfc3339()),
+            );
+            final_chunk.insert("message".to_string(), Value::Object(final_message));
+            final_chunk.insert("done".to_string(), Value::Bool(true));
+
+            let done_reason = last_finish_reason.unwrap_or_else(|| "stop".to_string());
+            final_chunk.insert("done_reason".to_string(), Value::String(done_reason));
+
+            if let Some(usage) = last_usage {
+                final_chunk.insert(
+                    "prompt_eval_count".to_string(),
+                    Value::Number(usage.prompt_tokens.into()),
+                );
+                final_chunk.insert(
+                    "eval_count".to_string(),
+                    Value::Number(usage.completion_tokens.into()),
+                );
+            }
+
+            let final_chunk_value = Value::Object(final_chunk);
 
             let formatted_final = match format {
-                StreamFormat::SSE => format!("data: {}\n\n", final_chunk),
-                StreamFormat::NDJSON => format!("{}\n", final_chunk),
-                StreamFormat::Json => final_chunk.to_string(),
+                StreamFormat::SSE => format!("data: {}\n\n", final_chunk_value),
+                StreamFormat::NDJSON => format!("{}\n", final_chunk_value),
+                StreamFormat::Json => final_chunk_value.to_string(),
             };
             let _ = tx.send(formatted_final);
             tracing::debug!("🏁 Sent final chunk");
