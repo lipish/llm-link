@@ -37,9 +37,12 @@ LLM Link provides zero-configuration access to LLM providers through multiple AP
 #### Option 0: Install via Homebrew (macOS)
 
 ```bash
+# Run the tap command once per machine so Homebrew knows where the formula lives
 brew tap lipish/llm-link
 brew install llm-link
 ```
+
+> 📝 如果要取消可执行 `brew untap lipish/llm-link`，之后重新 tap 再安装即可。
 
 #### Option 1: Install from crates.io (Recommended)
 
