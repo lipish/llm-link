@@ -28,8 +28,8 @@
 		},
 		{
 			title: 'Install via pip (macOS / Linux)',
-			description: 'Python wrapper fetches the right prebuilt binary on first run.',
-			command: 'pip install llm-link'
+			description: 'Package name is pyllmlink; first run fetches the prebuilt llm-link binary.',
+			command: 'pip install pyllmlink'
 		},
 		{
 			title: 'Install via cargo (recommended)',

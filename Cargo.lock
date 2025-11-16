@@ -849,7 +849,7 @@ dependencies = [
 
 [[package]]
 name = "llm-link"
-version = "0.3.8"
+version = "0.3.9"
 dependencies = [
  "anyhow",
  "axum",
