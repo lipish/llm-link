@@ -1,20 +1,21 @@
 <script>
 	import Button from '$lib/components/ui/button.svelte';
-	import { Github, Terminal, Package, Zap, Code, Settings, Key, Globe, Check, AlertCircle } from 'lucide-svelte';
+	import { Github, Terminal, Package, Zap, Code, Settings, Globe, Check, AlertCircle, ListOrdered, Workflow } from 'lucide-svelte';
 	import { base } from '$app/paths';
-	
+	import { providers } from '$lib/data/providers.js';
+
 	const basePath = base;
-	
+
 	const curlCommand = `curl -X POST http://localhost:8088/api/config/update \\
-  -H "Content-Type: application/json" \\
-  -d '{"provider": "openai", "api_key": "new_key"}'`;
-	
+ -H "Content-Type: application/json" \\
+ -d '{"provider": "openai", "api_key": "new_key"}'`;
+
 	const rustExample1 = `use llm_link::provider::ProviderRegistry;
 
 // List all available providers
 let providers = ProviderRegistry::list_providers();
 println!("Available providers: {:?}", providers)`;
-	
+
 	const rustExample2 = `use llm_link::models::ModelsConfig;
 
 // Load models configuration
@@ -24,7 +25,7 @@ let models = ModelsConfig::load_with_fallback()
 for model in models {
     println!("Model: {}", model.name);
 }`;
-	
+
 	const rustExample3 = `use llm_link::provider::{Provider, ProviderConfig};
 use llm_link::provider::openai::OpenAIProvider;
 
@@ -35,99 +36,23 @@ let config = ProviderConfig {
 
 let client = OpenAIProvider::create_client(&config)?;
 // Use client for chat completions`;
-	
-	const providers = [
-		{
-			name: 'OpenAI',
-			description: 'Leading AI models including GPT-4, GPT-3.5, and more',
-			models: ['GPT-4', 'GPT-4 Turbo', 'GPT-3.5 Turbo'],
-			envVar: 'OPENAI_API_KEY',
-			apiType: 'Native',
-			baseUrl: 'https://api.openai.com/v1',
-			features: ['Streaming', 'Function Calling', 'Vision']
-		},
-		{
-			name: 'Anthropic',
-			description: 'Advanced Claude models with strong reasoning capabilities',
-			models: ['Claude 3.5 Sonnet', 'Claude 3.5 Haiku', 'Claude 3 Opus'],
-			envVar: 'ANTHROPIC_API_KEY',
-			apiType: 'Native',
-			baseUrl: 'https://api.anthropic.com',
-			features: ['Streaming', 'Long Context', 'Vision']
-		},
-		{
-			name: 'Zhipu AI',
-			description: 'Chinese AI models with multilingual support',
-			models: ['GLM-4.6', 'GLM-4.5', 'GLM-4'],
-			envVar: 'ZHIPU_API_KEY',
-			apiType: 'OpenAI Compatible',
-			baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-			features: ['Streaming', 'Multilingual', 'Code Generation']
-		},
-		{
-			name: 'Aliyun',
-			description: 'Alibaba Cloud\'s powerful Qwen models',
-			models: ['Qwen3 Max', 'Qwen3 Plus', 'Qwen3 Turbo'],
-			envVar: 'ALIYUN_API_KEY',
-			apiType: 'Native',
-			baseUrl: 'https://dashscope.aliyuncs.com/api/v1',
-			features: ['Streaming', 'Long Context', 'Multilingual']
-		},
-		{
-			name: 'Volcengine',
-			description: 'ByteDance\'s advanced Doubao models',
-			models: ['Doubao Seed 1.6', 'Doubao Pro', 'Doubao Lite'],
-			envVar: 'VOLCENGINE_API_KEY',
-			apiType: 'Native',
-			baseUrl: 'https://ark.cn-beijing.volces.com/api/v3',
-			features: ['Streaming', 'Cost Effective', 'Fast Response']
-		},
-		{
-			name: 'Tencent',
-			description: 'Tencent\'s Hunyuan models for various applications',
-			models: ['Hunyuan T1', 'Hunyuan A13B', 'Hunyuan Turbos'],
-			envVar: 'TENCENT_API_KEY',
-			apiType: 'Native',
-			baseUrl: 'https://hunyuan.tencentcloudapi.com',
-			features: ['Streaming', 'Chinese Optimized', 'Enterprise Ready']
-		},
-		{
-			name: 'Longcat',
-			description: 'High-performance models for general dialogue',
-			models: ['LongCat Flash Chat', 'LongCat Flash Thinking'],
-			envVar: 'LONGCAT_API_KEY',
-			apiType: 'OpenAI Compatible',
-			baseUrl: 'https://api.longcat.ai/v1',
-			features: ['Streaming', 'Fast Response', 'Cost Effective']
-		},
-		{
-			name: 'Moonshot',
-			description: 'Kimi models with large context windows',
-			models: ['Kimi K2 Turbo', 'Kimi K2', 'Kimi K1.5'],
-			envVar: 'MOONSHOT_API_KEY',
-			apiType: 'OpenAI Compatible',
-			baseUrl: 'https://api.moonshot.cn/v1',
-			features: ['Streaming', '200K Context', 'Document Processing']
-		},
-		{
-			name: 'Minimax',
-			description: 'Powerful AI models with OpenAI-compatible API',
-			models: ['MiniMax-M2', 'MiniMax-H2', 'MiniMax-T2'],
-			envVar: 'MINIMAX_API_KEY',
-			apiType: 'OpenAI Compatible',
-			baseUrl: 'https://api.minimaxi.com/v1',
-			features: ['Streaming', 'Multilingual', 'Fast Response']
-		},
-		{
-			name: 'Ollama',
-			description: 'Local and open-source models',
-			models: ['Llama 2', 'Mistral', 'Code Llama', 'Custom Models'],
-			envVar: 'None Required',
-			apiType: 'Native',
-			baseUrl: 'http://localhost:11434',
-			features: ['Local Deployment', 'Privacy', 'Custom Models']
-		}
+
+	const providerCount = providers.length;
+	const criticalProviders = providers.filter((provider) =>
+		['openai', 'anthropic', 'volcengine', 'ollama'].includes(provider.id)
+	);
+
+	const pageOutline = [
+		{ id: 'installation', label: '安装' },
+		{ id: 'quick-start', label: '快速上手' },
+		{ id: 'setup-flow', label: '核心流程' },
+		{ id: 'providers', label: 'Provider 配置' },
+		{ id: 'hot-reload', label: '热更新' },
+		{ id: 'protocols', label: '协议入口' },
+		{ id: 'library', label: 'Rust 库' },
+		{ id: 'troubleshooting', label: '排障' }
 	];
+
 </script>
 
 <div class="container py-8">
@@ -140,8 +65,24 @@ let client = OpenAIProvider::create_client(&config)?;
 			</p>
 		</div>
 
+		<section class="mb-12" aria-label="Table of contents">
+			<div class="rounded-lg border bg-card p-6">
+				<div class="flex items-center mb-4">
+					<ListOrdered class="h-5 w-5 mr-2 text-primary" />
+					<h2 class="text-xl font-semibold">Page Outline</h2>
+				</div>
+				<div class="grid gap-3 md:grid-cols-2">
+					{#each pageOutline as item}
+						<a href={`#${item.id}`} class="text-sm text-muted-foreground hover:text-foreground">
+							#{item.label}
+						</a>
+					{/each}
+				</div>
+			</div>
+		</section>
+
 		<!-- Installation Section -->
-		<section class="mb-12">
+		<section class="mb-12" id="installation">
 			<div class="rounded-lg border bg-card p-6">
 				<div class="flex items-center mb-6">
 					<Package class="h-6 w-6 mr-2 text-primary" />
@@ -179,7 +120,7 @@ let client = OpenAIProvider::create_client(&config)?;
 		</section>
 
 		<!-- Quick Start Section -->
-		<section class="mb-12">
+		<section class="mb-12" id="quick-start">
 			<div class="rounded-lg border bg-card p-6">
 				<div class="flex items-center mb-6">
 					<Terminal class="h-6 w-6 mr-2 text-primary" />
@@ -244,74 +185,114 @@ llm-link --port 8088 --protocols openai,anthropic
 			</div>
 		</section>
 
+		<!-- Core Flow Section -->
+		<section class="mb-12" id="setup-flow">
+			<div class="rounded-lg border bg-card p-6">
+				<div class="flex items-center mb-6">
+					<Workflow class="h-6 w-6 mr-2 text-primary" />
+					<h2 class="text-2xl font-semibold">Core Setup Flow</h2>
+				</div>
+				<div class="grid gap-6 md:grid-cols-2">
+					<div class="border rounded-lg p-4">
+						<h3 class="text-lg font-medium mb-2">1. 安装 & 校验版本</h3>
+						<p class="text-sm text-muted-foreground">
+							安装后运行 <code class="font-mono">llm-link --version</code> 确认 CLI、服务端与文档描述版本一致。
+						</p>
+					</div>
+					<div class="border rounded-lg p-4">
+						<h3 class="text-lg font-medium mb-2">2. 配置 Provider 与模型</h3>
+						<p class="text-sm text-muted-foreground">
+							先设置关键 Provider（OpenAI / Anthropic / Volcengine / Ollama），其余可通过热更新补齐。
+						</p>
+					</div>
+					<div class="border rounded-lg p-4">
+						<h3 class="text-lg font-medium mb-2">3. 启动协议</h3>
+						<p class="text-sm text-muted-foreground">
+							通过 <code class="font-mono">--app</code> 或 <code class="font-mono">--protocols</code> 选择需要暴露的 OpenAI / Anthropic / Ollama 入口。
+						</p>
+					</div>
+					<div class="border rounded-lg p-4">
+						<h3 class="text-lg font-medium mb-2">4. 运行期监控</h3>
+						<p class="text-sm text-muted-foreground">
+							借助 <code class="font-mono">/api/health</code>、<code class="font-mono">/api/providers</code> 与日志检查状态，必要时用热更新 API 更新密钥。
+						</p>
+					</div>
+				</div>
+			</div>
+		</section>
+
 		<!-- Provider Configuration Section -->
-		<section class="mb-12">
+		<section class="mb-12" id="providers">
 			<div class="rounded-lg border bg-card p-6">
 				<div class="flex items-center mb-6">
 					<Settings class="h-6 w-6 mr-2 text-primary" />
 					<h2 class="text-2xl font-semibold">Provider Configuration</h2>
 				</div>
-				
-				<div class="mb-6">
-					<h3 class="text-lg font-medium mb-3">Environment Variables</h3>
-					<p class="text-sm text-muted-foreground mb-4">
-						Set API keys as environment variables. For Ollama, no API key is required.
-					</p>
-					
-					<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-						{#each providers as provider}
-							<div class="border rounded-lg p-4">
-								<div class="flex items-center mb-2">
-									<Key class="h-4 w-4 mr-2 text-primary" />
-									<h4 class="font-medium">{provider.name}</h4>
-								</div>
-								<div class="bg-muted rounded p-2 mb-2">
-									<code class="text-xs font-mono">{provider.envVar}</code>
-								</div>
-								<p class="text-xs text-muted-foreground mb-2">
-									{provider.description}
-								</p>
-								<div class="flex flex-wrap gap-1">
-									{#each provider.features as feature}
-										<span class="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-											{feature}
-										</span>
-									{/each}
-								</div>
-							</div>
-						{/each}
-					</div>
+				<p class="text-sm text-muted-foreground mb-6">
+					LLM Link Currently 支持 {providerCount} 个 Provider。以下列出最常见的 4 个，完整列表请见 Providers 页。
+				</p>
+				<div class="overflow-x-auto">
+					<table class="w-full text-sm">
+						<thead>
+							<tr class="text-left text-muted-foreground">
+								<th class="pb-3 font-medium">Provider</th>
+								<th class="pb-3 font-medium">Env Var</th>
+								<th class="pb-3 font-medium">关键特性</th>
+							</tr>
+						</thead>
+						<tbody>
+							{#each criticalProviders as provider}
+								<tr class="border-t">
+									<td class="py-3">
+										<div class="font-medium">{provider.name}</div>
+										<p class="text-xs text-muted-foreground">{provider.description}</p>
+									</td>
+									<td class="py-3">
+										<code class="bg-muted rounded px-2 py-1 text-xs font-mono">{provider.envVar}</code>
+									</td>
+									<td class="py-3">
+										<div class="flex flex-wrap gap-1">
+											{#each provider.features.slice(0, 3) as feature}
+												<span class="bg-primary/10 text-primary px-2 py-0.5 rounded text-xs">{feature}</span>
+											{/each}
+										</div>
+									</td>
+								</tr>
+							{/each}
+						</tbody>
+					</table>
 				</div>
-				
-				<div>
+				<div class="mt-6">
 					<h3 class="text-lg font-medium mb-3">Configuration File (Optional)</h3>
 					<p class="text-sm text-muted-foreground mb-3">
 						Create a <code>keys.yaml</code> file in the project directory:
 					</p>
 					<div class="bg-muted rounded-md p-4">
 						<code class="text-sm font-mono">
-providers:<br>
-&nbsp;openai:<br>
-&nbsp;&nbsp;api_key: "your_openai_key"<br>
-&nbsp;anthropic:<br>
-&nbsp;&nbsp;api_key: "your_anthropic_key"<br>
-&nbsp;zhipu:<br>
-&nbsp;&nbsp;api_key: "your_zhipu_key"<br>
-&nbsp;# ... other providers
+				providers:<br>
+				&nbsp;openai:<br>
+				&nbsp;&nbsp;api_key: "your_openai_key"<br>
+				&nbsp;anthropic:<br>
+				&nbsp;&nbsp;api_key: "your_anthropic_key"<br>
+				&nbsp;zhipu:<br>
+				&nbsp;&nbsp;api_key: "your_zhipu_key"<br>
+				&nbsp;# ... other providers
 						</code>
 					</div>
+					<p class="text-xs text-muted-foreground mt-2">
+						Use hot reload APIs to update values without restart.
+					</p>
 				</div>
 			</div>
 		</section>
 
 		<!-- Hot Reload Section -->
-		<section class="mb-12">
+		<section class="mb-12" id="hot-reload">
 			<div class="rounded-lg border bg-card p-6">
 				<div class="flex items-center mb-6">
 					<Zap class="h-6 w-6 mr-2 text-primary" />
 					<h2 class="text-2xl font-semibold">Hot Reload Configuration</h2>
 				</div>
-				
 				<div class="space-y-6">
 					<div>
 						<h3 class="text-lg font-medium mb-3">Dynamic Configuration Update</h3>
@@ -361,7 +342,7 @@ providers:<br>
 		</section>
 
 		<!-- API Protocols Section -->
-		<section class="mb-12">
+		<section class="mb-12" id="protocols">
 			<div class="rounded-lg border bg-card p-6">
 				<div class="flex items-center mb-6">
 					<Globe class="h-6 w-6 mr-2 text-primary" />
@@ -412,7 +393,7 @@ providers:<br>
 		</section>
 
 		<!-- Rust Library Section -->
-		<section class="mb-12">
+		<section class="mb-12" id="library">
 			<div class="rounded-lg border bg-card p-6">
 				<div class="flex items-center mb-6">
 					<Code class="h-6 w-6 mr-2 text-primary" />
@@ -457,7 +438,7 @@ providers:<br>
 		</section>
 
 		<!-- Troubleshooting Section -->
-		<section class="mb-12">
+		<section class="mb-12" id="troubleshooting">
 			<div class="rounded-lg border bg-card p-6">
 				<h2 class="text-2xl font-semibold mb-6">Troubleshooting</h2>
 				

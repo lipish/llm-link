@@ -1,6 +1,6 @@
 <script>
 	import Button from '$lib/components/ui/button.svelte';
-	import { Github, Terminal, Code, Settings, Key, Globe, Check, AlertCircle, BookOpen, Zap } from 'lucide-svelte';
+	import { Github, Terminal, Code, Settings, Globe, Check, AlertCircle, BookOpen, Zap, ListOrdered } from 'lucide-svelte';
 	import { base } from '$app/paths';
 	
 	const basePath = base;
@@ -442,6 +442,140 @@ curl -X POST http://localhost:8088/api/chat \\
   }
 }`
 	};
+
+	const pageOutline = [
+		{ id: 'overview', label: '概览' },
+		{ id: 'management', label: '管理接口' },
+		{ id: 'protocols', label: '协议代理' },
+		{ id: 'diagnostics', label: '诊断与监控' },
+		{ id: 'error-handling', label: '错误处理' },
+		{ id: 'rate-limiting', label: '限流策略' }
+	];
+
+	const managementSections = [
+		{
+			title: '模型与 Provider 发现',
+			description: '查询实时可用的模型、Provider 以及静态支持列表。',
+			items: [
+				{
+					title: 'Models API',
+					description: '动态返回已注册 Provider 的实时模型。',
+					endpoints: ['GET /api/models', 'GET /api/models?provider=openai'],
+					exampleKey: 'models'
+				},
+				{
+					title: 'Supported Models API',
+					description: '输出包含上下文长度、能力标签的静态模型列表。',
+					endpoints: ['GET /api/supported-models', 'GET /api/supported-models?provider=openai'],
+					exampleKey: 'supportedModels'
+				},
+				{
+					title: 'Provider List API',
+					description: '查询所有支持的 Provider 及其能力。',
+					endpoints: ['GET /api/provider-list'],
+					exampleKey: 'providerList'
+				},
+				{
+					title: 'Providers API',
+					description: '查看当前实例中每个 Provider 的状态。',
+					endpoints: ['GET /api/providers'],
+					exampleKey: 'providers'
+				}
+			]
+		},
+		{
+			title: '运行时配置与热更新',
+			description: '无需重启即可校验、更新、切换 Provider 配置。',
+			items: [
+				{
+					title: 'Current Config',
+					description: '查看当前 Provider、模型与密钥状态。',
+					endpoints: ['GET /api/config/current'],
+					exampleKey: 'currentConfig'
+				},
+				{
+					title: 'Validate API Key',
+					description: '预先校验 Provider API Key，避免热更新失败。',
+					endpoints: ['POST /api/config/validate-key'],
+					exampleKey: 'validateKey'
+				},
+				{
+					title: 'Update API Key (Hot Reload)',
+					description: '在运行中替换单个 Provider 的密钥。',
+					endpoints: ['POST /api/config/update-key'],
+					exampleKey: 'updateKey'
+				},
+				{
+					title: 'Switch Provider',
+					description: '一次请求中切换 Provider + 模型。',
+					endpoints: ['POST /api/config/switch-provider'],
+					exampleKey: 'switchProvider'
+				},
+				{
+					title: 'Bulk Config Update',
+					description: '批量提交多个 Provider 的配置或密钥。',
+					endpoints: ['POST /api/config/update'],
+					exampleKey: 'config'
+				}
+			]
+		},
+		{
+			title: '运维辅助',
+			description: '管理进程、触发优雅关闭，并获取运行实例信息。',
+			items: [
+				{
+					title: 'Process Management',
+					description: '查询 PID 或请求优雅关停，便于外部编排。',
+					endpoints: ['GET /api/config/pid', 'POST /api/config/shutdown'],
+					exampleKey: 'processManagement'
+				}
+			]
+		}
+	];
+
+	const protocolApis = [
+		{
+			title: 'OpenAI 兼容 API',
+			description: '对接 OpenAI、Zhipu、Moonshot、Minimax、Longcat 等兼容客户端。',
+			endpoints: ['POST /v1/chat/completions', 'GET /v1/models'],
+			exampleKey: 'openai'
+		},
+		{
+			title: 'Anthropic 原生 API',
+			description: '完整支持 Claude Messages 协议与流式输出。',
+			endpoints: ['POST /v1/messages', 'GET /v1/models'],
+			exampleKey: 'anthropic'
+		},
+		{
+			title: 'Ollama 兼容 API',
+			description: '为本地模型和 Zed 这类客户端桥接 generate/chat/tags 接口。',
+			endpoints: ['POST /api/generate', 'POST /api/chat', 'GET /api/tags'],
+			exampleKey: 'ollama'
+		}
+	];
+
+	const diagnosticApis = [
+		{
+			title: 'Service Info',
+			description: '获取版本号、当前 Provider、启用协议等信息。',
+			endpoints: ['GET /api/info'],
+			exampleKey: 'serviceInfo'
+		},
+		{
+			title: 'Health API',
+			description: '检查实例健康度、端口、协议启用状态。',
+			endpoints: ['GET /api/health'],
+			exampleKey: 'health'
+		}
+	];
+
+	const managementItemCount = managementSections.reduce((count, section) => count + section.items.length, 0);
+
+	const summaryCards = [
+		{ title: 'Base URL', value: 'http://localhost:8088', hint: '默认端口 8088，可通过 --port 修改' },
+		{ title: '管理接口', value: `${managementItemCount}`, hint: '覆盖配置、发现、运维' },
+		{ title: '协议代理', value: `${protocolApis.length}`, hint: 'OpenAI / Anthropic / Ollama' }
+	];
 </script>
 
 <div class="container py-8">
@@ -454,14 +588,38 @@ curl -X POST http://localhost:8088/api/chat \\
 			</p>
 		</div>
 
-		<!-- Overview Section -->
-		<section class="mb-12">
+		<section class="mb-10" aria-label="Table of contents">
 			<div class="rounded-lg border bg-card p-6">
-				<div class="flex items-center mb-6">
+				<div class="flex items-center mb-4">
+					<ListOrdered class="h-5 w-5 mr-2 text-primary" />
+					<h2 class="text-xl font-semibold">Page Outline</h2>
+				</div>
+				<div class="grid gap-3 md:grid-cols-3">
+					{#each pageOutline as item}
+						<a href={`#${item.id}`} class="text-sm text-muted-foreground hover:text-foreground">
+							#{item.label}
+						</a>
+					{/each}
+				</div>
+			</div>
+		</section>
+
+		<section class="mb-12" id="overview">
+			<div class="rounded-lg border bg-card p-6 space-y-8">
+				<div class="flex items-center mb-2">
 					<BookOpen class="h-6 w-6 mr-2 text-primary" />
 					<h2 class="text-2xl font-semibold">API Overview</h2>
 				</div>
-				
+				<div class="grid gap-4 md:grid-cols-3">
+					{#each summaryCards as card}
+						<div class="rounded-lg border bg-muted/50 p-4">
+							<p class="text-xs text-muted-foreground uppercase">{card.title}</p>
+							<p class="text-2xl font-bold">{card.value}</p>
+							<p class="text-xs text-muted-foreground">{card.hint}</p>
+						</div>
+					{/each}
+				</div>
+
 				<div class="grid gap-6 md:grid-cols-2">
 					<div>
 						<h3 class="text-lg font-medium mb-3">Base URL</h3>
@@ -469,21 +627,20 @@ curl -X POST http://localhost:8088/api/chat \\
 							<code class="text-sm font-mono">http://localhost:8088</code>
 						</div>
 						<p class="text-sm text-muted-foreground mt-2">
-							Default port is 8088, can be changed with <code>--port</code> flag
+							Default port is 8088, configurable via <code>--port</code> flag.
 						</p>
 					</div>
-					
 					<div>
 						<h3 class="text-lg font-medium mb-3">Authentication</h3>
 						<div class="space-y-2">
 							<div class="bg-muted rounded-md p-3">
-								<code class="text-xs font-mono">OpenAI API: Bearer Token</code>
+								<code class="text-xs font-mono">OpenAI API · Authorization: Bearer</code>
 							</div>
 							<div class="bg-muted rounded-md p-3">
-								<code class="text-xs font-mono">Anthropic API: x-api-key Header</code>
+								<code class="text-xs font-mono">Anthropic API · x-api-key + anthropic-version</code>
 							</div>
 							<div class="bg-muted rounded-md p-3">
-								<code class="text-xs font-mono">Management APIs: No Auth Required</code>
+								<code class="text-xs font-mono">Management APIs · 默认无需鉴权</code>
 							</div>
 						</div>
 					</div>
@@ -492,403 +649,109 @@ curl -X POST http://localhost:8088/api/chat \\
 		</section>
 
 		<!-- Management APIs Section -->
-		<section class="mb-12">
+		<section class="mb-12" id="management">
 			<div class="rounded-lg border bg-card p-6">
 				<div class="flex items-center mb-6">
 					<Settings class="h-6 w-6 mr-2 text-primary" />
 					<h2 class="text-2xl font-semibold">Management APIs</h2>
 				</div>
-				
-				<div class="space-y-8">
-					<!-- Models API -->
-					<div>
-						<h3 class="text-lg font-medium mb-3 flex items-center">
-							<Code class="h-4 w-4 mr-2" />
-							Models API
-						</h3>
-						<p class="text-sm text-muted-foreground mb-4">
-							Get available models for all providers or specific provider
-						</p>
-						
-						<div class="space-y-4">
-							<div>
-								<h4 class="font-medium mb-2">Endpoints</h4>
-								<div class="grid gap-2 md:grid-cols-2">
-									<div class="bg-muted rounded p-3">
-										<code class="text-xs font-mono">GET /api/models</code>
-									</div>
-									<div class="bg-muted rounded p-3">
-										<code class="text-xs font-mono">GET /api/models?provider=openai</code>
-									</div>
+
+				<div class="space-y-6">
+					{#each managementSections as section}
+						<div class="rounded-lg border bg-muted/30 p-5">
+							<div class="flex flex-col gap-2 mb-4">
+								<div class="flex items-center justify-between">
+									<h3 class="text-xl font-semibold">{section.title}</h3>
+									<span class="text-xs text-muted-foreground">{section.items.length} 个端点组</span>
 								</div>
+								<p class="text-sm text-muted-foreground">{section.description}</p>
 							</div>
-							
-							<div>
-								<h4 class="font-medium mb-2">Example Usage</h4>
-								<div class="bg-muted rounded-md p-4">
-									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.models}</code>
-								</div>
+							<div class="space-y-4">
+								{#each section.items as item}
+									<div class="rounded-lg border bg-card p-4">
+										<div class="flex items-center justify-between mb-2">
+											<h4 class="font-medium">{item.title}</h4>
+											<span class="text-xs text-muted-foreground">{item.endpoints.length} endpoints</span>
+										</div>
+										<p class="text-sm text-muted-foreground mb-3">{item.description}</p>
+										<div class="grid gap-2 md:grid-cols-2 mb-3">
+											{#each item.endpoints as endpoint}
+												<div class="bg-muted rounded p-3">
+													<code class="text-xs font-mono">{endpoint}</code>
+												</div>
+											{/each}
+										</div>
+										{#if item.exampleKey}
+											<div class="bg-muted rounded-md p-4">
+												<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples[item.exampleKey]}</code>
+											</div>
+										{/if}
+									</div>
+								{/each}
 							</div>
 						</div>
-					</div>
-
-					<!-- Providers API -->
-					<div>
-						<h3 class="text-lg font-medium mb-3 flex items-center">
-							<Globe class="h-4 w-4 mr-2" />
-							Providers API
-						</h3>
-						<p class="text-sm text-muted-foreground mb-4">
-							Get status and configuration of all providers
-						</p>
-						
-						<div class="space-y-4">
-							<div>
-								<h4 class="font-medium mb-2">Endpoints</h4>
-								<div class="bg-muted rounded p-3">
-									<code class="text-xs font-mono">GET /api/providers</code>
-								</div>
-							</div>
-							
-							<div>
-								<h4 class="font-medium mb-2">Example Usage</h4>
-								<div class="bg-muted rounded-md p-4">
-									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.providers}</code>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<!-- Supported Models API -->
-					<div>
-						<h3 class="text-lg font-medium mb-3 flex items-center">
-							<Code class="h-4 w-4 mr-2" />
-							Supported Models API
-						</h3>
-						<p class="text-sm text-muted-foreground mb-4">
-							Get static list of all supported models with detailed information
-						</p>
-						
-						<div class="space-y-4">
-							<div>
-								<h4 class="font-medium mb-2">Endpoints</h4>
-								<div class="grid gap-2 md:grid-cols-2">
-									<div class="bg-muted rounded p-3">
-										<code class="text-xs font-mono">GET /api/supported-models</code>
-									</div>
-									<div class="bg-muted rounded p-3">
-										<code class="text-xs font-mono">GET /api/supported-models?provider=openai</code>
-									</div>
-								</div>
-							</div>
-							
-							<div>
-								<h4 class="font-medium mb-2">Example Usage</h4>
-								<div class="bg-muted rounded-md p-4">
-									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.supportedModels}</code>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<!-- Provider List API -->
-					<div>
-						<h3 class="text-lg font-medium mb-3 flex items-center">
-							<Globe class="h-4 w-4 mr-2" />
-							Provider List API
-						</h3>
-						<p class="text-sm text-muted-foreground mb-4">
-							Get list of all supported providers with their capabilities
-						</p>
-						
-						<div class="space-y-4">
-							<div>
-								<h4 class="font-medium mb-2">Endpoints</h4>
-								<div class="bg-muted rounded p-3">
-									<code class="text-xs font-mono">GET /api/provider-list</code>
-								</div>
-							</div>
-							
-							<div>
-								<h4 class="font-medium mb-2">Example Usage</h4>
-								<div class="bg-muted rounded-md p-4">
-									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.providerList}</code>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<!-- Configuration Management APIs -->
-					<div>
-						<h3 class="text-lg font-medium mb-3 flex items-center">
-							<Key class="h-4 w-4 mr-2" />
-							Configuration Management APIs
-						</h3>
-						<p class="text-sm text-muted-foreground mb-4">
-							Runtime configuration management without service restart
-						</p>
-						
-						<div class="space-y-6">
-							<!-- Current Config -->
-							<div>
-								<h4 class="font-medium mb-2">Get Current Configuration</h4>
-								<div class="bg-muted rounded p-3 mb-3">
-									<code class="text-xs font-mono">GET /api/config/current</code>
-								</div>
-								<div class="bg-muted rounded-md p-4">
-									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.currentConfig}</code>
-								</div>
-							</div>
-
-							<!-- Validate API Key -->
-							<div>
-								<h4 class="font-medium mb-2">Validate API Key</h4>
-								<div class="bg-muted rounded p-3 mb-3">
-									<code class="text-xs font-mono">POST /api/config/validate-key</code>
-								</div>
-								<div class="bg-muted rounded-md p-4">
-									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.validateKey}</code>
-								</div>
-							</div>
-
-							<!-- Update API Key -->
-							<div>
-								<h4 class="font-medium mb-2">Update API Key (Hot Reload)</h4>
-								<div class="bg-muted rounded p-3 mb-3">
-									<code class="text-xs font-mono">POST /api/config/update-key</code>
-								</div>
-								<div class="bg-muted rounded-md p-4">
-									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.updateKey}</code>
-								</div>
-							</div>
-
-							<!-- Switch Provider -->
-							<div>
-								<h4 class="font-medium mb-2">Switch Provider</h4>
-								<div class="bg-muted rounded p-3 mb-3">
-									<code class="text-xs font-mono">POST /api/config/switch-provider</code>
-								</div>
-								<div class="bg-muted rounded-md p-4">
-									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.switchProvider}</code>
-								</div>
-							</div>
-
-							<!-- Process Management -->
-							<div>
-								<h4 class="font-medium mb-2">Process Management</h4>
-								<div class="grid gap-2 md:grid-cols-2 mb-3">
-									<div class="bg-muted rounded p-3">
-										<code class="text-xs font-mono">GET /api/config/pid</code>
-									</div>
-									<div class="bg-muted rounded p-3">
-										<code class="text-xs font-mono">POST /api/config/shutdown</code>
-									</div>
-								</div>
-								<div class="bg-muted rounded-md p-4">
-									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.processManagement}</code>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<!-- Service Info API -->
-					<div>
-						<h3 class="text-lg font-medium mb-3 flex items-center">
-							<BookOpen class="h-4 w-4 mr-2" />
-							Service Info API
-						</h3>
-						<p class="text-sm text-muted-foreground mb-4">
-							Get comprehensive service information and status
-						</p>
-						
-						<div class="space-y-4">
-							<div>
-								<h4 class="font-medium mb-2">Endpoints</h4>
-								<div class="grid gap-2 md:grid-cols-2">
-									<div class="bg-muted rounded p-3">
-										<code class="text-xs font-mono">GET /api/info</code>
-									</div>
-									<div class="bg-muted rounded p-3">
-										<code class="text-xs font-mono">GET /api/health</code>
-									</div>
-								</div>
-							</div>
-							
-							<div>
-								<h4 class="font-medium mb-2">Example Usage</h4>
-								<div class="bg-muted rounded-md p-4">
-									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.serviceInfo}</code>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<!-- Configuration API -->
-					<div>
-						<h3 class="text-lg font-medium mb-3 flex items-center">
-							<Key class="h-4 w-4 mr-2" />
-							Configuration API
-						</h3>
-						<p class="text-sm text-muted-foreground mb-4">
-							Update provider configurations without restarting the service
-						</p>
-						
-						<div class="space-y-4">
-							<div>
-								<h4 class="font-medium mb-2">Endpoints</h4>
-								<div class="bg-muted rounded p-3">
-									<code class="text-xs font-mono">POST /api/config/update</code>
-								</div>
-							</div>
-							
-							<div>
-								<h4 class="font-medium mb-2">Example Usage</h4>
-								<div class="bg-muted rounded-md p-4">
-									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.config}</code>
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<!-- Health API -->
-					<div>
-						<h3 class="text-lg font-medium mb-3 flex items-center">
-							<Zap class="h-4 w-4 mr-2" />
-							Health API
-						</h3>
-						<p class="text-sm text-muted-foreground mb-4">
-							Check service health and system status
-						</p>
-						
-						<div class="space-y-4">
-							<div>
-								<h4 class="font-medium mb-2">Endpoints</h4>
-								<div class="bg-muted rounded p-3">
-									<code class="text-xs font-mono">GET /api/health</code>
-								</div>
-							</div>
-							
-							<div>
-								<h4 class="font-medium mb-2">Example Usage</h4>
-								<div class="bg-muted rounded-md p-4">
-									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.health}</code>
-								</div>
-							</div>
-						</div>
-					</div>
+					{/each}
 				</div>
 			</div>
 		</section>
 
 		<!-- Protocol APIs Section -->
-		<section class="mb-12">
+		<section class="mb-12" id="protocols">
 			<div class="rounded-lg border bg-card p-6">
 				<div class="flex items-center mb-6">
 					<Terminal class="h-6 w-6 mr-2 text-primary" />
 					<h2 class="text-2xl font-semibold">Protocol APIs</h2>
 				</div>
-				
 				<p class="text-sm text-muted-foreground mb-6">
-					LLM Link provides native API compatibility for major LLM providers. 
-					Use the same endpoints and authentication as the original services.
+					LLM Link 同时暴露 OpenAI、Anthropic、Ollama 三种协议入口，自动完成认证与格式转换。
 				</p>
-				
-				<div class="space-y-8">
-					<!-- OpenAI API -->
-					<div>
-						<h3 class="text-lg font-medium mb-3">OpenAI Compatible API</h3>
-						<p class="text-sm text-muted-foreground mb-4">
-							Compatible with OpenAI's API format for OpenAI, Zhipu AI, Longcat, Moonshot, and Minimax providers
-						</p>
-						
-						<div class="space-y-4">
-							<div>
-								<h4 class="font-medium mb-2">Endpoints</h4>
-								<div class="grid gap-2 md:grid-cols-2">
+				<div class="grid gap-6">
+					{#each protocolApis as protocol}
+						<div class="rounded-lg border bg-muted/40 p-5">
+							<h3 class="text-lg font-semibold mb-2">{protocol.title}</h3>
+							<p class="text-sm text-muted-foreground mb-3">{protocol.description}</p>
+							<div class="grid gap-2 md:grid-cols-3 mb-3">
+								{#each protocol.endpoints as endpoint}
 									<div class="bg-muted rounded p-3">
-										<code class="text-xs font-mono">POST /v1/chat/completions</code>
+										<code class="text-xs font-mono">{endpoint}</code>
 									</div>
-									<div class="bg-muted rounded p-3">
-										<code class="text-xs font-mono">GET /v1/models</code>
-									</div>
-								</div>
+								{/each}
 							</div>
-							
-							<div>
-								<h4 class="font-medium mb-2">Example Usage</h4>
-								<div class="bg-muted rounded-md p-4">
-									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.openai}</code>
-								</div>
+							<div class="bg-muted rounded-md p-4">
+								<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples[protocol.exampleKey]}</code>
 							</div>
 						</div>
-					</div>
+					{/each}
+				</div>
+			</div>
+		</section>
 
-					<!-- Anthropic API -->
-					<div>
-						<h3 class="text-lg font-medium mb-3">Anthropic Native API</h3>
-						<p class="text-sm text-muted-foreground mb-4">
-							Native Anthropic Claude API compatibility
-						</p>
-						
-						<div class="space-y-4">
-							<div>
-								<h4 class="font-medium mb-2">Endpoints</h4>
-								<div class="grid gap-2 md:grid-cols-2">
-									<div class="bg-muted rounded p-3">
-										<code class="text-xs font-mono">POST /v1/messages</code>
-									</div>
-									<div class="bg-muted rounded p-3">
-										<code class="text-xs font-mono">GET /v1/models</code>
-									</div>
-								</div>
+		<!-- Diagnostics Section -->
+		<section class="mb-12" id="diagnostics">
+			<div class="rounded-lg border bg-card p-6">
+				<div class="flex items-center mb-6">
+					<Code class="h-6 w-6 mr-2 text-primary" />
+					<h2 class="text-2xl font-semibold">Diagnostics & Monitoring</h2>
+				</div>
+				<div class="grid gap-4 md:grid-cols-2">
+					{#each diagnosticApis as diag}
+						<div class="rounded-lg border bg-muted/40 p-4">
+							<h3 class="text-lg font-semibold mb-2">{diag.title}</h3>
+							<p class="text-sm text-muted-foreground mb-3">{diag.description}</p>
+							<div class="bg-muted rounded p-3 mb-3">
+								<code class="text-xs font-mono">{diag.endpoints[0]}</code>
 							</div>
-							
-							<div>
-								<h4 class="font-medium mb-2">Example Usage</h4>
-								<div class="bg-muted rounded-md p-4">
-									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.anthropic}</code>
-								</div>
+							<div class="bg-muted rounded-md p-4">
+								<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples[diag.exampleKey]}</code>
 							</div>
 						</div>
-					</div>
-
-					<!-- Ollama API -->
-					<div>
-						<h3 class="text-lg font-medium mb-3">Ollama Compatible API</h3>
-						<p class="text-sm text-muted-foreground mb-4">
-							Compatible with Ollama's API format for local model deployment
-						</p>
-						
-						<div class="space-y-4">
-							<div>
-								<h4 class="font-medium mb-2">Endpoints</h4>
-								<div class="grid gap-2 md:grid-cols-3">
-									<div class="bg-muted rounded p-3">
-										<code class="text-xs font-mono">POST /api/generate</code>
-									</div>
-									<div class="bg-muted rounded p-3">
-										<code class="text-xs font-mono">POST /api/chat</code>
-									</div>
-									<div class="bg-muted rounded p-3">
-										<code class="text-xs font-mono">GET /api/tags</code>
-									</div>
-								</div>
-							</div>
-							
-							<div>
-								<h4 class="font-medium mb-2">Example Usage</h4>
-								<div class="bg-muted rounded-md p-4">
-									<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples.ollama}</code>
-								</div>
-							</div>
-						</div>
-					</div>
+					{/each}
 				</div>
 			</div>
 		</section>
 
 		<!-- Error Handling Section -->
-		<section class="mb-12">
+		<section class="mb-12" id="error-handling">
 			<div class="rounded-lg border bg-card p-6">
 				<h2 class="text-2xl font-semibold mb-6">Error Handling</h2>
 				
@@ -930,7 +793,7 @@ curl -X POST http://localhost:8088/api/chat \\
 		</section>
 
 		<!-- Rate Limiting Section -->
-		<section class="mb-12">
+		<section class="mb-12" id="rate-limiting">
 			<div class="rounded-lg border bg-card p-6">
 				<h2 class="text-2xl font-semibold mb-6">Rate Limiting</h2>
 				

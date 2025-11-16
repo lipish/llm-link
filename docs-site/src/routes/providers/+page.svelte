@@ -1,89 +1,11 @@
 <script>
 	import Button from '$lib/components/ui/button.svelte';
 	import { Github, Check, ExternalLink } from 'lucide-svelte';
-	
-	const providers = [
-		{
-			name: 'OpenAI',
-			description: 'Leading AI models including GPT-4, GPT-3.5, and more',
-			models: ['GPT-4', 'GPT-4 Turbo', 'GPT-3.5 Turbo'],
-			envVar: 'OPENAI_API_KEY',
-			apiType: 'Native',
-			website: 'https://openai.com'
-		},
-		{
-			name: 'Anthropic',
-			description: 'Advanced Claude models with strong reasoning capabilities',
-			models: ['Claude 3.5 Sonnet', 'Claude 3.5 Haiku', 'Claude 3 Opus'],
-			envVar: 'ANTHROPIC_API_KEY',
-			apiType: 'Native',
-			website: 'https://anthropic.com'
-		},
-		{
-			name: 'Zhipu AI',
-			description: 'Chinese AI models with multilingual support',
-			models: ['GLM-4.6', 'GLM-4.5', 'GLM-4'],
-			envVar: 'ZHIPU_API_KEY',
-			apiType: 'OpenAI Compatible',
-			website: 'https://zhipuai.cn'
-		},
-		{
-			name: 'Aliyun',
-			description: 'Alibaba Cloud\'s powerful Qwen models',
-			models: ['Qwen3 Max', 'Qwen3 Plus', 'Qwen3 Turbo'],
-			envVar: 'ALIYUN_API_KEY',
-			apiType: 'Native',
-			website: 'https://aliyun.com'
-		},
-		{
-			name: 'Volcengine',
-			description: 'ByteDance\'s advanced Doubao models',
-			models: ['Doubao Seed 1.6', 'Doubao Pro', 'Doubao Lite'],
-			envVar: 'VOLCENGINE_API_KEY',
-			apiType: 'Native',
-			website: 'https://volcengine.com'
-		},
-		{
-			name: 'Tencent',
-			description: 'Tencent\'s Hunyuan models for various applications',
-			models: ['Hunyuan T1', 'Hunyuan A13B', 'Hunyuan Turbos'],
-			envVar: 'TENCENT_API_KEY',
-			apiType: 'Native',
-			website: 'https://cloud.tencent.com'
-		},
-		{
-			name: 'Longcat',
-			description: 'High-performance models for general dialogue',
-			models: ['LongCat Flash Chat', 'LongCat Flash Thinking'],
-			envVar: 'LONGCAT_API_KEY',
-			apiType: 'OpenAI Compatible',
-			website: 'https://longcat.ai'
-		},
-		{
-			name: 'Moonshot',
-			description: 'Kimi models with large context windows',
-			models: ['Kimi K2 Turbo', 'Kimi K2', 'Kimi K1.5'],
-			envVar: 'MOONSHOT_API_KEY',
-			apiType: 'OpenAI Compatible',
-			website: 'https://moonshot.cn'
-		},
-		{
-			name: 'Minimax',
-			description: 'Powerful AI models with OpenAI-compatible API',
-			models: ['MiniMax-M2', 'MiniMax-H2', 'MiniMax-T2'],
-			envVar: 'MINIMAX_API_KEY',
-			apiType: 'OpenAI Compatible',
-			website: 'https://minimaxi.com'
-		},
-		{
-			name: 'Ollama',
-			description: 'Local and open-source models',
-			models: ['Llama 2', 'Mistral', 'Code Llama', 'Custom Models'],
-			envVar: 'None Required',
-			apiType: 'Native',
-			website: 'https://ollama.ai'
-		}
-	];
+	import { providers } from '$lib/data/providers.js';
+
+	const providerCount = providers.length;
+	const nativeProviders = providers.filter((provider) => provider.apiType === 'Native');
+	const compatibleProviders = providers.filter((provider) => provider.apiType !== 'Native');
 </script>
 
 <div class="container py-8">
@@ -91,8 +13,26 @@
 		<div class="text-center mb-12">
 			<h1 class="text-4xl font-bold tracking-tight mb-4">Supported Providers</h1>
 			<p class="text-lg text-muted-foreground">
-				LLM Link supports 10 major LLM providers with unified API access and automatic format conversion.
+				LLM Link 支持 {providerCount} 个 LLM Provider，覆盖 Native 与 OpenAI-Compatible API 类型。
 			</p>
+		</div>
+
+		<div class="grid gap-4 md:grid-cols-3 mb-10">
+			<div class="rounded-lg border bg-card p-4">
+				<p class="text-xs text-muted-foreground uppercase">Provider 数量</p>
+				<p class="text-3xl font-bold">{providerCount}</p>
+				<p class="text-xs text-muted-foreground">统一格式暴露，便于协议切换</p>
+			</div>
+			<div class="rounded-lg border bg-card p-4">
+				<p class="text-xs text-muted-foreground uppercase">Native API</p>
+				<p class="text-3xl font-bold">{nativeProviders.length}</p>
+				<p class="text-xs text-muted-foreground">OpenAI / Anthropic / Volcengine / Ollama ...</p>
+			</div>
+			<div class="rounded-lg border bg-card p-4">
+				<p class="text-xs text-muted-foreground uppercase">OpenAI-Compatible</p>
+				<p class="text-3xl font-bold">{compatibleProviders.length}</p>
+				<p class="text-xs text-muted-foreground">Zhipu / Moonshot / Minimax / Longcat ...</p>
+			</div>
 		</div>
 
 		<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
