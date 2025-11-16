@@ -1,5 +1,5 @@
 use super::Client;
-use crate::llm::types::Model;
+use crate::normalizer::types::Model;
 use crate::settings::LlmBackendSettings;
 use anyhow::Result;
 use llm_connector::Provider;

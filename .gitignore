@@ -1,3 +1,6 @@
+# Local model overrides (per-user, may contain private endpoint IDs)
+model-overrides.yaml
+
 # docs-site
 /docs-site/node_modules
 /docs-site/build
@@ -9,6 +12,9 @@
 
 #Keys
 keys.yaml
+
+# Local model overrides (per-user, may contain private endpoint IDs)
+model-overrides.yaml
 
 # Mac files
 .DS_Store

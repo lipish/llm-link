@@ -1,4 +1,4 @@
-use crate::llm::Response;
+use crate::normalizer::Response;
 use anyhow::Result;
 use llm_connector::types::{Function, Message as LlmMessage, MessageBlock, Role as LlmRole, Tool};
 use serde_json::Value;
@@ -198,7 +198,7 @@ pub fn openai_tools_to_llm(tools: Vec<Value>) -> Vec<Tool> {
 
 /// Convert model list to Ollama format
 #[allow(dead_code)]
-pub fn models_to_ollama(models: Vec<crate::llm::Model>) -> Vec<Value> {
+pub fn models_to_ollama(models: Vec<crate::normalizer::Model>) -> Vec<Value> {
     models
         .into_iter()
         .map(|model| {

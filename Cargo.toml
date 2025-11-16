@@ -1,6 +1,6 @@
 [package]
 name = "llm-link"
-version = "0.3.5"
+version = "0.3.6"
 edition = "2021"
 authors = ["LLM Link Contributors"]
 description = "A universal LLM proxy supporting 10 providers (OpenAI, Anthropic, Zhipu, Aliyun, Volcengine, Tencent, Longcat, Moonshot, Minimax, Ollama) with dynamic model discovery API, hot-reload configuration, and optional API key startup"
@@ -26,7 +26,7 @@ tower = "0.4"
 tower-http = { version = "0.5", features = ["cors", "trace"] }
 
 # LLM connector
-llm-connector = { version = "0.5.1", features = ["streaming"] }
+llm-connector = { version = "0.5.3", features = ["streaming"] }
 
 # Serialization
 serde = { version = "1.0", features = ["derive"] }
@@ -54,6 +54,7 @@ chrono = { version = "0.4", features = ["serde"] }
 futures = "0.3"
 tokio-stream = "0.1"
 futures-util = "0.3"
+once_cell = "1.19"
 
 [dev-dependencies]
 tempfile = "3.0"

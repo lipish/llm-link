@@ -2,7 +2,7 @@ mod chat;
 mod models;
 mod stream;
 mod types;
-pub mod minimax_client;
+mod model_resolver;
 
 pub use types::{Model, Response};
 

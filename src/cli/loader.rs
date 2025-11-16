@@ -93,9 +93,21 @@ impl ConfigLoader {
         // Check environment variables for protocol combination
         Self::check_protocol_env_vars(&protocols, args)?;
 
-        let config = AppConfigGenerator::generate_protocol_config(&protocols, args.api_key.as_deref());
+        // Generate base config for the selected protocols
+        let mut config = AppConfigGenerator::generate_protocol_config(&protocols, args.api_key.as_deref());
+
+        // Apply provider/model overrides if specified (same behavior as app mode)
+        if let Some(provider) = &args.provider {
+            config = Self::apply_provider_overrides(
+                config,
+                Some(provider.as_str()),
+                args.model.as_deref(),
+                args.llm_api_key.as_deref(),
+            )?;
+        }
+
         let config_source = format!("protocols: {}", protocols.join(", "));
-        
+
         Ok((config, config_source))
     }
 
@@ -125,12 +137,6 @@ impl ConfigLoader {
     /// 检查协议模式的环境变量
     fn check_protocol_env_vars(protocols: &[String], args: &Args) -> Result<()> {
         let mut missing_vars = Vec::new();
-
-        // Always need ZHIPU_API_KEY
-        if std::env::var("ZHIPU_API_KEY").is_err() {
-            missing_vars.push("ZHIPU_API_KEY".to_string());
-        }
-
         // Check protocol-specific requirements
         for protocol in protocols {
             match protocol.to_lowercase().as_str() {

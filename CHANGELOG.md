@@ -32,6 +32,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Improved GitHub Actions deployment configuration
 - Fixed branch name compatibility (master vs main)
 
+### 🛠️ Internal Refactors
+- Renamed internal `LLM` communication layer to **Normalizer Layer** (`src/normalizer/`), emphasizing its role as the protocol normalization and LLM communication layer.
+- Moved `MinimaxClient` into the provider system as `provider::minimax::MinimaxClient`, aligning all provider-specific direct clients under `src/provider/`.
+- Enhanced Ollama protocol handler:
+  - `/api/tags` now reads models dynamically from `models.yaml` using the current backend provider.
+  - Volcengine Doubao models are fully reflected in tags, including `doubao-seed-code-preview-latest` for code-centric scenarios.
+
 ### 📚 Documentation Updates
 - Added complete provider documentation for Minimax
 - Updated all provider counts and descriptions

@@ -147,6 +147,57 @@ export ALIYUN_API_KEY="your-key"
 - `moonshot` - Moonshot Kimi models (default: `kimi-k2-turbo-preview`)
 - `ollama` - Ollama local models (default: `llama2`)
 
+### Volcengine Doubao: Logical Models vs Endpoint IDs
+
+Volcengine Ark 对 Doubao 模型采用「逻辑模型名」和「接入点 ID (ep-xxxx)」两层概念：
+
+- 在 Ark 控制台 / 文档中看到的 `doubao-seed-1.6`、`doubao-seed-code-preview-latest` 等是**逻辑模型名**。
+- 通过 OpenAI 兼容接口调用时，通常需要使用你账号下创建的 **接入点 ID**（例如 `ep-20251115213103-t9sf2`）作为 `model`。
+
+llm-link 的处理方式是：
+
+- 对外协议层（/api/chat、/api/tags、Zed 等）仍使用逻辑模型名，方便阅读与配置。
+- 在发送请求给 Volcengine 之前，由 Normalizer 层的 `ModelResolver` 将逻辑名映射为真正的 `ep-...`。
+
+映射规则（优先级从高到低）：
+
+1. **本地覆盖文件** `model-overrides.yaml`（仓库根目录，可选，本地配置，已加入 `.gitignore`）：
+
+   ```yaml
+   volcengine:
+     doubao-seed-code-preview-latest: "ep-your-seedcode-endpoint-id"
+     doubao-seed-1.6-thinking: "ep-your-thinking-endpoint-id"
+   ```
+
+   如果存在该文件且命中 provider+逻辑名，则总是使用这里配置的 `ep-...`。
+
+2. **Volcengine 默认规则**（无 overrides 时）：
+
+   - 如果请求中的 `model` 本身就是 `ep-...`，则直接透传。
+   - 否则（逻辑名），使用配置中的默认模型（通常来自 CLI `--model ep-...`）。
+
+3. **其他 Provider**：
+
+   - 目前保持简单策略：使用请求中的 `model`（为空时回退到默认模型）。
+
+推荐实践：
+
+- 想要**一个进程只用一个 Doubao endpoint**：
+
+  ```bash
+  cargo run -- \
+    --protocols ollama \
+    --provider volcengine \
+    --model ep-your-default-endpoint \
+    --llm-api-key "$ARK_API_KEY"
+  ```
+
+  然后在客户端中使用逻辑名（例如 `doubao-seed-code-preview-latest`），llm-link 会自动映射到默认 `ep-...`。
+
+- 想要**在同一进程中为多个 Doubao 逻辑模型配置不同 endpoint**：
+
+  在根目录创建 `model-overrides.yaml`（可从 `examples/model-overrides.example.yaml` 拷贝），按需要为每个逻辑名指定对应的 `ep-...`，无需修改代码或提交配置。
+
 **💡 Discover All Models:**
 ```bash
 # Query all supported providers and their models via API
@@ -831,12 +882,12 @@ Business logic layer between API and LLM layers.
 - Default model fallback
 - Delegating to LLM layer methods
 
-#### 4. LLM Layer (`src/llm/`)
+#### 4. Normalizer Layer (`src/normalizer/`)
 
-LLM communication layer, encapsulates interaction with LLM providers.
+Protocol normalization and LLM communication layer, encapsulates interaction with LLM providers.
 
 **Modules:**
-- `mod.rs` - Client struct and constructor
+- `mod.rs` - Unified client struct and constructor
 - `types.rs` - Type definitions (Model, Response, Usage)
 - `chat.rs` - Non-streaming chat
 - `stream.rs` - Streaming chat
@@ -844,7 +895,7 @@ LLM communication layer, encapsulates interaction with LLM providers.
 
 **Responsibilities:**
 - Encapsulate llm-connector library
-- Unified request/response interface
+- Normalize requests/responses across different provider protocols
 - Stream response management
 - Error handling
 
@@ -890,7 +941,7 @@ Built-in application configuration generators.
    ├─ Business Logic
    └─ Model Selection
    ↓
-4. LLM Layer
+4. Normalizer Layer
    ├─ LLM Connector Wrapper
    └─ Request Formatting
    ↓
@@ -902,7 +953,7 @@ Built-in application configuration generators.
 ```
 1. LLM Provider Response
    ↓
-2. LLM Layer
+2. Normalizer Layer
    ├─ Stream Processing
    └─ Error Handling
    ↓
@@ -1004,8 +1055,8 @@ llm-link/
 │   │   ├── ollama.rs       # Ollama API endpoints
 │   │   ├── openai.rs       # OpenAI API endpoints
 │   │   └── anthropic.rs    # Anthropic API endpoints
-│   ├── llm/                 # LLM communication layer
-│   │   ├── mod.rs          # Client struct
+│   ├── normalizer/         # Protocol normalization and LLM communication layer
+│   │   ├── mod.rs          # Unified client struct
 │   │   ├── types.rs        # Type definitions
 │   │   ├── chat.rs         # Non-streaming chat
 │   │   ├── stream.rs       # Streaming chat

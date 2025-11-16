@@ -829,9 +829,9 @@ checksum = "6373607a59f0be73a39b6fe456b8192fcc3585f602af20751600e974dd455e77"
 
 [[package]]
 name = "llm-connector"
-version = "0.5.2"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bdf657db5faae7379dfa1fa1eed97f1ca277ba269ccbb8a5ce71cc47e6b536f9"
+checksum = "8ef86e9e94550c3d1846c20e99167429965dc7f68480956777f5738faf9c70d1"
 dependencies = [
  "async-trait",
  "bytes",
@@ -849,7 +849,7 @@ dependencies = [
 
 [[package]]
 name = "llm-link"
-version = "0.3.5"
+version = "0.3.6"
 dependencies = [
  "anyhow",
  "axum",
@@ -858,6 +858,7 @@ dependencies = [
  "futures",
  "futures-util",
  "llm-connector",
+ "once_cell",
  "regex",
  "reqwest",
  "serde",

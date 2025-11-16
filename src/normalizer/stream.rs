@@ -25,7 +25,7 @@ impl Client {
             ..Default::default()
         };
 
-        tracing::info!("🔄 Requesting streaming from LLM connector...");
+        tracing::info!("🔄 Requesting streaming from LLM connector (Ollama format)...");
 
         // Use real streaming API
         let mut stream = self.llm_client.chat_stream(&request).await
@@ -35,7 +35,7 @@ impl Client {
         let model_name = model.to_string();
 
         tokio::spawn(async move {
-            tracing::info!("🔄 Starting to process stream chunks (Ollama format)...");
+            tracing::debug!("🔄 Starting to process stream chunks (Ollama format)...");
             let mut chunk_count = 0;
 
             while let Some(chunk) = stream.next().await {
@@ -49,7 +49,11 @@ impl Client {
                         if let Some(content) = stream_chunk.get_content() {
                             if !content.is_empty() {
                                 chunk_count += 1;
-                                tracing::info!("📦 Received chunk #{}: '{}' ({} chars)", chunk_count, content, content.len());
+                                if chunk_count == 1 {
+                                    tracing::info!("📦 Received first streaming chunk ({} chars)", content.len());
+                                } else {
+                                    tracing::debug!("📦 Received chunk #{} ({} chars)", chunk_count, content.len());
+                                }
 
                                 // Build Ollama-format streaming response
                                 let response_chunk = serde_json::json!({
@@ -105,7 +109,7 @@ impl Client {
                 StreamFormat::Json => final_chunk.to_string(),
             };
             let _ = tx.send(formatted_final);
-            tracing::info!("🏁 Sent final chunk");
+            tracing::debug!("🏁 Sent final chunk");
         });
 
         Ok(UnboundedReceiverStream::new(rx))

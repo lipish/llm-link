@@ -1,5 +1,5 @@
 use super::Client;
-use crate::llm::types::{Response, Usage};
+use crate::normalizer::types::{Response, Usage};
 use anyhow::{anyhow, Result};
 use llm_connector::types::ChatRequest;
 
@@ -22,17 +22,6 @@ impl Client {
 
         let response = self.llm_client.chat(&request).await
             .map_err(|e| anyhow!("LLM connector error: {}", e))?;
-
-        // Debug: log the raw response
-        tracing::info!("📦 Raw LLM response: {:?}", response);
-        tracing::info!("📦 Raw LLM response choices: {}", response.choices.len());
-        if let Some(choice) = response.choices.get(0) {
-            tracing::info!("📦 Message content: '{}'", choice.message.content_as_text());
-            tracing::info!("📦 Message reasoning_content: {:?}", choice.message.reasoning_content);
-            tracing::info!("📦 Message reasoning: {:?}", choice.message.reasoning);
-        } else {
-            tracing::warn!("⚠️ No choices in response!");
-        }
 
         // Extract content and usage information
         let (prompt_tokens, completion_tokens, total_tokens) = response.get_usage_safe();

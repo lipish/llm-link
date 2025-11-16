@@ -1,4 +1,4 @@
-use crate::llm::{Client, Model, Response};
+use crate::normalizer::{Client, Model, Response};
 use crate::settings::LlmBackendSettings;
 use anyhow::Result;
 use llm_connector::types::Tool;
@@ -48,8 +48,11 @@ impl Service {
         messages: Vec<llm_connector::types::Message>,
         tools: Option<Vec<Tool>>,
     ) -> Result<Response> {
-        let model = model.unwrap_or(&self.model);
-        self.client.chat(model, messages, tools).await
+        let requested = model.unwrap_or(&self.model);
+        let backend_model = self
+            .client
+            .resolve_model(requested, &self.model);
+        self.client.chat(&backend_model, messages, tools).await
     }
 
     /// Chat with streaming (Ollama format)
@@ -62,8 +65,13 @@ impl Service {
         messages: Vec<llm_connector::types::Message>,
         format: StreamFormat,
     ) -> Result<UnboundedReceiverStream<String>> {
-        let model = model.unwrap_or(&self.model);
-        self.client.chat_stream_with_format(model, messages, format).await
+        let requested = model.unwrap_or(&self.model);
+        let backend_model = self
+            .client
+            .resolve_model(requested, &self.model);
+        self.client
+            .chat_stream_with_format(&backend_model, messages, format)
+            .await
     }
 
     /// Chat with streaming (OpenAI format)
@@ -77,8 +85,13 @@ impl Service {
         tools: Option<Vec<Tool>>,
         format: StreamFormat,
     ) -> Result<UnboundedReceiverStream<String>> {
-        let model = model.unwrap_or(&self.model);
-        self.client.chat_stream_openai(model, messages, tools, format).await
+        let requested = model.unwrap_or(&self.model);
+        let backend_model = self
+            .client
+            .resolve_model(requested, &self.model);
+        self.client
+            .chat_stream_openai(&backend_model, messages, tools, format)
+            .await
     }
 
     /// List available models

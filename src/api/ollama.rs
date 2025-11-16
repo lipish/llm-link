@@ -4,6 +4,8 @@ use axum::{
     response::{IntoResponse, Json},
     response::Response,
     body::Body,
+    routing::{get, post},
+    Router,
 };
 use futures::StreamExt;
 use serde::Deserialize;
@@ -13,6 +15,9 @@ use tracing::{info, warn, error};
 
 use crate::adapters::{ClientAdapter, FormatDetector};
 use crate::api::{AppState, convert};
+use crate::models::ModelsConfig;
+use crate::settings;
+use crate::provider::minimax::MinimaxClient;
 
 #[derive(Debug, Deserialize)]
 #[allow(dead_code)]
@@ -402,4 +407,407 @@ pub async fn ps(
     Ok(Json(serde_json::json!({
         "models": []
     })))
+}
+
+/// Build Ollama routes (used by main.rs)
+#[allow(dead_code)]
+pub fn build_ollama_routes(state: AppState, ollama_config: &settings::OllamaApiSettings) -> Router {
+    let state_for_chat = state.clone();
+    let state_for_tags = state.clone();
+
+    Router::new()
+        .route(&format!("{}/api/tags", ollama_config.path), get(move || {
+            let state = state_for_tags.clone();
+            async move {
+                use axum::Json;
+
+                // Determine current provider name from backend
+                let provider_name = {
+                    let cfg = state.config.read().await;
+                    let name = match &cfg.llm_backend {
+                        settings::LlmBackendSettings::OpenAI { .. } => "openai",
+                        settings::LlmBackendSettings::Anthropic { .. } => "anthropic",
+                        settings::LlmBackendSettings::Zhipu { .. } => "zhipu",
+                        settings::LlmBackendSettings::Ollama { .. } => "ollama",
+                        settings::LlmBackendSettings::Aliyun { .. } => "aliyun",
+                        settings::LlmBackendSettings::Volcengine { .. } => "volcengine",
+                        settings::LlmBackendSettings::Tencent { .. } => "tencent",
+                        settings::LlmBackendSettings::Longcat { .. } => "longcat",
+                        settings::LlmBackendSettings::Moonshot { .. } => "moonshot",
+                        settings::LlmBackendSettings::Minimax { .. } => "minimax",
+                    };
+                    name.to_string()
+                };
+
+                // Load models from embedded models.yaml
+                let models_config = ModelsConfig::load_with_fallback();
+                let provider_models = models_config.get_models_for_provider(&provider_name);
+
+                // Map to Ollama tags format
+                let ollama_models: Vec<serde_json::Value> = provider_models
+                    .into_iter()
+                    .map(|m| {
+                        let family = m.id.split('-').next().unwrap_or("model");
+                        serde_json::json!({
+                            "name": m.id,
+                            "model": m.id,
+                            "modified_at": "2025-01-01T00:00:00Z",
+                            "size": 0,
+                            "digest": m.id,
+                            "details": {
+                                "format": "remote",
+                                "family": family,
+                                "families": [family],
+                                "parameter_size": "",
+                                "quantization_level": ""
+                            }
+                        })
+                    })
+                    .collect();
+
+                Json(serde_json::json!({
+                    "models": ollama_models
+                }))
+            }
+        }))
+        .route(&format!("{}/api/chat", ollama_config.path), post(move |axum::extract::State(s): axum::extract::State<AppState>, axum::Json(req): axum::Json<serde_json::Value>| {
+            let s = s.clone();
+            async move {
+                use tracing::info;
+                use axum::response::{Response, IntoResponse};
+
+                // Extract model name
+                let model = req.get("model")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("MiniMax-M2")
+                    .to_string();
+
+                // Extract messages
+                let messages_value = req.get("messages")
+                    .and_then(|v| v.as_array())
+                    .cloned()
+                    .unwrap_or_default();
+
+                // Extract stream parameter
+                let stream = req.get("stream")
+                    .and_then(|v| v.as_bool())
+                    .unwrap_or(false);
+
+                info!("📨 Chat request: model={}, messages_count={}, stream={}", model, messages_value.len(), stream);
+
+                // Check if this is a MiniMax request and use direct client
+                let config = s.config.read().await;
+                let (is_minimax, minimax_api_key) = match &config.llm_backend {
+                    settings::LlmBackendSettings::Minimax { api_key, .. } => (true, Some(api_key.clone())),
+                    _ => (false, None),
+                };
+                drop(config);
+
+                let response: Response = if is_minimax {
+                    handle_minimax_chat(&model, messages_value, stream, minimax_api_key).await
+                } else {
+                    handle_generic_chat(s, &model, messages_value, stream).await
+                };
+
+                response.into_response()
+            }
+        }))
+        .route(&format!("{}/api/show", ollama_config.path), post(show_handler))
+        .route(&format!("{}/api/version", ollama_config.path), get(|| async {
+            axum::Json(serde_json::json!({
+                "version": "0.1.0",
+                "build": "llm-link"
+            }))
+        }))
+        .with_state(state_for_chat)
+}
+
+async fn handle_minimax_chat(
+    model: &str,
+    messages_value: Vec<serde_json::Value>,
+    stream: bool,
+    api_key: Option<String>,
+) -> Response {
+    use tracing::info;
+    use axum::response::Response;
+    use axum::body::Body;
+
+    // Use direct MiniMax client for better compatibility
+    if let Some(api_key) = api_key {
+        let minimax_client = MinimaxClient::new(&api_key);
+
+        if stream {
+            handle_minimax_stream(&minimax_client, model, messages_value).await
+        } else {
+            // Handle non-streaming response
+            match minimax_client.chat(model, messages_value).await {
+                Ok(response) => {
+                    info!("✅ Chat response generated successfully (MiniMax direct)");
+                    let ollama_response = convert::response_to_ollama_from_minimax(response);
+                    Response::builder()
+                        .status(200)
+                        .header("content-type", "application/json")
+                        .body(Body::from(serde_json::to_string(&ollama_response).unwrap()))
+                        .unwrap()
+                }
+                Err(e) => {
+                    info!("❌ MiniMax direct request failed: {:?}", e);
+                    Response::builder()
+                        .status(500)
+                        .header("content-type", "application/json")
+                        .body(Body::from(serde_json::json!({"error": "Chat request failed"}).to_string()))
+                        .unwrap()
+                }
+            }
+        }
+    } else {
+        info!("❌ Minimax API key not set in config");
+        Response::builder()
+            .status(500)
+            .header("content-type", "application/json")
+            .body(Body::from(serde_json::json!({"error": "API key not configured"}).to_string()))
+            .unwrap()
+    }
+}
+
+async fn handle_minimax_stream(
+    minimax_client: &MinimaxClient,
+    model: &str,
+    messages_value: Vec<serde_json::Value>,
+) -> Response {
+    use tracing::info;
+    use axum::response::Response;
+    use axum::body::Body;
+    use futures::StreamExt;
+    use std::convert::Infallible;
+
+    // Handle streaming response
+    match minimax_client.chat_stream(model, messages_value).await {
+        Ok(stream) => {
+            info!("✅ MiniMax streaming started");
+
+            let model_name = model.to_string();
+            let in_think = std::sync::Arc::new(std::sync::Mutex::new(false));
+            let in_think_clone = in_think.clone();
+            let adapted_stream = stream.map(move |result| {
+                let in_think = in_think_clone.clone();
+                match result {
+                    Ok(chunk) => {
+                        let output = minimax_chunk_to_ollama_lines(&chunk, &model_name, &in_think);
+                        Ok::<_, Infallible>(output)
+                    }
+                    Err(_) => Ok(String::new()),
+                }
+            });
+
+            let body_stream = adapted_stream.map(|data| {
+                match data {
+                    Ok(s) => Ok::<_, Infallible>(axum::body::Bytes::from(s)),
+                    Err(_) => Ok(axum::body::Bytes::new()),
+                }
+            });
+            let body = Body::from_stream(body_stream);
+
+            Response::builder()
+                .status(200)
+                .header("content-type", "application/x-ndjson")
+                .body(body)
+                .unwrap()
+        }
+        Err(e) => {
+            info!("❌ MiniMax streaming failed: {:?}", e);
+            Response::builder()
+                .status(500)
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::json!({"error": "Streaming failed"}).to_string()))
+                .unwrap()
+        }
+    }
+}
+
+fn minimax_chunk_to_ollama_lines(
+    chunk: &str,
+    model_name: &str,
+    in_think: &std::sync::Arc<std::sync::Mutex<bool>>,
+) -> String {
+    // Parse each JSON line in the chunk
+    let mut output = String::new();
+
+    for line in chunk.lines() {
+        if line.is_empty() {
+            continue;
+        }
+
+        // Parse JSON line; skip on failure
+        let Ok(json_data) = serde_json::from_str::<serde_json::Value>(line) else {
+            continue;
+        };
+
+        // Extract choices[0].delta.content as &str; skip if any step is missing
+        let Some(choices) = json_data.get("choices").and_then(|c| c.as_array()) else {
+            continue;
+        };
+        let Some(choice) = choices.first() else {
+            continue;
+        };
+        let Some(delta) = choice.get("delta") else {
+            continue;
+        };
+        let Some(content) = delta.get("content").and_then(|c| c.as_str()) else {
+            continue;
+        };
+
+        // Track think blocks across chunks
+        let mut in_think_block = in_think.lock().unwrap();
+
+        // Check if we're entering a think block
+        if content.contains("<think>") {
+            *in_think_block = true;
+        }
+
+        // Check if we're exiting a think block
+        if content.contains("</think>") {
+            *in_think_block = false;
+            continue;
+        }
+
+        // Skip content inside think blocks
+        if *in_think_block {
+            continue;
+        }
+
+        drop(in_think_block);
+
+        // Clean up any remaining <think> tags
+        let cleaned = MinimaxClient::clean_think_tags(content);
+
+        if !cleaned.is_empty() {
+            let ollama_chunk = serde_json::json!({
+                "model": model_name,
+                "created_at": chrono::Utc::now().to_rfc3339(),
+                "message": {
+                    "role": "assistant",
+                    "content": cleaned,
+                },
+                "done": false
+            });
+            output.push_str(&format!("{}\n", ollama_chunk));
+        }
+    }
+
+    output
+}
+
+async fn handle_generic_chat(
+    state: AppState,
+    model: &str,
+    messages_value: Vec<serde_json::Value>,
+    stream: bool,
+) -> Response {
+    use tracing::info;
+    use axum::response::Response;
+    use axum::body::Body;
+
+    // Step 1: convert messages; early-return on error to avoid deep nesting
+    let messages = match convert::openai_messages_to_llm(messages_value) {
+        Ok(messages) => messages,
+        Err(e) => {
+            info!("❌ Failed to convert messages: {:?}", e);
+            return Response::builder()
+                .status(400)
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    serde_json::json!({"error": "Invalid messages format"}).to_string(),
+                ))
+                .unwrap();
+        }
+    };
+
+    // Step 2: delegate to stream / non-stream helpers, always passing the
+    // logical model name down to the service layer. Provider-specific
+    // resolution (e.g. Volcengine endpoint IDs) is handled by the
+    // normalizer/client via ModelResolver.
+    if stream {
+        handle_generic_chat_stream(state, Some(model.to_string()), messages).await
+    } else {
+        handle_generic_chat_nonstream(state, Some(model.to_string()), messages).await
+    }
+}
+
+async fn handle_generic_chat_stream(
+    state: AppState,
+    model_arg: Option<String>,
+    messages: Vec<llm_connector::types::Message>,
+) -> Response {
+    use tracing::info;
+    use axum::response::Response;
+    use axum::body::Body;
+    use futures::StreamExt;
+    use std::convert::Infallible;
+
+    let llm_service = state.llm_service.read().await;
+    let model_ref = model_arg.as_deref();
+
+    match llm_service
+        .chat_stream_ollama(model_ref, messages, llm_connector::StreamFormat::NDJSON)
+        .await
+    {
+        Ok(rx) => {
+            info!("✅ Chat streaming response started successfully");
+
+            let body_stream = rx.map(|data| Ok::<_, Infallible>(axum::body::Bytes::from(data)));
+            let body = Body::from_stream(body_stream);
+
+            Response::builder()
+                .status(200)
+                .header("content-type", "application/x-ndjson")
+                .body(body)
+                .unwrap()
+        }
+        Err(e) => {
+            info!("❌ Chat streaming request failed: {:?}", e);
+            Response::builder()
+                .status(500)
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    serde_json::json!({"error": "Chat request failed"}).to_string(),
+                ))
+                .unwrap()
+        }
+    }
+}
+
+async fn handle_generic_chat_nonstream(
+    state: AppState,
+    model_arg: Option<String>,
+    messages: Vec<llm_connector::types::Message>,
+) -> Response {
+    use tracing::info;
+    use axum::response::Response;
+    use axum::body::Body;
+
+    let llm_service = state.llm_service.read().await;
+    let model_ref = model_arg.as_deref();
+
+    match llm_service.chat(model_ref, messages, None).await {
+        Ok(response) => {
+            info!("✅ Chat response generated successfully");
+            let ollama_response = convert::response_to_ollama(response);
+            Response::builder()
+                .status(200)
+                .header("content-type", "application/json")
+                .body(Body::from(serde_json::to_string(&ollama_response).unwrap()))
+                .unwrap()
+        }
+        Err(e) => {
+            info!("❌ Chat request failed: {:?}", e);
+            Response::builder()
+                .status(500)
+                .header("content-type", "application/json")
+                .body(Body::from(
+                    serde_json::json!({"error": "Chat request failed"}).to_string(),
+                ))
+                .unwrap()
+        }
+    }
 }
