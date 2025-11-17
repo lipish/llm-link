@@ -32,11 +32,6 @@ pub struct OllamaChatRequest {
     pub options: Option<Value>,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct OllamaTagsParams {
-    // Ollama tags endpoint parameters (if any)
-}
-
 // Chat handler is now implemented in main.rs as an inline closure
 // This is a workaround for Axum's strict type system
 

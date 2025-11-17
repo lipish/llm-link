@@ -136,51 +136,36 @@ impl ConfigLoader {
 
     /// 检查协议模式的环境变量
     fn check_protocol_env_vars(protocols: &[String], args: &Args) -> Result<()> {
-        let mut missing_vars = Vec::new();
-        // Check protocol-specific requirements
+        let mut missing_flags = Vec::new();
+
         for protocol in protocols {
             match protocol.to_lowercase().as_str() {
                 "openai" => {
-                    if args.api_key.is_none() && std::env::var("LLM_LINK_API_KEY").is_err() {
-                        missing_vars.push("LLM_LINK_API_KEY".to_string());
+                    if args.api_key.is_none() {
+                        missing_flags.push("--api-key");
                     }
-                },
-                "anthropic" => {
-                    if std::env::var("ANTHROPIC_API_KEY").is_err() {
-                        missing_vars.push("ANTHROPIC_API_KEY".to_string());
-                    }
-                },
-                "ollama" => {
-                    // Ollama doesn't require additional env vars
-                },
+                }
+                "anthropic" | "ollama" => {
+                    // No extra flags required beyond provider overrides
+                }
                 _ => {
                     return Err(anyhow::anyhow!(
-                        "Unknown protocol: {}. Supported: openai, ollama, anthropic", 
+                        "Unknown protocol: {}. Supported: openai, ollama, anthropic",
                         protocol
                     ));
                 }
             }
         }
 
-        if !missing_vars.is_empty() {
-            error!("❌ Missing required environment variables for protocols:");
-            for var in &missing_vars {
-                error!("   - {}", var);
+        if !missing_flags.is_empty() {
+            error!("❌ Missing required CLI flags for protocols:");
+            for flag in &missing_flags {
+                error!("   - {}", flag);
             }
             error!("");
-            println!("🔧 Set the required environment variables:");
-            for var in &missing_vars {
-                match var.as_str() {
-                    "ZHIPU_API_KEY" => println!("export ZHIPU_API_KEY=\"your-zhipu-api-key\""),
-                    "LLM_LINK_API_KEY" => {
-                        println!("export LLM_LINK_API_KEY=\"your-auth-token\"");
-                        println!("# OR use: --api-key \"your-auth-token\"");
-                    },
-                    "ANTHROPIC_API_KEY" => println!("export ANTHROPIC_API_KEY=\"your-anthropic-api-key\""),
-                    _ => println!("export {}=\"your-{}-here\"", var, var.to_lowercase().replace('_', "-")),
-                }
-            }
-            return Err(anyhow::anyhow!("Missing required environment variables"));
+            return Err(anyhow::anyhow!(
+                "Missing required CLI flags. Provide them via command line arguments."
+            ));
         }
 
         Ok(())
@@ -198,48 +183,15 @@ impl ConfigLoader {
         if let Some(provider_name) = provider {
             info!("🔄 Overriding LLM provider to: {}", provider_name);
 
-            // Determine API key
-            let api_key = if let Some(key) = llm_api_key {
-                Some(key.to_string())
-            } else {
-                match provider_name {
-                    "openai" => std::env::var("OPENAI_API_KEY").ok(),
-                    "anthropic" => std::env::var("ANTHROPIC_API_KEY").ok(),
-                    "zhipu" => std::env::var("ZHIPU_API_KEY").ok(),
-                    "aliyun" => std::env::var("ALIYUN_API_KEY").ok(),
-                    "volcengine" => std::env::var("VOLCENGINE_API_KEY").ok(),
-                    "tencent" => std::env::var("TENCENT_API_KEY").ok(),
-                    "longcat" => std::env::var("LONGCAT_API_KEY").ok(),
-                    "moonshot" => std::env::var("MOONSHOT_API_KEY").ok(),
-                    "minimax" => std::env::var("MINIMAX_API_KEY").ok(),
-                    "ollama" => None,
-                    _ => return Err(anyhow::anyhow!("Unknown provider: {}", provider_name)),
-                }
-            };
-
-            // Check if API key is required but missing
-            if provider_name != "ollama" && api_key.is_none() {
-                let env_var = match provider_name {
-                    "openai" => "OPENAI_API_KEY",
-                    "anthropic" => "ANTHROPIC_API_KEY",
-                    "zhipu" => "ZHIPU_API_KEY",
-                    "aliyun" => "ALIYUN_API_KEY",
-                    "volcengine" => "VOLCENGINE_API_KEY",
-                    "tencent" => "TENCENT_API_KEY",
-                    "longcat" => "LONGCAT_API_KEY",
-                    "moonshot" => "MOONSHOT_API_KEY",
-                    "minimax" => "MINIMAX_API_KEY",
-                    _ => "API_KEY",
-                };
-
-                // Warn but allow startup without API key
-                // User can set it later via hot-reload API
-                tracing::warn!("⚠️  Starting without API key for provider '{}'", provider_name);
-                tracing::warn!("⚠️  Set {} environment variable or use --llm-api-key", env_var);
-                tracing::warn!("⚠️  Or update API key dynamically via: POST /api/config/update-key");
-                tracing::warn!("⚠️  LLM requests will fail until API key is configured");
-                tracing::warn!("");
-            }
+            // Determine API key strictly from CLI
+            let provided_key = llm_api_key
+                .map(|key| key.to_string())
+                .ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "Missing required --llm-api-key for provider '{}'",
+                        provider_name
+                    )
+                })?;
 
             // Determine model
             let model_name = if let Some(m) = model {
@@ -264,8 +216,12 @@ impl ConfigLoader {
             info!("🔄 Using model: {}", model_name);
 
             // Create new backend settings based on provider
-            // Use empty string as placeholder if API key is not provided
-            let api_key_value = api_key.unwrap_or_else(|| String::new());
+            // Ollama 不需要实际使用 API key，但仍要求通过 CLI 传入以保持接口一致
+            let api_key_value = if provider_name == "ollama" {
+                String::new()
+            } else {
+                provided_key.clone()
+            };
 
             config.llm_backend = match provider_name {
                 "openai" => LlmBackendSettings::OpenAI {

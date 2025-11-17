@@ -119,13 +119,19 @@ pub fn response_to_openai(response: Response) -> Value {
 /// Convert Response to Ollama format
 #[allow(dead_code)]
 pub fn response_to_ollama(response: Response) -> Value {
+    let mut message = serde_json::json!({
+        "role": "assistant",
+        "content": response.content
+    });
+
+    if let Some(tool_calls) = response.tool_calls {
+        message["tool_calls"] = tool_calls;
+    }
+
     serde_json::json!({
         "model": response.model,
         "created_at": chrono::Utc::now().to_rfc3339(),
-        "message": {
-            "role": "assistant",
-            "content": response.content
-        },
+        "message": message,
         "done": true,
         "total_duration": 0,
         "load_duration": 0,

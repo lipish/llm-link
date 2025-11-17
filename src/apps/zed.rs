@@ -3,24 +3,21 @@ use crate::settings::{
     OpenAiApiSettings, OllamaApiSettings, AnthropicApiSettings,
     ClientAdapterSettings, ZedAdapterSettings,
 };
-use super::AppConfigGenerator;
-
 /// Zed.dev application configuration
 pub struct ZedApp;
 
 impl ZedApp {
     /// Generate Zed.dev configuration
-    pub fn generate_config(cli_api_key: Option<&str>) -> Settings {
+    pub fn generate_config() -> Settings {
         Settings {
             server: ServerSettings {
                 host: "0.0.0.0".to_string(),
                 port: 11434,
                 log_level: "info".to_string(),
             },
-            llm_backend: LlmBackendSettings::Zhipu {
-                api_key: AppConfigGenerator::resolve_env_var("${ZHIPU_API_KEY}", cli_api_key),
-                base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
-                model: "glm-4-flash".to_string(),
+            llm_backend: LlmBackendSettings::Ollama {
+                base_url: Some("http://localhost:11435".to_string()),
+                model: "llama2".to_string(),
             },
             apis: ApiSettings {
                 openai: Some(OpenAiApiSettings {

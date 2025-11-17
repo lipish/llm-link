@@ -64,7 +64,7 @@ impl AppConfigGenerator {
         match app {
             SupportedApp::CodexCLI => CodexApp::generate_config(cli_api_key),
             SupportedApp::ClaudeCode => ClaudeApp::generate_config(cli_api_key),
-            SupportedApp::Zed => ZedApp::generate_config(cli_api_key),
+            SupportedApp::Zed => ZedApp::generate_config(),
         }
     }
 
@@ -85,11 +85,11 @@ impl AppConfigGenerator {
                 }
             }
 
-            // Otherwise try to get from environment variable
-            std::env::var(var_name).unwrap_or_else(|_| {
-                eprintln!("Warning: Environment variable '{}' not found, using placeholder", var_name);
-                template.to_string()
-            })
+            eprintln!(
+                "Warning: Environment variable '{}' ignored. Provide the value via CLI flags (e.g. --api-key).",
+                var_name
+            );
+            String::new()
         } else {
             template.to_string()
         }
