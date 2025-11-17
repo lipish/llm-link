@@ -7,6 +7,14 @@ pub struct ModelInfo {
     pub id: String,
     pub name: String,
     pub description: String,
+    #[serde(default)]
+    pub supports_tools: bool,
+    #[serde(default = "default_context_length")]
+    pub context_length: u32,
+}
+
+fn default_context_length() -> u32 {
+    4096
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -75,16 +83,22 @@ impl Default for ModelsConfig {
                     id: "gpt-4o".to_string(),
                     name: "GPT-4o".to_string(),
                     description: "GPT-4 Omni model".to_string(),
+                    supports_tools: true,
+                    context_length: 128000,
                 },
                 ModelInfo {
                     id: "gpt-4".to_string(),
                     name: "GPT-4".to_string(),
                     description: "Most capable GPT-4 model".to_string(),
+                    supports_tools: true,
+                    context_length: 8192,
                 },
                 ModelInfo {
                     id: "gpt-3.5-turbo".to_string(),
                     name: "GPT-3.5 Turbo".to_string(),
                     description: "Fast and efficient model".to_string(),
+                    supports_tools: true,
+                    context_length: 16385,
                 },
             ],
         });
@@ -96,11 +110,15 @@ impl Default for ModelsConfig {
                     id: "claude-3-5-sonnet-20241022".to_string(),
                     name: "Claude 3.5 Sonnet".to_string(),
                     description: "Latest Claude 3.5 Sonnet model".to_string(),
+                    supports_tools: true,
+                    context_length: 200000,
                 },
                 ModelInfo {
                     id: "claude-3-haiku-20240307".to_string(),
                     name: "Claude 3 Haiku".to_string(),
                     description: "Fast Claude 3 model".to_string(),
+                    supports_tools: true,
+                    context_length: 200000,
                 },
             ],
         });
@@ -112,11 +130,15 @@ impl Default for ModelsConfig {
                     id: "glm-4-flash".to_string(),
                     name: "GLM-4 Flash".to_string(),
                     description: "Fast GLM-4 model".to_string(),
+                    supports_tools: true,
+                    context_length: 128000,
                 },
                 ModelInfo {
                     id: "glm-4".to_string(),
                     name: "GLM-4".to_string(),
                     description: "Standard GLM-4 model".to_string(),
+                    supports_tools: true,
+                    context_length: 128000,
                 },
             ],
         });
@@ -128,11 +150,15 @@ impl Default for ModelsConfig {
                     id: "llama3.2".to_string(),
                     name: "Llama 3.2".to_string(),
                     description: "Latest Llama model".to_string(),
+                    supports_tools: false,
+                    context_length: 128000,
                 },
                 ModelInfo {
                     id: "llama2".to_string(),
                     name: "Llama 2".to_string(),
                     description: "Stable Llama 2 model".to_string(),
+                    supports_tools: false,
+                    context_length: 4096,
                 },
             ],
         });
@@ -144,11 +170,15 @@ impl Default for ModelsConfig {
                     id: "qwen-turbo".to_string(),
                     name: "Qwen Turbo".to_string(),
                     description: "Fast Qwen model".to_string(),
+                    supports_tools: true,
+                    context_length: 8192,
                 },
                 ModelInfo {
                     id: "qwen-plus".to_string(),
                     name: "Qwen Plus".to_string(),
                     description: "Enhanced Qwen model".to_string(),
+                    supports_tools: true,
+                    context_length: 32768,
                 },
             ],
         });
@@ -160,6 +190,8 @@ impl Default for ModelsConfig {
                     id: "doubao-pro-32k".to_string(),
                     name: "Doubao Pro".to_string(),
                     description: "Volcengine Doubao model".to_string(),
+                    supports_tools: true,
+                    context_length: 32768,
                 },
             ],
         });
@@ -171,6 +203,8 @@ impl Default for ModelsConfig {
                     id: "hunyuan-lite".to_string(),
                     name: "Hunyuan Lite".to_string(),
                     description: "Tencent Hunyuan Lite model".to_string(),
+                    supports_tools: true,
+                    context_length: 256000,
                 },
             ],
         });
@@ -182,6 +216,8 @@ impl Default for ModelsConfig {
                     id: "LongCat-Flash-Chat".to_string(),
                     name: "LongCat Flash Chat".to_string(),
                     description: "High-performance general dialogue model".to_string(),
+                    supports_tools: false,
+                    context_length: 4096,
                 },
             ],
         });

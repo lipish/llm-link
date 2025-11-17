@@ -27,7 +27,7 @@ impl Client {
         let (prompt_tokens, completion_tokens, total_tokens) = response.get_usage_safe();
 
         // Extract content and tool_calls from choices[0].message or response.content
-        let (content, tool_calls) = if let Some(choice) = response.choices.get(0) {
+        let (content, tool_calls) = if let Some(choice) = response.choices.first() {
             let msg = &choice.message;
 
             // Extract content (could be in content, reasoning_content, reasoning, etc.)

@@ -190,8 +190,8 @@ impl MinimaxClient {
                     // Parse SSE format: "data: {...}\n\n"
                     let mut result_lines = Vec::new();
                     for line in text.lines() {
-                        if line.starts_with("data: ") {
-                            let json_str = &line[6..]; // Remove "data: " prefix
+                        if let Some(json_str) = line.strip_prefix("data: ") {
+                            // Remove "data: " prefix
                             if json_str == "[DONE]" {
                                 continue;
                             }

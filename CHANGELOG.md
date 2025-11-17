@@ -5,6 +5,73 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2025-11-17
+
+### 🎯 Zed Editor Full Compatibility
+
+This release focuses on complete Zed editor compatibility, fixing all known issues with tool calling, context limits, and reasoning content display.
+
+#### ✅ Fixed Issues
+
+1. **Tool Calling Support**
+   - Fixed "tools unsupported" error in Zed
+   - Added `capabilities: ["tools"]` to `/api/show` response
+   - Added `tags: ["tools"]` to `/api/tags` response for models that support tools
+   - Fixed tool call `arguments` format (JSON object instead of string)
+   - All tool-capable models (GLM-4.6, Volcengine Seed, OpenAI, Anthropic) now work correctly in Zed
+
+2. **Context Length Detection**
+   - Fixed "thread reached the token limit" error
+   - Added `model_info.llama.context_length` to `/api/show` response
+   - GLM-4.6 now correctly reports 200K context (was 4K)
+   - All models now report their actual context limits
+
+3. **Reasoning Content Filtering**
+   - Fixed `<think>` tags appearing in Zed output
+   - Added `filter_think_tags()` function to remove reasoning process tags
+   - Preserves all formatting (newlines, spaces, indentation)
+   - Only actual content is sent to Zed, not internal reasoning
+
+#### 🏗️ Architecture Improvements
+
+- **Proper Layer Separation**: llm-connector remains generic, llm-link handles Zed-specific adaptations
+- **Content Filtering**: Smart filtering that preserves formatting while removing reasoning tags
+- **Model Metadata**: Complete model information including context length and capabilities
+
+#### 📚 Documentation
+
+- Added comprehensive Zed integration guides:
+  - `README_ZED.md` - Complete Zed setup guide
+  - `docs/guides/ZED_ZHIPU_SETUP.md` - Zhipu GLM setup
+  - `docs/guides/ZED_SWITCH_PROVIDERS.md` - Provider switching guide
+  - `docs/fixes/zed-tools-detection.md` - Tool detection fix details
+  - `docs/fixes/tool-call-arguments-format.md` - Arguments format fix
+  - `docs/fixes/think-tags-filtering.md` - Reasoning content filtering
+  - `FINAL_FIX_SUMMARY.md` - Complete fix summary
+
+#### 🧪 Testing
+
+- Added `tests/test_zed_compatibility.sh` - Zed compatibility tests
+- Added `tests/test_tool_call_format.sh` - Tool call format validation
+- Added `tests/verify_fixes.sh` - Complete fix verification
+- All tests include proper error handling and validation
+
+#### 🔧 Code Quality
+
+- Fixed all clippy warnings
+- Added comprehensive unit tests for `filter_think_tags()`
+- Improved error messages and logging
+- Better debugging support with detailed logs
+
+### 🎉 What's Working Now
+
+- ✅ Zed AI assistant with all Chinese LLM providers (Zhipu, Volcengine, etc.)
+- ✅ Tool calling (function calling) in Zed
+- ✅ Correct context length detection (no more false "token limit" errors)
+- ✅ Clean output without reasoning tags
+- ✅ Perfect formatting preservation
+- ✅ All streaming responses work correctly
+
 ## [0.3.6] - 2025-11-16
 
 ### 🔥 Volcengine Doubao Improvements

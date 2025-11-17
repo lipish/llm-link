@@ -7,6 +7,99 @@ use llm_connector::{
 use serde_json::{Map, Value};
 use tokio_stream::wrappers::UnboundedReceiverStream;
 
+/// Filter out <think> tags from content
+/// GLM-4.6 and similar models may include reasoning process in <think></think> tags
+fn filter_think_tags(content: &str) -> String {
+    // Use simple string replacement to remove <think>...</think> tags
+    let mut result = content.to_string();
+
+    // Remove <think>...</think> blocks (non-greedy)
+    while let Some(start) = result.find("<think>") {
+        if let Some(end) = result[start..].find("</think>") {
+            let end_pos = start + end + "</think>".len();
+            result.replace_range(start..end_pos, "");
+        } else {
+            // If no closing tag, remove from <think> to end
+            result.replace_range(start.., "");
+            break;
+        }
+    }
+
+    // Also remove standalone </think> tags (in case of malformed HTML)
+    result = result.replace("</think>", "");
+    result = result.replace("<think>", "");
+
+    // DON'T trim! Whitespace and newlines are important in streaming chunks
+    // Each chunk might be just a newline or space, which is part of the formatting
+    result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_filter_think_tags() {
+        // Test simple think tag
+        assert_eq!(
+            filter_think_tags("<think>reasoning</think>actual content"),
+            "actual content"
+        );
+
+        // Test multiple think tags
+        assert_eq!(
+            filter_think_tags("<think>first</think>content<think>second</think>"),
+            "content"
+        );
+
+        // Test nested think tags
+        assert_eq!(
+            filter_think_tags("<think>outer<think>inner</think></think>text"),
+            "text"
+        );
+
+        // Test standalone closing tags
+        assert_eq!(
+            filter_think_tags("content</think></think>"),
+            "content"
+        );
+
+        // Test no think tags
+        assert_eq!(
+            filter_think_tags("normal content"),
+            "normal content"
+        );
+
+        // Test empty content
+        assert_eq!(
+            filter_think_tags("<think></think>"),
+            ""
+        );
+
+        // Test whitespace preservation (important for streaming!)
+        assert_eq!(
+            filter_think_tags("\n"),
+            "\n"
+        );
+
+        assert_eq!(
+            filter_think_tags("  "),
+            "  "
+        );
+
+        assert_eq!(
+            filter_think_tags("<think>test</think>\n"),
+            "\n"
+        );
+
+        // Test newlines in content
+        assert_eq!(
+            filter_think_tags("line1\nline2"),
+            "line1\nline2"
+        );
+    }
+}
+
 impl Client {
     /// Send a streaming chat request with specified format (Ollama-style response)
     ///
@@ -19,6 +112,21 @@ impl Client {
         messages: Vec<llm_connector::types::Message>,
         format: StreamFormat,
     ) -> Result<UnboundedReceiverStream<String>> {
+        self.chat_stream_with_format_and_tools(model, messages, None, format).await
+    }
+
+    /// Send a streaming chat request with specified format and tools (Ollama-style response)
+    ///
+    /// This method returns streaming responses in Ollama API format, which is used by
+    /// Ollama-compatible clients like Zed.dev.
+    #[allow(dead_code)]
+    pub async fn chat_stream_with_format_and_tools(
+        &self,
+        model: &str,
+        messages: Vec<llm_connector::types::Message>,
+        tools: Option<Vec<llm_connector::types::Tool>>,
+        format: StreamFormat,
+    ) -> Result<UnboundedReceiverStream<String>> {
         use futures_util::StreamExt;
 
         // Messages are already in llm-connector format
@@ -26,10 +134,12 @@ impl Client {
             model: model.to_string(),
             messages,
             stream: Some(true),
+            tools,
             ..Default::default()
         };
 
-        tracing::info!("🔄 Requesting streaming from LLM connector (Ollama format)...");
+        tracing::info!("🔄 Requesting streaming from LLM connector (Ollama format) with {} tools...",
+                      request.tools.as_ref().map_or(0, |t| t.len()));
 
         // Use real streaming API
         let mut stream = self.llm_client.chat_stream(&request).await
@@ -56,7 +166,7 @@ impl Client {
                             last_usage = Some(usage);
                         }
 
-                        if let Some(first_choice) = stream_chunk.choices.get(0) {
+                        if let Some(first_choice) = stream_chunk.choices.first() {
                             if let Some(reason) = first_choice.finish_reason.clone() {
                                 last_finish_reason = Some(reason);
                             }
@@ -70,8 +180,31 @@ impl Client {
                         let mut has_payload = false;
                         let mut content_text = String::new();
 
-                        if let Some(content) = stream_chunk.get_content() {
-                            content_text = content.to_string();
+                        // Only use delta.content, NOT reasoning_content
+                        // This prevents <think> tags from being sent to Zed
+                        if let Some(first_choice) = stream_chunk.choices.first() {
+                            if let Some(content) = &first_choice.delta.content {
+                                if !content.is_empty() {
+                                    // Filter out <think> tags from content
+                                    // GLM-4.6 sometimes includes reasoning in <think></think> tags
+                                    content_text = filter_think_tags(content);
+
+                                    // Only count as payload if there's actual content after filtering
+                                    if content_text.is_empty() && !content.is_empty() {
+                                        tracing::debug!("🧠 Filtered entire chunk (was only <think> tags): {:?}",
+                                                      content.chars().take(50).collect::<String>());
+                                    }
+                                }
+                            }
+
+                            // Log if we're filtering out reasoning content
+                            if let Some(reasoning) = &first_choice.delta.reasoning_content {
+                                if !reasoning.is_empty() {
+                                    tracing::debug!("🧠 Filtered reasoning_content ({} chars): {:?}",
+                                                  reasoning.len(),
+                                                  reasoning.chars().take(50).collect::<String>());
+                                }
+                            }
                         }
 
                         if !content_text.is_empty() {
@@ -86,29 +219,60 @@ impl Client {
 
                         message.insert("content".to_string(), Value::String(content_text));
 
-                        if let Some(first_choice) = stream_chunk.choices.get(0) {
+                        if let Some(first_choice) = stream_chunk.choices.first() {
                             if let Some(tool_calls) = &first_choice.delta.tool_calls {
                                 if !tool_calls.is_empty() {
-                                    if let Ok(tool_calls_value) = serde_json::to_value(tool_calls) {
-                                        message.insert("tool_calls".to_string(), tool_calls_value);
-                                        has_payload = true;
-                                        tracing::debug!("🔧 Chunk includes {} tool call(s)", tool_calls.len());
+                                    // Convert tool_calls to Ollama format
+                                    // Zed expects arguments to be a JSON object, not a string
+                                    let mut ollama_tool_calls = Vec::new();
+                                    for tc in tool_calls {
+                                        let mut ollama_tc = serde_json::Map::new();
+
+                                        // Add function object
+                                        let mut function = serde_json::Map::new();
+                                        function.insert("name".to_string(), Value::String(tc.function.name.clone()));
+
+                                        // Parse arguments from string to JSON object
+                                        let arguments_value = if tc.function.arguments.is_empty() {
+                                            Value::Object(serde_json::Map::new())
+                                        } else {
+                                            match serde_json::from_str::<Value>(&tc.function.arguments) {
+                                                Ok(v) => v,
+                                                Err(_) => {
+                                                    // If parsing fails, wrap in an object
+                                                    tracing::warn!("⚠️ Failed to parse tool arguments as JSON: {}", tc.function.arguments);
+                                                    Value::String(tc.function.arguments.clone())
+                                                }
+                                            }
+                                        };
+                                        function.insert("arguments".to_string(), arguments_value);
+
+                                        ollama_tc.insert("function".to_string(), Value::Object(function));
+                                        ollama_tool_calls.push(Value::Object(ollama_tc));
                                     }
+
+                                    message.insert("tool_calls".to_string(), Value::Array(ollama_tool_calls));
+                                    has_payload = true;
+                                    tracing::debug!("🔧 Chunk includes {} tool call(s)", tool_calls.len());
                                 }
                             }
 
-                            if let Some(reason_text) = first_choice.delta.reasoning_any() {
-                                if !reason_text.is_empty() {
-                                    if !thinking_buffer.is_empty() {
-                                        thinking_buffer.push(' ');
-                                    }
-                                    thinking_buffer.push_str(reason_text);
-                                }
-                            }
+                            // Don't collect reasoning content for Zed
+                            // Zed doesn't need to see the thinking process (<think> tags)
+                            // If needed in the future, this can be controlled by a config flag
+                            // if let Some(reason_text) = first_choice.delta.reasoning_any() {
+                            //     if !reason_text.is_empty() {
+                            //         if !thinking_buffer.is_empty() {
+                            //             thinking_buffer.push(' ');
+                            //         }
+                            //         thinking_buffer.push_str(reason_text);
+                            //     }
+                            // }
                         }
 
                         if !has_payload {
-                            tracing::debug!("⚠️ Chunk has no content/tool_calls (likely metadata or finish chunk)");
+                            tracing::debug!("⚠️ Chunk has no content/tool_calls (likely metadata or finish chunk): {:?}",
+                                          serde_json::to_string(&stream_chunk).unwrap_or_default().chars().take(200).collect::<String>());
                             continue;
                         }
 
@@ -254,7 +418,7 @@ impl Client {
                         }
 
                         // Check for tool_calls (extract from choices[0].delta.tool_calls)
-                        if let Some(first_choice) = stream_chunk.choices.get(0) {
+                        if let Some(first_choice) = stream_chunk.choices.first() {
                             if let Some(tool_calls) = &first_choice.delta.tool_calls {
                                 if let Ok(tool_calls_value) = serde_json::to_value(tool_calls) {
                                     delta["tool_calls"] = tool_calls_value;

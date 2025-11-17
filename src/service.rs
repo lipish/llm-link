@@ -74,6 +74,26 @@ impl Service {
             .await
     }
 
+    /// Chat with streaming (Ollama format) with tools support
+    ///
+    /// If model is None, uses the default model from configuration.
+    #[allow(dead_code)]
+    pub async fn chat_stream_ollama_with_tools(
+        &self,
+        model: Option<&str>,
+        messages: Vec<llm_connector::types::Message>,
+        tools: Option<Vec<llm_connector::types::Tool>>,
+        format: StreamFormat,
+    ) -> Result<UnboundedReceiverStream<String>> {
+        let requested = model.unwrap_or(&self.model);
+        let backend_model = self
+            .client
+            .resolve_model(requested, &self.model);
+        self.client
+            .chat_stream_with_format_and_tools(&backend_model, messages, tools, format)
+            .await
+    }
+
     /// Chat with streaming (OpenAI format)
     ///
     /// If model is None, uses the default model from configuration.

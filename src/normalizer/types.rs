@@ -1,4 +1,3 @@
-use serde_json;
 
 /// Token usage information
 #[derive(Debug, Clone)]

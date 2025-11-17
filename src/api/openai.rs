@@ -80,7 +80,7 @@ pub async fn chat(
             let model = if request.model.is_empty() { None } else { Some(request.model.as_str()) };
 
             // 转换 tools 格式
-            let tools = request.tools.map(|t| convert::openai_tools_to_llm(t));
+            let tools = request.tools.map(convert::openai_tools_to_llm);
             if let Some(ref tools_ref) = tools {
                 info!("🔧 Request includes {} tools", tools_ref.len());
                 // Debug: log the first tool
@@ -170,7 +170,7 @@ async fn handle_streaming_request(
                 }
             });
 
-            let body_stream = adapted_stream.map(|data| Ok::<_, Infallible>(data));
+            let body_stream = adapted_stream.map(Ok::<_, Infallible>);
             let body = Body::from_stream(body_stream);
 
             let response = Response::builder()
