@@ -107,6 +107,11 @@ ollama:
 
 aliyun:
   models:
+    - id: "qwen3-coder-plus"
+      name: "Qwen3 Coder Plus"
+      description: "Code-specialized Qwen3 model with enhanced programming capabilities"
+      supports_tools: true
+      context_length: 262000
     - id: "qwen3-max"
       name: "Qwen3 Max"
       description: "Latest and most capable Qwen3 model, 262K context"
