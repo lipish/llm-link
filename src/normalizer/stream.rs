@@ -141,6 +141,12 @@ impl Client {
         tracing::info!("🔄 Requesting streaming from LLM connector (Ollama format) with {} tools...",
                       request.tools.as_ref().map_or(0, |t| t.len()));
 
+        // Debug: log messages being sent to LLM connector
+        for (i, msg) in request.messages.iter().enumerate() {
+            tracing::debug!("📨 Message {}: role={:?}, tool_call_id={:?}, has_tool_calls={}",
+                          i, msg.role, msg.tool_call_id, msg.tool_calls.is_some());
+        }
+
         // Use real streaming API
         let mut stream = self.llm_client.chat_stream(&request).await
             .map_err(|e| anyhow!("LLM connector streaming error: {}", e))?;
