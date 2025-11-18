@@ -320,15 +320,19 @@ mod tests {
             json!({
                 "role": "tool",
                 "content": "Some tool response"
-                // Missing tool_call_id field
+                // Missing tool_call_id field - this is now allowed for compatibility
             })
         ];
 
         let result = openai_messages_to_llm(messages);
-        assert!(result.is_err());
+        assert!(result.is_ok());
 
-        let error_msg = result.unwrap_err().to_string();
-        assert!(error_msg.contains("Tool message is missing required 'tool_call_id' field"));
+        let llm_messages = result.unwrap();
+        assert_eq!(llm_messages.len(), 1);
+
+        let tool_message = &llm_messages[0];
+        assert_eq!(tool_message.role, LlmRole::Tool);
+        assert_eq!(tool_message.tool_call_id, None); // No tool_call_id is now allowed
     }
 
     #[test]
