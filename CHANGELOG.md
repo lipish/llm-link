@@ -5,6 +5,42 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2024-11-18
+
+### 🎉 Major Features & Bug Fixes
+
+#### Multi-Provider Support Enhancement
+- **10 LLM Providers**: OpenAI, Anthropic, Zhipu AI, Aliyun, Volcengine, Tencent, Moonshot, MiniMax, LongCat, Ollama
+- **Universal Provider Switching**: `scripts/switch-provider.sh` for seamless provider changes
+- **Comprehensive Testing Suite**: Individual test scripts for each provider
+
+#### Qwen3-Coder-Plus Integration ⭐
+- **Specialized Code Model**: Added Qwen3-Coder-Plus with 262K context length
+- **Enhanced Tool Support**: Full function calling capabilities for coding tasks
+- **Zed Editor Integration**: Optimized scripts for Zed + Qwen3-Coder-Plus workflow
+
+#### Critical Bug Fixes
+- **🐛 Fixed Zed "Blank Tool" Issue**: Resolved tool display problems by adding required `id` and `type` fields
+- **🔧 Tool Persistence**: Tools remain available throughout conversation without re-sending
+- **✅ Enhanced Tool Format**: Proper Ollama-compatible tool call responses
+
+#### New Scripts & Documentation
+- `scripts/zed-qwen3-coder.sh` - Quick start for Zed + Qwen3-Coder-Plus
+- `scripts/switch-provider.sh` - Universal provider switching
+- `scripts/debug-zed-tools.sh` - Tool call debugging
+- `scripts/README-ALL-PROVIDERS.md` - Complete multi-provider guide
+- `scripts/ZED-QWEN3-CODER-SETUP.md` - Detailed Zed setup instructions
+
+#### Quick Start
+```bash
+# Qwen3-Coder-Plus (recommended for coding)
+./scripts/zed-qwen3-coder.sh "your-aliyun-api-key"
+
+# Switch to other providers
+./scripts/switch-provider.sh openai "your-openai-key"
+./scripts/switch-provider.sh anthropic "your-anthropic-key"
+```
+
 ## [0.4.0] - 2025-11-17
 
 ### 🎯 Zed Editor Full Compatibility
