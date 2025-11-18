@@ -123,6 +123,12 @@ async fn chat_impl(
 
             // 转换 tools 格式并处理工具缓存
             info!("📋 Ollama request tools: {:?}", request.tools.as_ref().map(|t| t.len()));
+
+            // 详细日志：打印原始工具定义
+            if let Some(ref tools) = request.tools {
+                info!("🔍 Raw tools from Zed: {}", serde_json::to_string_pretty(tools).unwrap_or_else(|_| "Failed to serialize".to_string()));
+            }
+
             let tools = handle_tool_caching(&request.model, request.tools);
 
             if request.stream.unwrap_or(false) {

@@ -231,8 +231,25 @@ impl Client {
                                     // Convert tool_calls to Ollama format
                                     // Zed expects arguments to be a JSON object, not a string
                                     let mut ollama_tool_calls = Vec::new();
-                                    for tc in tool_calls {
+                                    for (i, tc) in tool_calls.iter().enumerate() {
+                                        tracing::debug!("🔧 Processing tool call {}: name={}, args_len={}",
+                                                      i, tc.function.name, tc.function.arguments.len());
+
                                         let mut ollama_tc = serde_json::Map::new();
+
+                                        // Add tool call ID - this is crucial for Zed
+                                        if !tc.id.is_empty() {
+                                            ollama_tc.insert("id".to_string(), Value::String(tc.id.clone()));
+                                            tracing::debug!("✅ Tool call ID: {}", tc.id);
+                                        } else {
+                                            // Generate a unique ID if missing
+                                            let generated_id = format!("call_{}", uuid::Uuid::new_v4().to_string().replace("-", "")[..8].to_string());
+                                            ollama_tc.insert("id".to_string(), Value::String(generated_id.clone()));
+                                            tracing::warn!("⚠️ Generated tool call ID: {}", generated_id);
+                                        }
+
+                                        // Add type field
+                                        ollama_tc.insert("type".to_string(), Value::String("function".to_string()));
 
                                         // Add function object
                                         let mut function = serde_json::Map::new();
@@ -243,10 +260,13 @@ impl Client {
                                             Value::Object(serde_json::Map::new())
                                         } else {
                                             match serde_json::from_str::<Value>(&tc.function.arguments) {
-                                                Ok(v) => v,
-                                                Err(_) => {
+                                                Ok(v) => {
+                                                    tracing::debug!("✅ Parsed tool arguments: {}", serde_json::to_string(&v).unwrap_or_default());
+                                                    v
+                                                }
+                                                Err(e) => {
                                                     // If parsing fails, wrap in an object
-                                                    tracing::warn!("⚠️ Failed to parse tool arguments as JSON: {}", tc.function.arguments);
+                                                    tracing::warn!("⚠️ Failed to parse tool arguments as JSON: {} - Error: {}", tc.function.arguments, e);
                                                     Value::String(tc.function.arguments.clone())
                                                 }
                                             }
@@ -254,6 +274,8 @@ impl Client {
                                         function.insert("arguments".to_string(), arguments_value);
 
                                         ollama_tc.insert("function".to_string(), Value::Object(function));
+
+                                        tracing::debug!("🔧 Converted tool call: {}", serde_json::to_string(&ollama_tc).unwrap_or_default());
                                         ollama_tool_calls.push(Value::Object(ollama_tc));
                                     }
 
