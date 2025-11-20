@@ -1,0 +1,73 @@
+<script lang="ts">
+	import { onMount } from 'svelte';
+	import hljs from 'highlight.js/lib/core';
+	import bash from 'highlight.js/lib/languages/bash';
+	import rust from 'highlight.js/lib/languages/rust';
+	import yaml from 'highlight.js/lib/languages/yaml';
+	import json from 'highlight.js/lib/languages/json';
+	import 'highlight.js/styles/github-dark.css';
+
+	export let code: string;
+	export let language: string = 'bash';
+	export let showLineNumbers: boolean = false;
+
+	let highlightedCode = '';
+
+	hljs.registerLanguage('bash', bash);
+	hljs.registerLanguage('rust', rust);
+	hljs.registerLanguage('yaml', yaml);
+	hljs.registerLanguage('json', json);
+
+	onMount(() => {
+		try {
+			const result = hljs.highlight(code, { language });
+			highlightedCode = result.value;
+		} catch (e) {
+			highlightedCode = code;
+		}
+	});
+</script>
+
+<div class="code-block-wrapper">
+	<pre class="code-block" class:line-numbers={showLineNumbers}><code>{@html highlightedCode}</code></pre>
+</div>
+
+<style>
+	.code-block-wrapper {
+		position: relative;
+		border-radius: 0.5rem;
+		overflow: hidden;
+		background: #0d1117;
+	}
+
+	.code-block {
+		margin: 0;
+		padding: 1rem;
+		overflow-x: auto;
+		font-size: 0.875rem;
+		line-height: 1.5;
+		background: #0d1117;
+		color: #c9d1d9;
+	}
+
+	.code-block code {
+		font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Droid Sans Mono', 'Source Code Pro', monospace;
+	}
+
+	.line-numbers {
+		counter-reset: line;
+	}
+
+	.line-numbers code {
+		counter-increment: line;
+	}
+
+	.line-numbers code::before {
+		content: counter(line);
+		display: inline-block;
+		width: 2rem;
+		margin-right: 1rem;
+		text-align: right;
+		color: #6e7681;
+	}
+</style>

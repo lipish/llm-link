@@ -1,6 +1,7 @@
 <script>
 	import Button from '$lib/components/ui/button.svelte';
-	import { Github, Check, ExternalLink } from 'lucide-svelte';
+	import Accordion from '$lib/components/Accordion.svelte';
+	import { Github, ExternalLink, Check } from 'lucide-svelte';
 	import { providers } from '$lib/data/providers.js';
 
 	const providerCount = providers.length;
@@ -8,124 +9,149 @@
 	const compatibleProviders = providers.filter((provider) => provider.apiType !== 'Native');
 </script>
 
-<div class="container py-8">
-	<div class="max-w-6xl mx-auto">
-		<div class="text-center mb-12">
-			<h1 class="text-4xl font-bold tracking-tight mb-4">Supported Providers</h1>
+<div class="container py-8 max-w-6xl mx-auto">
+	<div class="text-center mb-12">
+		<h1 class="text-4xl font-bold tracking-tight mb-4">Supported Providers</h1>
+		<p class="text-lg text-muted-foreground">
+			LLM Link supports {providerCount} major LLM providers with unified API access
+		</p>
+	</div>
+
+	<!-- Stats -->
+	<div class="grid gap-4 md:grid-cols-3 mb-12">
+		<div class="rounded-lg border bg-card p-6 text-center">
+			<p class="text-sm text-muted-foreground uppercase mb-2">Total Providers</p>
+			<p class="text-4xl font-bold">{providerCount}</p>
+			<p class="text-xs text-muted-foreground mt-2">Unified API access</p>
+		</div>
+		<div class="rounded-lg border bg-card p-6 text-center">
+			<p class="text-sm text-muted-foreground uppercase mb-2">Native APIs</p>
+			<p class="text-4xl font-bold">{nativeProviders.length}</p>
+			<p class="text-xs text-muted-foreground mt-2">Custom implementations</p>
+		</div>
+		<div class="rounded-lg border bg-card p-6 text-center">
+			<p class="text-sm text-muted-foreground uppercase mb-2">OpenAI Compatible</p>
+			<p class="text-4xl font-bold">{compatibleProviders.length}</p>
+			<p class="text-xs text-muted-foreground mt-2">Standard protocol</p>
+		</div>
+	</div>
+
+	<!-- Provider List -->
+	<div class="space-y-4 mb-12">
+		{#each providers as provider}
+			<Accordion title={provider.name}>
+				<div class="grid md:grid-cols-2 gap-6">
+					<div class="space-y-4">
+						<div>
+							<h4 class="text-sm font-medium text-muted-foreground mb-2">Description</h4>
+							<p class="text-sm">{provider.description}</p>
+						</div>
+						
+						<div>
+							<h4 class="text-sm font-medium text-muted-foreground mb-2">Popular Models</h4>
+							<div class="flex flex-wrap gap-2">
+								{#each provider.models as model}
+									<span class="bg-muted px-3 py-1 rounded-md text-sm">{model}</span>
+								{/each}
+							</div>
+						</div>
+
+						<div>
+							<h4 class="text-sm font-medium text-muted-foreground mb-2">Features</h4>
+							<div class="flex flex-wrap gap-2">
+								{#each provider.features as feature}
+									<span class="bg-primary/10 text-primary px-3 py-1 rounded-md text-sm flex items-center gap-1">
+										<Check class="h-3 w-3" />
+										{feature}
+									</span>
+								{/each}
+							</div>
+						</div>
+					</div>
+
+					<div class="space-y-4">
+						<div>
+							<h4 class="text-sm font-medium text-muted-foreground mb-2">Configuration</h4>
+							<div class="space-y-2">
+								<div class="flex items-center justify-between text-sm">
+									<span class="text-muted-foreground">API Type:</span>
+									<code class="bg-muted px-2 py-1 rounded text-xs">{provider.apiType}</code>
+								</div>
+								<div class="flex items-center justify-between text-sm">
+									<span class="text-muted-foreground">Environment Variable:</span>
+									<code class="bg-muted px-2 py-1 rounded text-xs">{provider.envVar}</code>
+								</div>
+								<div class="flex items-center justify-between text-sm">
+									<span class="text-muted-foreground">Base URL:</span>
+									<code class="bg-muted px-2 py-1 rounded text-xs truncate max-w-xs">{provider.baseUrl}</code>
+								</div>
+							</div>
+						</div>
+
+						<div>
+							<a 
+								href={provider.website} 
+								target="_blank" 
+								rel="noopener noreferrer"
+								class="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+							>
+								Visit official website
+								<ExternalLink class="h-4 w-4" />
+							</a>
+						</div>
+					</div>
+				</div>
+			</Accordion>
+		{/each}
+	</div>
+
+	<!-- Benefits -->
+	<section class="mb-12">
+		<div class="text-center mb-8">
+			<h2 class="text-3xl font-bold tracking-tight mb-4">Why Use LLM Link?</h2>
 			<p class="text-lg text-muted-foreground">
-				LLM Link 支持 {providerCount} 个 LLM Provider，覆盖 Native 与 OpenAI-Compatible API 类型。
+				Unified access with intelligent optimizations
 			</p>
 		</div>
 
-		<div class="grid gap-4 md:grid-cols-3 mb-10">
-			<div class="rounded-lg border bg-card p-4">
-				<p class="text-xs text-muted-foreground uppercase">Provider 数量</p>
-				<p class="text-3xl font-bold">{providerCount}</p>
-				<p class="text-xs text-muted-foreground">统一格式暴露，便于协议切换</p>
-			</div>
-			<div class="rounded-lg border bg-card p-4">
-				<p class="text-xs text-muted-foreground uppercase">Native API</p>
-				<p class="text-3xl font-bold">{nativeProviders.length}</p>
-				<p class="text-xs text-muted-foreground">OpenAI / Anthropic / Volcengine / Ollama ...</p>
-			</div>
-			<div class="rounded-lg border bg-card p-4">
-				<p class="text-xs text-muted-foreground uppercase">OpenAI-Compatible</p>
-				<p class="text-3xl font-bold">{compatibleProviders.length}</p>
-				<p class="text-xs text-muted-foreground">Zhipu / Moonshot / Minimax / Longcat ...</p>
-			</div>
-		</div>
-
-		<div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-			{#each providers as provider}
-				<div class="rounded-lg border bg-card p-6 hover:shadow-lg transition-shadow">
-					<div class="flex items-start justify-between mb-4">
-						<h3 class="text-xl font-semibold">{provider.name}</h3>
-						<a 
-							href={provider.website} 
-							target="_blank" 
-							rel="noopener noreferrer"
-							class="text-muted-foreground hover:text-foreground"
-						>
-							<ExternalLink class="h-4 w-4" />
-						</a>
-					</div>
-					
-					<p class="text-sm text-muted-foreground mb-4">{provider.description}</p>
-					
-					<div class="space-y-3">
-						<div>
-							<h4 class="text-sm font-medium mb-1">Popular Models</h4>
-							<div class="flex flex-wrap gap-1">
-								{#each provider.models.slice(0, 3) as model}
-									<span class="bg-muted px-2 py-1 rounded text-xs">{model}</span>
-								{/each}
-								{#if provider.models.length > 3}
-									<span class="text-xs text-muted-foreground">+{provider.models.length - 3} more</span>
-								{/if}
-							</div>
-						</div>
-						
-						<div class="space-y-1">
-							<div class="flex items-center text-sm">
-								<span class="font-medium mr-2">API Key:</span>
-								<code class="bg-muted px-2 py-0.5 rounded text-xs">{provider.envVar}</code>
-							</div>
-							<div class="flex items-center text-sm">
-								<span class="font-medium mr-2">API Type:</span>
-								<span class="bg-muted px-2 py-0.5 rounded text-xs">{provider.apiType}</span>
-							</div>
-						</div>
-					</div>
+		<div class="grid gap-6 md:grid-cols-3">
+			<div class="rounded-lg border bg-card p-6">
+				<div class="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground mb-4">
+					<Check class="h-6 w-6" />
 				</div>
-			{/each}
-		</div>
-
-		<div class="mt-16 space-y-8">
-			<div class="text-center">
-				<h2 class="text-3xl font-bold tracking-tight mb-4">Why Choose LLM Link?</h2>
-				<p class="text-lg text-muted-foreground">
-					Unified access to multiple providers with intelligent optimizations
+				<h3 class="text-lg font-semibold mb-2">Unified Interface</h3>
+				<p class="text-sm text-muted-foreground">
+					Access all providers through OpenAI, Ollama, or Anthropic API formats without changing client code
 				</p>
 			</div>
-
-			<div class="grid gap-6 md:grid-cols-3">
-				<div class="text-center space-y-3">
-					<div class="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-						<Check class="h-6 w-6" />
-					</div>
-					<h3 class="text-lg font-semibold">Unified API</h3>
-					<p class="text-sm text-muted-foreground">
-						Access all providers through OpenAI, Ollama, or Anthropic API formats
-					</p>
+			
+			<div class="rounded-lg border bg-card p-6">
+				<div class="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground mb-4">
+					<Check class="h-6 w-6" />
 				</div>
-				
-				<div class="text-center space-y-3">
-					<div class="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-						<Check class="h-6 w-6" />
-					</div>
-					<h3 class="text-lg font-semibold">Smart Detection</h3>
-					<p class="text-sm text-muted-foreground">
-						Automatic client detection and format optimization
-					</p>
+				<h3 class="text-lg font-semibold mb-2">Hot Reload</h3>
+				<p class="text-sm text-muted-foreground">
+					Update API keys and switch providers dynamically via REST API without service restart
+				</p>
+			</div>
+			
+			<div class="rounded-lg border bg-card p-6">
+				<div class="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground mb-4">
+					<Check class="h-6 w-6" />
 				</div>
-				
-				<div class="text-center space-y-3">
-					<div class="mx-auto flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-						<Check class="h-6 w-6" />
-					</div>
-					<h3 class="text-lg font-semibold">Hot Reload</h3>
-					<p class="text-sm text-muted-foreground">
-						Update API keys and switch providers without service restart
-					</p>
-				</div>
+				<h3 class="text-lg font-semibold mb-2">Smart Detection</h3>
+				<p class="text-sm text-muted-foreground">
+					Automatic client detection and protocol optimization for seamless integration
+				</p>
 			</div>
 		</div>
+	</section>
 
-		<div class="mt-12 text-center">
-			<Button size="lg" href="https://github.com/lipish/llm-link">
-				<Github class="mr-2 h-4 w-4" />
-				Get Started
-			</Button>
-		</div>
+	<!-- CTA -->
+	<div class="flex gap-3 justify-center pt-8 border-t">
+		<Button size="lg" href="https://github.com/lipish/llm-link">
+			<Github class="mr-2 h-4 w-4" />
+			Get Started
+		</Button>
 	</div>
 </div>
