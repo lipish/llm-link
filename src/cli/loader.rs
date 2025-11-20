@@ -40,10 +40,10 @@ impl ConfigLoader {
                 .map(|s| s.trim().to_string())
                 .collect();
 
-            // Check environment variables for protocol combination
-            Self::check_protocol_env_vars(&protocols, args)?;
+            // Check required CLI flags for protocol combination
+            Self::check_protocol_flags(&protocols, args)?;
 
-            let mut config = AppConfigGenerator::generate_protocol_config(&protocols, args.api_key.as_deref());
+            let mut config = AppConfigGenerator::generate_protocol_config(&protocols, args.auth_key.as_deref());
 
             // Apply provider/model overrides if specified
             if let Some(provider) = &args.provider {
@@ -62,8 +62,8 @@ impl ConfigLoader {
         // Require --provider parameter
         let provider = Self::require_provider(app_name, args)?;
 
-        // Generate base config for the app
-        let mut config = AppConfigGenerator::generate_config(&app, args.api_key.as_deref());
+        // Generate base config for the app (LLM Link auth is provided via --auth-key)
+        let mut config = AppConfigGenerator::generate_config(&app, args.auth_key.as_deref());
 
         // Apply provider/model overrides (provider is required, model is optional)
         config = Self::apply_provider_overrides(
@@ -90,11 +90,11 @@ impl ConfigLoader {
 
         info!("🚀 Starting with protocols: {}", protocols.join(", "));
 
-        // Check environment variables for protocol combination
-        Self::check_protocol_env_vars(&protocols, args)?;
+        // Check required CLI flags for protocol combination
+        Self::check_protocol_flags(&protocols, args)?;
 
         // Generate base config for the selected protocols
-        let mut config = AppConfigGenerator::generate_protocol_config(&protocols, args.api_key.as_deref());
+        let mut config = AppConfigGenerator::generate_protocol_config(&protocols, args.auth_key.as_deref());
 
         // Apply provider/model overrides if specified (same behavior as app mode)
         if let Some(provider) = &args.provider {
@@ -102,7 +102,7 @@ impl ConfigLoader {
                 config,
                 Some(provider.as_str()),
                 args.model.as_deref(),
-                args.llm_api_key.as_deref(),
+                args.api_key.as_deref(),
             )?;
         }
 
@@ -118,11 +118,11 @@ impl ConfigLoader {
                 error!("❌ Missing required parameter: --provider");
                 error!("");
                 error!("🔧 You must specify which LLM provider to use:");
-                error!("   --provider openai      (requires OPENAI_API_KEY)");
-                error!("   --provider anthropic   (requires ANTHROPIC_API_KEY)");
-                error!("   --provider zhipu       (requires ZHIPU_API_KEY)");
-                error!("   --provider aliyun      (requires ALIYUN_API_KEY)");
-                error!("   --provider minimax     (requires MINIMAX_API_KEY)");
+                error!("   --provider openai      (requires --api-key)");
+                error!("   --provider anthropic   (requires --api-key)");
+                error!("   --provider zhipu       (requires --api-key)");
+                error!("   --provider aliyun      (requires --api-key)");
+                error!("   --provider minimax     (requires --api-key)");
                 error!("   --provider ollama      (no API key needed)");
                 error!("");
                 error!("💡 Example:");
@@ -134,15 +134,15 @@ impl ConfigLoader {
             })
     }
 
-    /// 检查协议模式的环境变量
-    fn check_protocol_env_vars(protocols: &[String], args: &Args) -> Result<()> {
+    /// 检查协议模式所需的 CLI 参数
+    fn check_protocol_flags(protocols: &[String], args: &Args) -> Result<()> {
         let mut missing_flags = Vec::new();
 
         for protocol in protocols {
             match protocol.to_lowercase().as_str() {
                 "openai" => {
-                    if args.api_key.is_none() {
-                        missing_flags.push("--api-key");
+                    if args.auth_key.is_none() {
+                        missing_flags.push("--auth-key");
                     }
                 }
                 "anthropic" | "ollama" => {
@@ -176,19 +176,19 @@ impl ConfigLoader {
         mut config: Settings,
         provider: Option<&str>,
         model: Option<&str>,
-        llm_api_key: Option<&str>,
+        api_key: Option<&str>,
     ) -> Result<Settings> {
         use crate::settings::LlmBackendSettings;
 
         if let Some(provider_name) = provider {
             info!("🔄 Overriding LLM provider to: {}", provider_name);
 
-            // Determine API key strictly from CLI
-            let provided_key = llm_api_key
+            // Determine provider API key strictly from CLI
+            let provided_key = api_key
                 .map(|key| key.to_string())
                 .ok_or_else(|| {
                     anyhow::anyhow!(
-                        "Missing required --llm-api-key for provider '{}'",
+                        "Missing required --api-key for provider '{}'",
                         provider_name
                     )
                 })?;

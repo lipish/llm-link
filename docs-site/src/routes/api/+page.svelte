@@ -646,6 +646,23 @@ curl -X POST http://localhost:8088/api/chat \\
 						</div>
 					</div>
 				</div>
+
+				<div class="grid gap-4 md:grid-cols-2">
+					<div class="rounded-lg border bg-muted/40 p-4 space-y-2">
+						<h3 class="text-sm font-semibold">Security conventions</h3>
+						<ul class="text-xs text-muted-foreground list-disc pl-4 space-y-1">
+							<li>
+								<strong>Provider API keys</strong> are <strong>never</strong> read from environment variables
+								(e.g. <code>OPENAI_API_KEY</code>, <code>ANTHROPIC_API_KEY</code>). Always pass them explicitly
+								via CLI flags (such as <code>--api-key</code>) or through the configuration APIs.
+							</li>
+							<li>
+								The <code>--auth-key</code> flag is used to protect llm-link's own HTTP/management APIs
+								(client-facing authentication) and is <strong>not</strong> forwarded to upstream LLM providers.
+							</li>
+						</ul>
+					</div>
+				</div>
 			</div>
 		</section>
 

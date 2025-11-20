@@ -11,7 +11,7 @@
 		{
 			icon: Layers,
 			title: 'Multi-Protocol Support',
-			description: 'Unified proxy for OpenAI, Ollama, and Anthropic APIs with automatic protocol detection.'
+			description: 'Unified proxy for OpenAI-compatible and Ollama APIs with automatic protocol detection.'
 		},
 		{
 			icon: Zap,
@@ -35,7 +35,7 @@
 			One Proxy for All LLM Providers
 		</h1>
 		<p class="max-w-2xl text-base text-muted-foreground sm:text-lg mx-auto">
-			A unified proxy service supporting 10+ LLM providers with OpenAI, Ollama, and Anthropic API compatibility. Built with Rust for performance and reliability.
+			A unified proxy service for multiple LLM providers with OpenAI-compatible and Ollama APIs. Built with Rust for performance and reliability.
 		</p>
 		<div class="flex flex-wrap items-center justify-center gap-3">
 			<Button variant="default" size="lg" href="#quickstart">
@@ -123,12 +123,12 @@
 			<Accordion title="Codex & Claude Code">
 				<div class="space-y-4">
 					<div class="space-y-2">
-						<p class="text-sm text-muted-foreground">Route Codex CLI through llm-link with OpenAI-compatible API:</p>
-						<CodeBlock code="llm-link --app codex --provider openai" language="bash" />
+						<p class="text-sm text-muted-foreground">Route Codex CLI through llm-link using GLM 4.6 via the OpenAI-compatible API:</p>
+						<CodeBlock code="llm-link --app codex --provider zhipu --api-key zhipu-... --model glm-4.6" language="bash" />
 					</div>
 					<div class="space-y-2">
-						<p class="text-sm text-muted-foreground">Run Claude Code via llm-link using the Anthropic-compatible API:</p>
-						<CodeBlock code="llm-link --app claude --provider anthropic" language="bash" />
+						<p class="text-sm text-muted-foreground">Run Claude Code via llm-link routing to Qwen3 Coder Plus on Aliyun:</p>
+						<CodeBlock code="llm-link --app claude --provider aliyun --api-key qwen-... --model qwen3-coder-plus" language="bash" />
 					</div>
 				</div>
 			</Accordion>
@@ -144,19 +144,10 @@
 		</div>
 		<div class="grid gap-4 grid-cols-2 md:grid-cols-5 text-center">
 			<div class="rounded-lg border bg-card p-4">
-				<p class="font-semibold">OpenAI</p>
-			</div>
-			<div class="rounded-lg border bg-card p-4">
-				<p class="font-semibold">Anthropic</p>
-			</div>
-			<div class="rounded-lg border bg-card p-4">
 				<p class="font-semibold">Zhipu</p>
 			</div>
 			<div class="rounded-lg border bg-card p-4">
 				<p class="font-semibold">Volcengine</p>
-			</div>
-			<div class="rounded-lg border bg-card p-4">
-				<p class="font-semibold">Ollama</p>
 			</div>
 			<div class="rounded-lg border bg-card p-4">
 				<p class="font-semibold">Moonshot</p>

@@ -170,7 +170,7 @@ llm-link-0.1.0/
 
 **Excluded**:
 - `tests/` directory
-- `keys.yaml` (sensitive data)
+- Local secrets/keys files (API keys, tokens, etc.)
 - `.git/` directory
 - `.gitignore`
 

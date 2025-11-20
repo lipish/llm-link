@@ -18,7 +18,8 @@ impl CodexApp {
                 log_level: "info".to_string(),
             },
             llm_backend: LlmBackendSettings::Zhipu {
-                api_key: AppConfigGenerator::resolve_env_var("${ZHIPU_API_KEY}", cli_api_key),
+                // Provider API key is supplied via CLI (--api-key) and applied later by loader
+                api_key: String::new(),
                 base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
                 model: "glm-4-flash".to_string(),
             },
@@ -27,7 +28,8 @@ impl CodexApp {
                     enabled: true,
                     path: "/v1".to_string(),
                     api_key_header: Some("Authorization".to_string()),
-                    api_key: Some(AppConfigGenerator::resolve_env_var("${LLM_LINK_API_KEY}", cli_api_key)),
+                    // Use the CLI-provided auth key (if any) as the client-facing API key for /v1
+                    api_key: cli_api_key.map(|k| k.to_string()),
                 }),
                 ollama: Some(OllamaApiSettings {
                     enabled: false,

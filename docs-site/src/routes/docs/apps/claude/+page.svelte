@@ -21,9 +21,10 @@
 		<p class="text-sm text-muted-foreground">
 			This preset starts an Anthropic-compatible server on <code>http://localhost:8089</code>.
 		</p>
-		<CodeBlock code="llm-link --app claude --provider anthropic" language="bash" />
+		<CodeBlock code="llm-link --app claude --provider anthropic --api-key sk-ant-..." language="bash" />
 		<p class="text-xs text-muted-foreground">
-			Set <code>ANTHROPIC_API_KEY</code> in your environment before starting llm-link.
+			Always pass the provider API key explicitly via <code>--api-key</code>. Environment variables
+			are not used by llm-link for API keys.
 		</p>
 	</section>
 

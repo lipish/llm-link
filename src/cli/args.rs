@@ -20,9 +20,9 @@ pub struct Args {
     #[arg(long)]
     pub app_info: Option<String>,
 
-    /// API key for LLM Link authentication (overrides LLM_LINK_API_KEY env var)
-    #[arg(long)]
-    pub api_key: Option<String>,
+    /// API key for protecting LLM Link's own HTTP APIs (not forwarded to providers)
+    #[arg(long = "auth-key")]
+    pub auth_key: Option<String>,
 
     /// Override LLM provider (openai, anthropic, zhipu, ollama)
     #[arg(long)]
@@ -32,8 +32,8 @@ pub struct Args {
     #[arg(long)]
     pub model: Option<String>,
 
-    /// LLM provider API key (overrides provider-specific env vars)
-    #[arg(long)]
+    /// LLM provider API key (used to talk to upstream providers)
+    #[arg(long = "api-key")]
     pub llm_api_key: Option<String>,
 
     /// Host to bind to (if provided overrides config)

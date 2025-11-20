@@ -36,36 +36,28 @@ pub fn show_application_info(app_name: &str) {
 
         println!("🔧 Required Parameters:");
         println!();
-        println!("⚠️  You MUST specify --provider and corresponding API key:");
+        println!("⚠️  You MUST specify --provider and pass the provider API key explicitly:");
         println!();
-        println!("   --provider openai      (requires OPENAI_API_KEY)");
-        println!("   --provider anthropic   (requires ANTHROPIC_API_KEY)");
-        println!("   --provider zhipu       (requires ZHIPU_API_KEY)");
-        println!("   --provider aliyun      (requires ALIYUN_API_KEY)");
-        println!("   --provider volcengine  (requires VOLCENGINE_API_KEY)");
-        println!("   --provider tencent     (requires TENCENT_API_KEY)");
-        println!("   --provider ollama      (no API key needed)");
+        println!("   --provider openai      (pass OpenAI key via --api-key)");
+        println!("   --provider anthropic   (pass Anthropic key via --api-key)");
+        println!("   --provider zhipu       (pass Zhipu key via --api-key)");
+        println!("   --provider aliyun      (pass Qwen key via --api-key)");
+        println!("   --provider volcengine  (pass Doubao key via --api-key)");
+        println!("   --provider tencent     (pass Hunyuan key via --api-key)");
+        println!("   --provider ollama      (no provider API key needed)");
         println!();
         
         if info.auth_required {
-            println!("   --api-key <TOKEN>      (or set LLM_LINK_API_KEY env var)");
+            println!("   --auth-key <TOKEN>     (protects llm-link HTTP APIs, not forwarded upstream)");
             println!();
         }
 
         println!("💡 Example:");
         println!();
-        println!("   export OPENAI_API_KEY=\"sk-xxx\"");
-        if info.auth_required {
-            println!("   export LLM_LINK_API_KEY=\"your-auth-token\"");
-        }
-        println!("   ./llm-link --app {} --provider openai", app_name);
+        println!("   ./llm-link --app {} --provider openai --api-key sk-openai-xxx", app_name);
         println!();
         println!("   # Or use a different provider:");
-        println!("   export ANTHROPIC_API_KEY=\"sk-ant-xxx\"");
-        if info.auth_required {
-            println!("   export LLM_LINK_API_KEY=\"your-auth-token\"");
-        }
-        println!("   ./llm-link --app {} --provider anthropic", app_name);
+        println!("   ./llm-link --app {} --provider anthropic --api-key sk-ant-xxx", app_name);
         println!();
     } else {
         error!("❌ Unknown application: {}", app_name);

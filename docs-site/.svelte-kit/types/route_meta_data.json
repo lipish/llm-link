@@ -9,7 +9,9 @@
 	"/docs/apps/claude": [],
 	"/docs/apps/codex": [],
 	"/docs/apps/zed": [],
+	"/docs/architecture": [],
 	"/docs/protocols": [],
+	"/docs/quick-start": [],
 	"/providers": [
 		"src/routes/providers/+page.js"
 	]

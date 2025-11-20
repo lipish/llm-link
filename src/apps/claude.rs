@@ -18,7 +18,8 @@ impl ClaudeApp {
                 log_level: "info".to_string(),
             },
             llm_backend: LlmBackendSettings::Anthropic {
-                api_key: AppConfigGenerator::resolve_env_var("${ANTHROPIC_API_KEY}", cli_api_key),
+                // Provider API key is supplied via CLI (--api-key) and applied later by loader
+                api_key: String::new(),
                 model: "claude-3-5-sonnet-20241022".to_string(),
             },
             apis: ApiSettings {

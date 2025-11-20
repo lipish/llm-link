@@ -72,27 +72,4 @@ impl AppConfigGenerator {
     pub fn generate_protocol_config(protocols: &[String], cli_api_key: Option<&str>) -> Settings {
         protocol::generate_protocol_config(protocols, cli_api_key)
     }
-
-    /// Resolve environment variable template, supporting CLI parameter override
-    pub(crate) fn resolve_env_var(template: &str, cli_api_key: Option<&str>) -> String {
-        if template.starts_with("${") && template.ends_with("}") {
-            let var_name = &template[2..template.len()-1];
-
-            // If it's LLM_LINK_API_KEY and CLI parameter is provided, prioritize CLI parameter
-            if var_name == "LLM_LINK_API_KEY" {
-                if let Some(cli_key) = cli_api_key {
-                    return cli_key.to_string();
-                }
-            }
-
-            eprintln!(
-                "Warning: Environment variable '{}' ignored. Provide the value via CLI flags (e.g. --api-key).",
-                var_name
-            );
-            String::new()
-        } else {
-            template.to_string()
-        }
-    }
 }
-

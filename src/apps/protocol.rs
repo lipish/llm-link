@@ -19,7 +19,8 @@ pub fn generate_protocol_config(protocols: &[String], cli_api_key: Option<&str>)
                     enabled: true,
                     path: "/v1".to_string(),
                     api_key_header: Some("Authorization".to_string()),
-                    api_key: Some(AppConfigGenerator::resolve_env_var("${LLM_LINK_API_KEY}", cli_api_key)),
+                    // Use CLI-provided auth key (if any) for the OpenAI-compatible endpoint
+                    api_key: cli_api_key.map(|k| k.to_string()),
                 });
             },
             "ollama" => {
@@ -50,7 +51,8 @@ pub fn generate_protocol_config(protocols: &[String], cli_api_key: Option<&str>)
             log_level: "info".to_string(),
         },
         llm_backend: LlmBackendSettings::Zhipu {
-            api_key: AppConfigGenerator::resolve_env_var("${ZHIPU_API_KEY}", cli_api_key),
+            // Provider API key is supplied later via --api-key or config APIs
+            api_key: String::new(),
             base_url: Some("https://open.bigmodel.cn/api/paas/v4".to_string()),
             model: "glm-4-flash".to_string(),
         },

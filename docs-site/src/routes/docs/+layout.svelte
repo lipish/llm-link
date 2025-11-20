@@ -8,7 +8,9 @@
 		{
 			title: 'Getting Started',
 			items: [
-				{ label: 'Overview', href: '/docs' }
+				{ label: 'Introduction', href: '/docs' },
+				{ label: 'Quick Start', href: '/docs/quick-start' },
+				{ label: 'Architecture', href: '/docs/architecture' }
 			]
 		},
 		{
@@ -34,7 +36,12 @@
 	];
 
 	const isActive = (path: string, current: string) => {
-		if (path === '/docs') return current === `${basePath}${path}`;
+		if (path === '/docs') {
+			return current === `${basePath}/docs`;
+		}
+		if (path.startsWith('/docs/')) {
+			return current.startsWith(`${basePath}${path}`);
+		}
 		return current.startsWith(`${basePath}${path}`);
 	};
 </script>

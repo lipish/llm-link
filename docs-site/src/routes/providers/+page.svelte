@@ -2,8 +2,10 @@
 	import Button from '$lib/components/ui/button.svelte';
 	import Accordion from '$lib/components/Accordion.svelte';
 	import { Github, ExternalLink, Check } from 'lucide-svelte';
-	import { providers } from '$lib/data/providers.js';
+	import { providers as allProviders } from '$lib/data/providers.js';
 
+	// Hide providers that are not yet tested (e.g. openai/anthropic)
+	const providers = allProviders.filter((provider) => provider.id !== 'openai' && provider.id !== 'anthropic');
 	const providerCount = providers.length;
 	const nativeProviders = providers.filter((provider) => provider.apiType === 'Native');
 	const compatibleProviders = providers.filter((provider) => provider.apiType !== 'Native');
@@ -76,10 +78,6 @@
 								<div class="flex items-center justify-between text-sm">
 									<span class="text-muted-foreground">API Type:</span>
 									<code class="bg-muted px-2 py-1 rounded text-xs">{provider.apiType}</code>
-								</div>
-								<div class="flex items-center justify-between text-sm">
-									<span class="text-muted-foreground">Environment Variable:</span>
-									<code class="bg-muted px-2 py-1 rounded text-xs">{provider.envVar}</code>
 								</div>
 								<div class="flex items-center justify-between text-sm">
 									<span class="text-muted-foreground">Base URL:</span>
