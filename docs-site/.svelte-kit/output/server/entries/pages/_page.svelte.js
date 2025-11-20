@@ -1,7 +1,10 @@
-import { c as create_ssr_component, v as validate_component } from "../../chunks/ssr.js";
-import { I as Icon, B as Button, G as Github } from "../../chunks/github.js";
+import { c as create_ssr_component, v as validate_component, f as each, m as missing_component, e as escape } from "../../chunks/ssr.js";
+import { I as Icon, B as Button } from "../../chunks/Icon.js";
+import { C as CodeBlock } from "../../chunks/CodeBlock.js";
+import { A as Accordion } from "../../chunks/Accordion.js";
 import { b as base } from "../../chunks/paths.js";
-import { Z as Zap, C as Code } from "../../chunks/zap.js";
+import { G as Github } from "../../chunks/github.js";
+import { Z as Zap } from "../../chunks/zap.js";
 const Download = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   const iconNode = [
     [
@@ -74,17 +77,35 @@ const Shield = create_ssr_component(($$result, $$props, $$bindings, slots) => {
 const Shield$1 = Shield;
 const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   const basePath = base;
-  return `<section class="space-y-6 pb-8 pt-6 md:pb-12 md:pt-10 lg:py-32"><div class="container flex max-w-[64rem] flex-col items-center gap-4 text-center"><a href="https://github.com/lipish/llm-link" target="_blank" rel="noreferrer" class="rounded-2xl bg-muted px-4 py-1.5 text-sm font-medium" data-svelte-h="svelte-119ax5f">🚀 Star us on GitHub</a> <h1 class="font-heading text-4xl font-bold sm:text-5xl md:text-6xl lg:text-7xl bg-gradient-to-r from-foreground to-muted-foreground bg-clip-text text-transparent" data-svelte-h="svelte-7eva05">LLM Link</h1> <p class="max-w-[42rem] leading-normal text-muted-foreground sm:text-xl sm:leading-8" data-svelte-h="svelte-10rfs9o">Universal LLM proxy service providing zero-configuration access to 9 major providers through multiple API formats, with built-in optimizations for AI coding tools.</p> <div class="space-x-4">${validate_component(Button, "Button").$$render(
+  const highlights = [
+    {
+      icon: Layers$1,
+      title: "Multi-Protocol Support",
+      description: "Unified proxy for OpenAI, Ollama, and Anthropic APIs with automatic protocol detection."
+    },
+    {
+      icon: Zap,
+      title: "Editor & Agent Integrations",
+      description: "First-class support for developer tools like Codex, Claude Code, and Zed.dev with unified LLM routing."
+    },
+    {
+      icon: Shield$1,
+      title: "Production Ready",
+      description: "Built with Rust for performance, reliability, and zero-downtime updates."
+    }
+  ];
+  return `<section class="space-y-6 pb-8 pt-6 md:pb-12 md:pt-10 lg:py-24"><div class="container flex max-w-4xl flex-col items-center gap-4 text-center"><p class="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground" data-svelte-h="svelte-hb4txv">LLM Link · Universal LLM Proxy</p> <h1 class="font-heading text-4xl font-bold sm:text-5xl md:text-6xl" data-svelte-h="svelte-mrnprm">One Proxy for All LLM Providers</h1> <p class="max-w-2xl text-base text-muted-foreground sm:text-lg mx-auto" data-svelte-h="svelte-1ks2mg4">A unified proxy service supporting 10+ LLM providers with OpenAI, Ollama, and Anthropic API compatibility. Built with Rust for performance and reliability.</p> <div class="flex flex-wrap items-center justify-center gap-3">${validate_component(Button, "Button").$$render(
     $$result,
     {
+      variant: "default",
       size: "lg",
-      href: "https://github.com/lipish/llm-link"
+      href: "#quickstart"
     },
     {},
     {
       default: () => {
-        return `${validate_component(Github, "Github").$$render($$result, { class: "mr-2 h-4 w-4" }, {}, {})}
-				GitHub`;
+        return `${validate_component(Download$1, "Download").$$render($$result, { class: "mr-2 h-4 w-4" }, {}, {})}
+				Get Started`;
       }
     }
   )} ${validate_component(Button, "Button").$$render(
@@ -100,7 +121,135 @@ const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
         return `Documentation`;
       }
     }
-  )}</div></div></section> <section id="features" class="container space-y-6 py-8 md:py-12 lg:py-24"><div class="mx-auto grid max-w-5xl items-start gap-10 sm:grid-cols-2 md:gap-12 lg:grid-cols-3"><div class="grid gap-1"><div class="flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">${validate_component(Zap, "Zap").$$render($$result, { class: "h-6 w-6" }, {}, {})}</div> <h3 class="text-lg font-semibold" data-svelte-h="svelte-1gzs0wp">Zero Configuration</h3> <p class="text-sm text-muted-foreground" data-svelte-h="svelte-uklcos">One-command startup for common use cases with built-in configurations for popular AI coding tools.</p></div> <div class="grid gap-1"><div class="flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">${validate_component(Layers$1, "Layers").$$render($$result, { class: "h-6 w-6" }, {}, {})}</div> <h3 class="text-lg font-semibold" data-svelte-h="svelte-9ewhqp">Multi-Protocol</h3> <p class="text-sm text-muted-foreground" data-svelte-h="svelte-1xn727y">Simultaneous OpenAI, Ollama, and Anthropic API support with automatic format conversion.</p></div> <div class="grid gap-1"><div class="flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">${validate_component(Shield$1, "Shield").$$render($$result, { class: "h-6 w-6" }, {}, {})}</div> <h3 class="text-lg font-semibold" data-svelte-h="svelte-kmw885">9 LLM Providers</h3> <p class="text-sm text-muted-foreground" data-svelte-h="svelte-14ckaog">Support for OpenAI, Anthropic, Zhipu, Aliyun, Volcengine, Tencent, Longcat, Moonshot, and Ollama.</p></div> <div class="grid gap-1"><div class="flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">${validate_component(Code, "Code").$$render($$result, { class: "h-6 w-6" }, {}, {})}</div> <h3 class="text-lg font-semibold" data-svelte-h="svelte-okajlk">AI Tool Optimized</h3> <p class="text-sm text-muted-foreground" data-svelte-h="svelte-pg3bd">Built-in optimizations for Codex CLI, Zed, and Claude Code with smart client detection.</p></div> <div class="grid gap-1"><div class="flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">${validate_component(Download$1, "Download").$$render($$result, { class: "h-6 w-6" }, {}, {})}</div> <h3 class="text-lg font-semibold" data-svelte-h="svelte-4p2tf8">Rust Library</h3> <p class="text-sm text-muted-foreground" data-svelte-h="svelte-1il9ewc">Use as a Rust crate for direct programmatic access to provider and model information.</p></div> <div class="grid gap-1"><div class="flex h-12 w-12 items-center justify-center rounded-lg bg-muted text-muted-foreground">${validate_component(Zap, "Zap").$$render($$result, { class: "h-6 w-6" }, {}, {})}</div> <h3 class="text-lg font-semibold" data-svelte-h="svelte-hso2vu">Hot-Reload</h3> <p class="text-sm text-muted-foreground" data-svelte-h="svelte-fd5txf">Update API keys and switch providers without restart with dynamic configuration updates.</p></div></div></section> <section class="border-t bg-muted/50" data-svelte-h="svelte-ozcspk"><div class="container py-16"><div class="mx-auto grid max-w-5xl items-center gap-10 lg:grid-cols-2"><div class="space-y-4"><h2 class="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Built for developers</h2> <p class="text-lg text-muted-foreground">LLM Link is designed to integrate seamlessly with your existing development workflow.</p></div> <div class="grid gap-6"><div class="grid gap-1"><h3 class="text-lg font-semibold">🎯 Application-Oriented</h3> <p class="text-sm text-muted-foreground">Built-in configurations for popular AI coding tools like Codex CLI, Zed, and Claude Code.</p></div> <div class="grid gap-1"><h3 class="text-lg font-semibold">🔧 CLI-First Design</h3> <p class="text-sm text-muted-foreground">Simple command-line interface with helpful guidance and automatic setup.</p></div> <div class="grid gap-1"><h3 class="text-lg font-semibold">🚀 Production Ready</h3> <p class="text-sm text-muted-foreground">Built with Rust for performance, reliability, and memory safety.</p></div></div></div></div></section> <section class="py-16" data-svelte-h="svelte-4b42u"><div class="container mx-auto px-4"><div class="text-center mb-12"><h2 class="text-3xl font-bold tracking-tighter sm:text-4xl md:text-5xl">Supported Applications</h2> <p class="mt-4 text-lg text-muted-foreground">Optimized configurations for popular AI development tools</p></div> <div class="grid gap-6 md:grid-cols-3"><div class="rounded-lg border bg-card p-6"><h3 class="text-xl font-semibold mb-2">Codex CLI</h3> <p class="text-muted-foreground mb-4">OpenAI API client for AI-powered coding assistance</p> <div class="flex items-center text-sm text-muted-foreground"><span class="mr-2">🔗 Port:</span> <code class="bg-muted px-2 py-1 rounded">8088</code></div></div> <div class="rounded-lg border bg-card p-6"><h3 class="text-xl font-semibold mb-2">Zed</h3> <p class="text-muted-foreground mb-4">Modern editor with Ollama API integration</p> <div class="flex items-center text-sm text-muted-foreground"><span class="mr-2">🔗 Port:</span> <code class="bg-muted px-2 py-1 rounded">11434</code></div></div> <div class="rounded-lg border bg-card p-6"><h3 class="text-xl font-semibold mb-2">Claude Code</h3> <p class="text-muted-foreground mb-4">Anthropic client for advanced AI coding</p> <div class="flex items-center text-sm text-muted-foreground"><span class="mr-2">🔗 Port:</span> <code class="bg-muted px-2 py-1 rounded">8089</code></div></div></div></div></section>`;
+  )}</div></div></section> <section class="border-t bg-muted/40"><div class="container py-12"><div class="grid gap-8 md:grid-cols-3">${each(highlights, (highlight) => {
+    return `<div class="rounded-2xl border bg-background p-6"><div class="mb-3">${validate_component(highlight.icon || missing_component, "svelte:component").$$render($$result, { class: "h-8 w-8 text-primary" }, {}, {})}</div> <h3 class="text-lg font-semibold mb-2">${escape(highlight.title)}</h3> <p class="text-sm text-muted-foreground">${escape(highlight.description)}</p> </div>`;
+  })}</div></div></section> <section id="quickstart" class="py-16"><div class="container mx-auto max-w-4xl space-y-8"><div class="space-y-3 text-center" data-svelte-h="svelte-1sjzysh"><h2 class="text-3xl font-bold tracking-tight">Quick Start</h2> <p class="text-muted-foreground">Get started in under 2 minutes</p></div> <div class="space-y-4">${validate_component(Accordion, "Accordion").$$render(
+    $$result,
+    {
+      title: "Install via Homebrew (Recommended)",
+      open: true
+    },
+    {},
+    {
+      default: () => {
+        return `<div class="space-y-3"><p class="text-sm text-muted-foreground" data-svelte-h="svelte-uycy85">Add the tap and install:</p> ${validate_component(CodeBlock, "CodeBlock").$$render(
+          $$result,
+          {
+            code: "brew tap lipish/llm-link\nbrew install llm-link",
+            language: "bash"
+          },
+          {},
+          {}
+        )}</div>`;
+      }
+    }
+  )} ${validate_component(Accordion, "Accordion").$$render($$result, { title: "Install via pip (macOS / Linux)" }, {}, {
+    default: () => {
+      return `<div class="space-y-3"><p class="text-sm text-muted-foreground" data-svelte-h="svelte-ps32eq">Use the Python wrapper which downloads the prebuilt binary on first run:</p> ${validate_component(CodeBlock, "CodeBlock").$$render(
+        $$result,
+        {
+          code: "pip install pyllmlink\n# First run downloads the matching prebuilt binary into ~/.cache/llm-link",
+          language: "bash"
+        },
+        {},
+        {}
+      )}</div>`;
+    }
+  })} ${validate_component(Accordion, "Accordion").$$render($$result, { title: "Install via Cargo (Developers)" }, {}, {
+    default: () => {
+      return `<div class="space-y-3"><p class="text-sm text-muted-foreground" data-svelte-h="svelte-b27pbn">Install from crates.io (requires Rust toolchain):</p> ${validate_component(CodeBlock, "CodeBlock").$$render(
+        $$result,
+        {
+          code: "cargo install llm-link",
+          language: "bash"
+        },
+        {},
+        {}
+      )}</div>`;
+    }
+  })} ${validate_component(Accordion, "Accordion").$$render($$result, { title: "Build from Source" }, {}, {
+    default: () => {
+      return `<div class="space-y-3"><p class="text-sm text-muted-foreground" data-svelte-h="svelte-brz6ep">Clone and build manually:</p> ${validate_component(CodeBlock, "CodeBlock").$$render(
+        $$result,
+        {
+          code: "git clone https://github.com/lipish/llm-link.git\\ncd llm-link\\ncargo build --release",
+          language: "bash"
+        },
+        {},
+        {}
+      )}</div>`;
+    }
+  })}</div></div></section> <section class="border-t bg-muted/30 py-16"><div class="container mx-auto max-w-4xl space-y-8"><div class="space-y-3 text-center" data-svelte-h="svelte-pree6r"><h2 class="text-3xl font-bold tracking-tight">Usage Examples</h2> <p class="text-muted-foreground">Real-world setups for editor and agent integrations</p></div> <div class="space-y-4">${validate_component(Accordion, "Accordion").$$render(
+    $$result,
+    {
+      title: "Zed.dev with Qwen3 via Ollama",
+      open: true
+    },
+    {},
+    {
+      default: () => {
+        return `<div class="space-y-3"><p class="text-sm text-muted-foreground" data-svelte-h="svelte-6amyjz">Run Zed against a local Qwen3 model exposed through the Ollama-compatible API:</p> ${validate_component(CodeBlock, "CodeBlock").$$render(
+          $$result,
+          {
+            code: "llm-link --app zed --provider ollama --model qwen3",
+            language: "bash"
+          },
+          {},
+          {}
+        )} <p class="text-xs text-muted-foreground mt-2" data-svelte-h="svelte-14iwfu8">In Zed: Settings → AI → Custom provider → http://localhost:11434</p></div>`;
+      }
+    }
+  )} ${validate_component(Accordion, "Accordion").$$render($$result, { title: "Codex & Claude Code" }, {}, {
+    default: () => {
+      return `<div class="space-y-4"><div class="space-y-2"><p class="text-sm text-muted-foreground" data-svelte-h="svelte-ys07ka">Route Codex CLI through llm-link with OpenAI-compatible API:</p> ${validate_component(CodeBlock, "CodeBlock").$$render(
+        $$result,
+        {
+          code: "llm-link --app codex --provider openai",
+          language: "bash"
+        },
+        {},
+        {}
+      )}</div> <div class="space-y-2"><p class="text-sm text-muted-foreground" data-svelte-h="svelte-1idxs36">Run Claude Code via llm-link using the Anthropic-compatible API:</p> ${validate_component(CodeBlock, "CodeBlock").$$render(
+        $$result,
+        {
+          code: "llm-link --app claude --provider anthropic",
+          language: "bash"
+        },
+        {},
+        {}
+      )}</div></div>`;
+    }
+  })}</div></div></section> <section class="py-16"><div class="container mx-auto max-w-4xl space-y-8"><div class="space-y-3 text-center" data-svelte-h="svelte-1qer14e"><h2 class="text-3xl font-bold tracking-tight">Supported Providers</h2> <p class="text-muted-foreground">10+ LLM providers with unified API access</p></div> <div class="grid gap-4 grid-cols-2 md:grid-cols-5 text-center" data-svelte-h="svelte-1pjrhc2"><div class="rounded-lg border bg-card p-4"><p class="font-semibold">OpenAI</p></div> <div class="rounded-lg border bg-card p-4"><p class="font-semibold">Anthropic</p></div> <div class="rounded-lg border bg-card p-4"><p class="font-semibold">Zhipu</p></div> <div class="rounded-lg border bg-card p-4"><p class="font-semibold">Volcengine</p></div> <div class="rounded-lg border bg-card p-4"><p class="font-semibold">Ollama</p></div> <div class="rounded-lg border bg-card p-4"><p class="font-semibold">Moonshot</p></div> <div class="rounded-lg border bg-card p-4"><p class="font-semibold">Minimax</p></div> <div class="rounded-lg border bg-card p-4"><p class="font-semibold">Aliyun</p></div> <div class="rounded-lg border bg-card p-4"><p class="font-semibold">Tencent</p></div> <div class="rounded-lg border bg-card p-4"><p class="font-semibold">Longcat</p></div></div> <div class="text-center">${validate_component(Button, "Button").$$render(
+    $$result,
+    {
+      variant: "outline",
+      href: basePath + "/providers"
+    },
+    {},
+    {
+      default: () => {
+        return `View All Providers`;
+      }
+    }
+  )}</div></div></section> <section class="border-t bg-muted/40"><div class="container flex flex-col items-center gap-4 py-12 text-center"><h3 class="text-2xl font-semibold" data-svelte-h="svelte-1pttnma">Ready to get started?</h3> <p class="max-w-2xl text-muted-foreground" data-svelte-h="svelte-2he4em">Explore the docs for configuration details and API reference.</p> <div class="flex gap-3">${validate_component(Button, "Button").$$render($$result, { size: "lg", href: basePath + "/docs" }, {}, {
+    default: () => {
+      return `Documentation`;
+    }
+  })} ${validate_component(Button, "Button").$$render(
+    $$result,
+    {
+      variant: "outline",
+      size: "lg",
+      href: "https://github.com/lipish/llm-link"
+    },
+    {},
+    {
+      default: () => {
+        return `${validate_component(Github, "Github").$$render($$result, { class: "mr-2 h-4 w-4" }, {}, {})}
+				GitHub`;
+      }
+    }
+  )}</div></div></section>`;
 });
 export {
   Page as default

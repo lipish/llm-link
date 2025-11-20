@@ -1,30 +1,81 @@
-import { c as create_ssr_component, v as validate_component, e as escape } from "../../../chunks/ssr.js";
-import { I as Icon, B as Button, G as Github } from "../../../chunks/github.js";
+import { c as create_ssr_component, v as validate_component, f as each, e as escape, d as add_attribute } from "../../../chunks/ssr.js";
+import { I as Icon, B as Button } from "../../../chunks/Icon.js";
+import { C as CodeBlock } from "../../../chunks/CodeBlock.js";
 import { b as base } from "../../../chunks/paths.js";
-import { S as Settings, G as Globe, K as Key, T as Terminal } from "../../../chunks/terminal.js";
-import { C as Code, Z as Zap } from "../../../chunks/zap.js";
-const Book_open = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+import { B as BookOpen, S as Settings } from "../../../chunks/settings.js";
+import { G as Github } from "../../../chunks/github.js";
+const Code = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   const iconNode = [
-    [
-      "path",
-      {
-        "d": "M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"
-      }
-    ],
-    [
-      "path",
-      {
-        "d": "M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"
-      }
-    ]
+    ["polyline", { "points": "16 18 22 12 16 6" }],
+    ["polyline", { "points": "8 6 2 12 8 18" }]
   ];
-  return `${validate_component(Icon, "Icon").$$render($$result, Object.assign({}, { name: "book-open" }, $$props, { iconNode }), {}, {
+  return `${validate_component(Icon, "Icon").$$render($$result, Object.assign({}, { name: "code" }, $$props, { iconNode }), {}, {
     default: () => {
       return `${slots.default ? slots.default({}) : ``}`;
     }
   })}`;
 });
-const BookOpen = Book_open;
+const Code$1 = Code;
+const List_ordered = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+  const iconNode = [
+    [
+      "line",
+      {
+        "x1": "10",
+        "x2": "21",
+        "y1": "6",
+        "y2": "6"
+      }
+    ],
+    [
+      "line",
+      {
+        "x1": "10",
+        "x2": "21",
+        "y1": "12",
+        "y2": "12"
+      }
+    ],
+    [
+      "line",
+      {
+        "x1": "10",
+        "x2": "21",
+        "y1": "18",
+        "y2": "18"
+      }
+    ],
+    ["path", { "d": "M4 6h1v4" }],
+    ["path", { "d": "M4 10h2" }],
+    ["path", { "d": "M6 18H4c0-1 2-2 2-3s-1-1.5-2-1" }]
+  ];
+  return `${validate_component(Icon, "Icon").$$render($$result, Object.assign({}, { name: "list-ordered" }, $$props, { iconNode }), {}, {
+    default: () => {
+      return `${slots.default ? slots.default({}) : ``}`;
+    }
+  })}`;
+});
+const ListOrdered = List_ordered;
+const Terminal = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+  const iconNode = [
+    ["polyline", { "points": "4 17 10 11 4 5" }],
+    [
+      "line",
+      {
+        "x1": "12",
+        "x2": "20",
+        "y1": "19",
+        "y2": "19"
+      }
+    ]
+  ];
+  return `${validate_component(Icon, "Icon").$$render($$result, Object.assign({}, { name: "terminal" }, $$props, { iconNode }), {}, {
+    default: () => {
+      return `${slots.default ? slots.default({}) : ``}`;
+    }
+  })}`;
+});
+const Terminal$1 = Terminal;
 const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   const basePath = base;
   const apiExamples = {
@@ -449,17 +500,203 @@ curl -X POST http://localhost:8088/api/chat \\
   }
 }`
   };
+  const pageOutline = [
+    { id: "overview", label: "Overview" },
+    {
+      id: "management",
+      label: "Management APIs"
+    },
+    { id: "protocols", label: "Protocol APIs" },
+    {
+      id: "diagnostics",
+      label: "Diagnostics & Monitoring"
+    },
+    {
+      id: "error-handling",
+      label: "Error Handling"
+    },
+    {
+      id: "rate-limiting",
+      label: "Rate Limiting"
+    }
+  ];
+  const managementSections = [
+    {
+      title: "Model & Provider Discovery",
+      description: "Query live models, providers, and the static supported model list.",
+      items: [
+        {
+          title: "Models API",
+          description: "Return the live models currently registered for each provider.",
+          endpoints: ["GET /api/models", "GET /api/models?provider=openai"],
+          exampleKey: "models"
+        },
+        {
+          title: "Supported Models API",
+          description: "Return a static model catalog with context length and capability tags.",
+          endpoints: [
+            "GET /api/supported-models",
+            "GET /api/supported-models?provider=openai"
+          ],
+          exampleKey: "supportedModels"
+        },
+        {
+          title: "Provider List API",
+          description: "List all supported providers and their high-level capabilities.",
+          endpoints: ["GET /api/provider-list"],
+          exampleKey: "providerList"
+        },
+        {
+          title: "Providers API",
+          description: "Inspect the status of each provider in the current instance.",
+          endpoints: ["GET /api/providers"],
+          exampleKey: "providers"
+        }
+      ]
+    },
+    {
+      title: "Runtime Configuration & Hot Reload",
+      description: "Validate, update, and switch provider configuration without restart.",
+      items: [
+        {
+          title: "Current Config",
+          description: "View the current provider, model, and key status.",
+          endpoints: ["GET /api/config/current"],
+          exampleKey: "currentConfig"
+        },
+        {
+          title: "Validate API Key",
+          description: "Validate a provider API key before applying a hot update.",
+          endpoints: ["POST /api/config/validate-key"],
+          exampleKey: "validateKey"
+        },
+        {
+          title: "Update API Key (Hot Reload)",
+          description: "Replace the API key for a single provider while the service is running.",
+          endpoints: ["POST /api/config/update-key"],
+          exampleKey: "updateKey"
+        },
+        {
+          title: "Switch Provider",
+          description: "Switch provider and model together in a single request.",
+          endpoints: ["POST /api/config/switch-provider"],
+          exampleKey: "switchProvider"
+        },
+        {
+          title: "Bulk Config Update",
+          description: "Submit configuration or key updates for multiple providers at once.",
+          endpoints: ["POST /api/config/update"],
+          exampleKey: "config"
+        }
+      ]
+    },
+    {
+      title: "Operations & Process Control",
+      description: "Manage the process, trigger graceful shutdown, and inspect runtime state.",
+      items: [
+        {
+          title: "Process Management",
+          description: "Query the PID or trigger graceful shutdown for external orchestration.",
+          endpoints: ["GET /api/config/pid", "POST /api/config/shutdown"],
+          exampleKey: "processManagement"
+        }
+      ]
+    }
+  ];
+  const protocolApis = [
+    {
+      title: "OpenAI Compatible API",
+      description: "Connect OpenAI, Zhipu, Moonshot, Minimax, Longcat and other OpenAI-style clients.",
+      endpoints: ["POST /v1/chat/completions", "GET /v1/models"],
+      exampleKey: "openai"
+    },
+    {
+      title: "Anthropic Native API",
+      description: "Full support for Claude Messages protocol and streaming responses.",
+      endpoints: ["POST /v1/messages", "GET /v1/models"],
+      exampleKey: "anthropic"
+    },
+    {
+      title: "Ollama Compatible API",
+      description: "Bridge generate/chat/tags endpoints for local models and Zed-style clients.",
+      endpoints: ["POST /api/generate", "POST /api/chat", "GET /api/tags"],
+      exampleKey: "ollama"
+    }
+  ];
+  const diagnosticApis = [
+    {
+      title: "Service Info",
+      description: "Get version, current provider, enabled protocols, and related metadata.",
+      endpoints: ["GET /api/info"],
+      exampleKey: "serviceInfo"
+    },
+    {
+      title: "Health API",
+      description: "Check instance health, ports, and which protocols are enabled.",
+      endpoints: ["GET /api/health"],
+      exampleKey: "health"
+    }
+  ];
+  const managementItemCount = managementSections.reduce((count, section) => count + section.items.length, 0);
+  const summaryCards = [
+    {
+      title: "Base URL",
+      value: "http://localhost:8088",
+      hint: "Default port 8088, configurable via --port"
+    },
+    {
+      title: "Management APIs",
+      value: `${managementItemCount}`,
+      hint: "Configuration, discovery, and operations"
+    },
+    {
+      title: "Protocol Proxies",
+      value: `${protocolApis.length}`,
+      hint: "OpenAI / Anthropic / Ollama"
+    }
+  ];
   return `<div class="container py-8"><div class="max-w-6xl mx-auto"><div class="mb-8" data-svelte-h="svelte-i1l7sj"><h1 class="text-4xl font-bold tracking-tight mb-4">API Reference</h1> <p class="text-lg text-muted-foreground">Complete API documentation for LLM Link. Learn how to interact with all available endpoints,
-				manage providers, and integrate with your applications.</p></div>  <section class="mb-12"><div class="rounded-lg border bg-card p-6"><div class="flex items-center mb-6">${validate_component(BookOpen, "BookOpen").$$render($$result, { class: "h-6 w-6 mr-2 text-primary" }, {}, {})} <h2 class="text-2xl font-semibold" data-svelte-h="svelte-1g1ysmf">API Overview</h2></div> <div class="grid gap-6 md:grid-cols-2" data-svelte-h="svelte-jbwp41"><div><h3 class="text-lg font-medium mb-3">Base URL</h3> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono">http://localhost:8088</code></div> <p class="text-sm text-muted-foreground mt-2">Default port is 8088, can be changed with <code>--port</code> flag</p></div> <div><h3 class="text-lg font-medium mb-3">Authentication</h3> <div class="space-y-2"><div class="bg-muted rounded-md p-3"><code class="text-xs font-mono">OpenAI API: Bearer Token</code></div> <div class="bg-muted rounded-md p-3"><code class="text-xs font-mono">Anthropic API: x-api-key Header</code></div> <div class="bg-muted rounded-md p-3"><code class="text-xs font-mono">Management APIs: No Auth Required</code></div></div></div></div></div></section>  <section class="mb-12"><div class="rounded-lg border bg-card p-6"><div class="flex items-center mb-6">${validate_component(Settings, "Settings").$$render($$result, { class: "h-6 w-6 mr-2 text-primary" }, {}, {})} <h2 class="text-2xl font-semibold" data-svelte-h="svelte-1y5nyj6">Management APIs</h2></div> <div class="space-y-8"> <div><h3 class="text-lg font-medium mb-3 flex items-center">${validate_component(Code, "Code").$$render($$result, { class: "h-4 w-4 mr-2" }, {}, {})}
-							Models API</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-16l7pg0">Get available models for all providers or specific provider</p> <div class="space-y-4"><div data-svelte-h="svelte-yy1h00"><h4 class="font-medium mb-2">Endpoints</h4> <div class="grid gap-2 md:grid-cols-2"><div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /api/models</code></div> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /api/models?provider=openai</code></div></div></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-nkj2fj">Example Usage</h4> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.models)}</code></div></div></div></div>  <div><h3 class="text-lg font-medium mb-3 flex items-center">${validate_component(Globe, "Globe").$$render($$result, { class: "h-4 w-4 mr-2" }, {}, {})}
-							Providers API</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-quw76s">Get status and configuration of all providers</p> <div class="space-y-4"><div data-svelte-h="svelte-kz8v0x"><h4 class="font-medium mb-2">Endpoints</h4> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /api/providers</code></div></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-nkj2fj">Example Usage</h4> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.providers)}</code></div></div></div></div>  <div><h3 class="text-lg font-medium mb-3 flex items-center">${validate_component(Code, "Code").$$render($$result, { class: "h-4 w-4 mr-2" }, {}, {})}
-							Supported Models API</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-12fxrzb">Get static list of all supported models with detailed information</p> <div class="space-y-4"><div data-svelte-h="svelte-q1jqfm"><h4 class="font-medium mb-2">Endpoints</h4> <div class="grid gap-2 md:grid-cols-2"><div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /api/supported-models</code></div> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /api/supported-models?provider=openai</code></div></div></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-nkj2fj">Example Usage</h4> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.supportedModels)}</code></div></div></div></div>  <div><h3 class="text-lg font-medium mb-3 flex items-center">${validate_component(Globe, "Globe").$$render($$result, { class: "h-4 w-4 mr-2" }, {}, {})}
-							Provider List API</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-qnfcy1">Get list of all supported providers with their capabilities</p> <div class="space-y-4"><div data-svelte-h="svelte-s7238n"><h4 class="font-medium mb-2">Endpoints</h4> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /api/provider-list</code></div></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-nkj2fj">Example Usage</h4> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.providerList)}</code></div></div></div></div>  <div><h3 class="text-lg font-medium mb-3 flex items-center">${validate_component(Key, "Key").$$render($$result, { class: "h-4 w-4 mr-2" }, {}, {})}
-							Configuration Management APIs</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-fdnhn8">Runtime configuration management without service restart</p> <div class="space-y-6"> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-4dtjw1">Get Current Configuration</h4> <div class="bg-muted rounded p-3 mb-3" data-svelte-h="svelte-1bgj05n"><code class="text-xs font-mono">GET /api/config/current</code></div> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.currentConfig)}</code></div></div>  <div><h4 class="font-medium mb-2" data-svelte-h="svelte-55c1r5">Validate API Key</h4> <div class="bg-muted rounded p-3 mb-3" data-svelte-h="svelte-7pxt5i"><code class="text-xs font-mono">POST /api/config/validate-key</code></div> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.validateKey)}</code></div></div>  <div><h4 class="font-medium mb-2" data-svelte-h="svelte-bty523">Update API Key (Hot Reload)</h4> <div class="bg-muted rounded p-3 mb-3" data-svelte-h="svelte-1hv2035"><code class="text-xs font-mono">POST /api/config/update-key</code></div> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.updateKey)}</code></div></div>  <div><h4 class="font-medium mb-2" data-svelte-h="svelte-1pmqm7">Switch Provider</h4> <div class="bg-muted rounded p-3 mb-3" data-svelte-h="svelte-zkg31u"><code class="text-xs font-mono">POST /api/config/switch-provider</code></div> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.switchProvider)}</code></div></div>  <div><h4 class="font-medium mb-2" data-svelte-h="svelte-y95rme">Process Management</h4> <div class="grid gap-2 md:grid-cols-2 mb-3" data-svelte-h="svelte-9lbkdi"><div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /api/config/pid</code></div> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">POST /api/config/shutdown</code></div></div> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.processManagement)}</code></div></div></div></div>  <div><h3 class="text-lg font-medium mb-3 flex items-center">${validate_component(BookOpen, "BookOpen").$$render($$result, { class: "h-4 w-4 mr-2" }, {}, {})}
-							Service Info API</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-ydgcin">Get comprehensive service information and status</p> <div class="space-y-4"><div data-svelte-h="svelte-19ehzvn"><h4 class="font-medium mb-2">Endpoints</h4> <div class="grid gap-2 md:grid-cols-2"><div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /api/info</code></div> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /api/health</code></div></div></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-nkj2fj">Example Usage</h4> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.serviceInfo)}</code></div></div></div></div>  <div><h3 class="text-lg font-medium mb-3 flex items-center">${validate_component(Key, "Key").$$render($$result, { class: "h-4 w-4 mr-2" }, {}, {})}
-							Configuration API</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-1xl09sv">Update provider configurations without restarting the service</p> <div class="space-y-4"><div data-svelte-h="svelte-1ytj6v"><h4 class="font-medium mb-2">Endpoints</h4> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">POST /api/config/update</code></div></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-nkj2fj">Example Usage</h4> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.config)}</code></div></div></div></div>  <div><h3 class="text-lg font-medium mb-3 flex items-center">${validate_component(Zap, "Zap").$$render($$result, { class: "h-4 w-4 mr-2" }, {}, {})}
-							Health API</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-1pp5eqi">Check service health and system status</p> <div class="space-y-4"><div data-svelte-h="svelte-1aymo75"><h4 class="font-medium mb-2">Endpoints</h4> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /api/health</code></div></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-nkj2fj">Example Usage</h4> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.health)}</code></div></div></div></div></div></div></section>  <section class="mb-12"><div class="rounded-lg border bg-card p-6"><div class="flex items-center mb-6">${validate_component(Terminal, "Terminal").$$render($$result, { class: "h-6 w-6 mr-2 text-primary" }, {}, {})} <h2 class="text-2xl font-semibold" data-svelte-h="svelte-1j4ijhn">Protocol APIs</h2></div> <p class="text-sm text-muted-foreground mb-6" data-svelte-h="svelte-z7y22e">LLM Link provides native API compatibility for major LLM providers. 
-					Use the same endpoints and authentication as the original services.</p> <div class="space-y-8"> <div><h3 class="text-lg font-medium mb-3" data-svelte-h="svelte-13fg7im">OpenAI Compatible API</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-1cmrc6k">Compatible with OpenAI&#39;s API format for OpenAI, Zhipu AI, Longcat, Moonshot, and Minimax providers</p> <div class="space-y-4"><div data-svelte-h="svelte-dsp2r9"><h4 class="font-medium mb-2">Endpoints</h4> <div class="grid gap-2 md:grid-cols-2"><div class="bg-muted rounded p-3"><code class="text-xs font-mono">POST /v1/chat/completions</code></div> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /v1/models</code></div></div></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-nkj2fj">Example Usage</h4> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.openai)}</code></div></div></div></div>  <div><h3 class="text-lg font-medium mb-3" data-svelte-h="svelte-1x6ey2x">Anthropic Native API</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-f1bevk">Native Anthropic Claude API compatibility</p> <div class="space-y-4"><div data-svelte-h="svelte-1fhyldj"><h4 class="font-medium mb-2">Endpoints</h4> <div class="grid gap-2 md:grid-cols-2"><div class="bg-muted rounded p-3"><code class="text-xs font-mono">POST /v1/messages</code></div> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /v1/models</code></div></div></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-nkj2fj">Example Usage</h4> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.anthropic)}</code></div></div></div></div>  <div><h3 class="text-lg font-medium mb-3" data-svelte-h="svelte-z5u8wu">Ollama Compatible API</h3> <p class="text-sm text-muted-foreground mb-4" data-svelte-h="svelte-g9g3va">Compatible with Ollama&#39;s API format for local model deployment</p> <div class="space-y-4"><div data-svelte-h="svelte-o4om0y"><h4 class="font-medium mb-2">Endpoints</h4> <div class="grid gap-2 md:grid-cols-3"><div class="bg-muted rounded p-3"><code class="text-xs font-mono">POST /api/generate</code></div> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">POST /api/chat</code></div> <div class="bg-muted rounded p-3"><code class="text-xs font-mono">GET /api/tags</code></div></div></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-nkj2fj">Example Usage</h4> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono whitespace-pre-wrap">${escape(apiExamples.ollama)}</code></div></div></div></div></div></div></section>  <section class="mb-12"><div class="rounded-lg border bg-card p-6"><h2 class="text-2xl font-semibold mb-6" data-svelte-h="svelte-fojgu5">Error Handling</h2> <div class="space-y-4"><div class="border-l-4 border-red-400 pl-4" data-svelte-h="svelte-1p7zcuu"><h3 class="font-medium mb-2">HTTP Status Codes</h3> <div class="space-y-2"><div class="flex justify-between"><code class="text-xs font-mono">200</code> <span class="text-sm">Success</span></div> <div class="flex justify-between"><code class="text-xs font-mono">400</code> <span class="text-sm">Bad Request</span></div> <div class="flex justify-between"><code class="text-xs font-mono">401</code> <span class="text-sm">Unauthorized</span></div> <div class="flex justify-between"><code class="text-xs font-mono">404</code> <span class="text-sm">Not Found</span></div> <div class="flex justify-between"><code class="text-xs font-mono">500</code> <span class="text-sm">Internal Server Error</span></div></div></div> <div class="border-l-4 border-yellow-400 pl-4"><h3 class="font-medium mb-2" data-svelte-h="svelte-1i4szvk">Error Response Format</h3> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono">${escape(apiExamples.error)}</code></div></div></div></div></section>  <section class="mb-12" data-svelte-h="svelte-i3reia"><div class="rounded-lg border bg-card p-6"><h2 class="text-2xl font-semibold mb-6">Rate Limiting</h2> <div class="space-y-4"><p class="text-sm text-muted-foreground">LLM Link respects the rate limits of each provider. Limits are applied per provider 
+				manage providers, and integrate with your applications.</p></div> <section class="mb-10" aria-label="Table of contents"><div class="rounded-lg border bg-card p-6"><div class="flex items-center mb-4">${validate_component(ListOrdered, "ListOrdered").$$render($$result, { class: "h-5 w-5 mr-2 text-primary" }, {}, {})} <h2 class="text-xl font-semibold" data-svelte-h="svelte-d9ua8z">Page Outline</h2></div> <div class="grid gap-3 md:grid-cols-3">${each(pageOutline, (item) => {
+    return `<a${add_attribute("href", `#${item.id}`, 0)} class="text-sm text-muted-foreground hover:text-foreground">#${escape(item.label)} </a>`;
+  })}</div></div></section> <section class="mb-12" id="overview"><div class="rounded-lg border bg-card p-6 space-y-8"><div class="flex items-center mb-2">${validate_component(BookOpen, "BookOpen").$$render($$result, { class: "h-6 w-6 mr-2 text-primary" }, {}, {})} <h2 class="text-2xl font-semibold" data-svelte-h="svelte-1g1ysmf">API Overview</h2></div> <div class="grid gap-4 md:grid-cols-3">${each(summaryCards, (card) => {
+    return `<div class="rounded-lg border bg-muted/50 p-4"><p class="text-xs text-muted-foreground uppercase">${escape(card.title)}</p> <p class="text-2xl font-bold">${escape(card.value)}</p> <p class="text-xs text-muted-foreground">${escape(card.hint)}</p> </div>`;
+  })}</div> <div class="grid gap-6 md:grid-cols-2" data-svelte-h="svelte-cov9yk"><div><h3 class="text-lg font-medium mb-3">Base URL</h3> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono">http://localhost:8088</code></div> <p class="text-sm text-muted-foreground mt-2">Default port is 8088, configurable via <code>--port</code> flag.</p></div> <div><h3 class="text-lg font-medium mb-3">Authentication</h3> <div class="space-y-2"><div class="bg-muted rounded-md p-3"><code class="text-xs font-mono">OpenAI API · Authorization: Bearer</code></div> <div class="bg-muted rounded-md p-3"><code class="text-xs font-mono">Anthropic API · x-api-key + anthropic-version</code></div> <div class="bg-muted rounded-md p-3"><code class="text-xs font-mono">Management APIs · No authentication required by default</code></div></div></div></div></div></section>  <section class="mb-12" id="management"><div class="rounded-lg border bg-card p-6"><div class="flex items-center mb-6">${validate_component(Settings, "Settings").$$render($$result, { class: "h-6 w-6 mr-2 text-primary" }, {}, {})} <h2 class="text-2xl font-semibold" data-svelte-h="svelte-1y5nyj6">Management APIs</h2></div> <div class="space-y-6">${each(managementSections, (section) => {
+    return `<div class="rounded-lg border bg-muted/30 p-5"><div class="flex flex-col gap-2 mb-4"><div class="flex items-center justify-between"><h3 class="text-xl font-semibold">${escape(section.title)}</h3> <span class="text-xs text-muted-foreground">${escape(section.items.length)} endpoint groups</span></div> <p class="text-sm text-muted-foreground">${escape(section.description)}</p></div> <div class="space-y-4">${each(section.items, (item) => {
+      return `<div class="rounded-lg border bg-card p-4"><div class="flex items-center justify-between mb-2"><h4 class="font-medium">${escape(item.title)}</h4> <span class="text-xs text-muted-foreground">${escape(item.endpoints.length)} endpoints</span></div> <p class="text-sm text-muted-foreground mb-3">${escape(item.description)}</p> <div class="grid gap-2 md:grid-cols-2 mb-3">${each(item.endpoints, (endpoint) => {
+        return `<div class="bg-muted rounded p-3"><code class="text-xs font-mono">${escape(endpoint)}</code> </div>`;
+      })}</div> ${item.exampleKey ? `${validate_component(CodeBlock, "CodeBlock").$$render(
+        $$result,
+        {
+          code: apiExamples[item.exampleKey],
+          language: "bash"
+        },
+        {},
+        {}
+      )}` : ``} </div>`;
+    })}</div> </div>`;
+  })}</div></div></section>  <section class="mb-12" id="protocols"><div class="rounded-lg border bg-card p-6"><div class="flex items-center mb-6">${validate_component(Terminal$1, "Terminal").$$render($$result, { class: "h-6 w-6 mr-2 text-primary" }, {}, {})} <h2 class="text-2xl font-semibold" data-svelte-h="svelte-1j4ijhn">Protocol APIs</h2></div> <p class="text-sm text-muted-foreground mb-6" data-svelte-h="svelte-28mo0x">LLM Link 同时暴露 OpenAI、Anthropic、Ollama 三种协议入口，自动完成认证与格式转换。</p> <div class="grid gap-6">${each(protocolApis, (protocol) => {
+    return `<div class="rounded-lg border bg-muted/40 p-5"><h3 class="text-lg font-semibold mb-2">${escape(protocol.title)}</h3> <p class="text-sm text-muted-foreground mb-3">${escape(protocol.description)}</p> <div class="grid gap-2 md:grid-cols-3 mb-3">${each(protocol.endpoints, (endpoint) => {
+      return `<div class="bg-muted rounded p-3"><code class="text-xs font-mono">${escape(endpoint)}</code> </div>`;
+    })}</div> ${validate_component(CodeBlock, "CodeBlock").$$render(
+      $$result,
+      {
+        code: apiExamples[protocol.exampleKey],
+        language: "bash"
+      },
+      {},
+      {}
+    )} </div>`;
+  })}</div></div></section>  <section class="mb-12" id="diagnostics"><div class="rounded-lg border bg-card p-6"><div class="flex items-center mb-6">${validate_component(Code$1, "Code").$$render($$result, { class: "h-6 w-6 mr-2 text-primary" }, {}, {})} <h2 class="text-2xl font-semibold" data-svelte-h="svelte-1yjr9oi">Diagnostics &amp; Monitoring</h2></div> <div class="grid gap-4 md:grid-cols-2">${each(diagnosticApis, (diag) => {
+    return `<div class="rounded-lg border bg-muted/40 p-4"><h3 class="text-lg font-semibold mb-2">${escape(diag.title)}</h3> <p class="text-sm text-muted-foreground mb-3">${escape(diag.description)}</p> <div class="bg-muted rounded p-3 mb-3"><code class="text-xs font-mono">${escape(diag.endpoints[0])}</code></div> ${validate_component(CodeBlock, "CodeBlock").$$render(
+      $$result,
+      {
+        code: apiExamples[diag.exampleKey],
+        language: "bash"
+      },
+      {},
+      {}
+    )} </div>`;
+  })}</div></div></section>  <section class="mb-12" id="error-handling"><div class="rounded-lg border bg-card p-6"><h2 class="text-2xl font-semibold mb-6" data-svelte-h="svelte-fojgu5">Error Handling</h2> <div class="space-y-4"><div class="border-l-4 border-red-400 pl-4" data-svelte-h="svelte-1p7zcuu"><h3 class="font-medium mb-2">HTTP Status Codes</h3> <div class="space-y-2"><div class="flex justify-between"><code class="text-xs font-mono">200</code> <span class="text-sm">Success</span></div> <div class="flex justify-between"><code class="text-xs font-mono">400</code> <span class="text-sm">Bad Request</span></div> <div class="flex justify-between"><code class="text-xs font-mono">401</code> <span class="text-sm">Unauthorized</span></div> <div class="flex justify-between"><code class="text-xs font-mono">404</code> <span class="text-sm">Not Found</span></div> <div class="flex justify-between"><code class="text-xs font-mono">500</code> <span class="text-sm">Internal Server Error</span></div></div></div> <div class="border-l-4 border-yellow-400 pl-4"><h3 class="font-medium mb-2" data-svelte-h="svelte-1i4szvk">Error Response Format</h3> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono">${escape(apiExamples.error)}</code></div></div></div></div></section>  <section class="mb-12" id="rate-limiting" data-svelte-h="svelte-1nrc3fk"><div class="rounded-lg border bg-card p-6"><h2 class="text-2xl font-semibold mb-6">Rate Limiting</h2> <div class="space-y-4"><p class="text-sm text-muted-foreground">LLM Link respects the rate limits of each provider. Limits are applied per provider 
 						and are automatically managed based on the provider&#39;s specifications.</p> <div class="grid gap-4 md:grid-cols-2"><div class="border rounded-lg p-4"><h3 class="font-medium mb-2">OpenAI</h3> <p class="text-xs text-muted-foreground">3,500 requests per minute<br>
 								90,000 tokens per minute</p></div> <div class="border rounded-lg p-4"><h3 class="font-medium mb-2">Anthropic</h3> <p class="text-xs text-muted-foreground">1,000 requests per minute<br>
 								40,000 tokens per minute</p></div> <div class="border rounded-lg p-4"><h3 class="font-medium mb-2">Zhipu AI</h3> <p class="text-xs text-muted-foreground">600 requests per minute<br>

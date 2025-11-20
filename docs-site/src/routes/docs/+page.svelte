@@ -22,13 +22,13 @@
 		},
 		{
 			title: 'App Presets',
-			description: 'Pre-configured setups for Zed, Continue.dev, Cursor, and other popular AI coding tools.'
+			description: 'First-class presets for Zed.dev, Codex CLI, and Claude Code with optimized ports and protocols.'
 		}
 	];
 </script>
 
-<div class="container py-8 max-w-5xl mx-auto">
-	<div class="mb-12">
+<div class="max-w-3xl space-y-12">
+	<div class="space-y-3">
 		<h1 class="text-4xl font-bold tracking-tight mb-4">Documentation</h1>
 		<p class="text-lg text-muted-foreground">
 			Complete guide to LLM Link - a universal proxy for multiple LLM providers with hot-reload configuration and multi-protocol support.
@@ -115,61 +115,30 @@
 	<section class="mb-12">
 		<h2 class="text-2xl font-semibold mb-6 flex items-center">
 			<Globe class="h-6 w-6 mr-2 text-primary" />
-			Usage Examples
+			Usage Overview
 		</h2>
-		<div class="space-y-4">
-			<Accordion title="App Presets" open={true}>
-				<div class="space-y-4">
-					<div>
-						<h4 class="font-medium mb-2">Zed Editor</h4>
-						<CodeBlock code="llm-link --app zed" language="bash" />
-						<p class="text-xs text-muted-foreground mt-2">Starts Ollama-compatible API on port 11434</p>
-					</div>
-					<div>
-						<h4 class="font-medium mb-2">Continue.dev / Cursor</h4>
-						<CodeBlock code="llm-link --app continue" language="bash" />
-						<p class="text-xs text-muted-foreground mt-2">Starts OpenAI-compatible API on port 8088</p>
-					</div>
+		<div class="grid gap-4 md:grid-cols-2">
+			<div class="rounded-lg border bg-card p-5 space-y-2">
+				<h3 class="font-semibold">Applications</h3>
+				<p class="text-sm text-muted-foreground">
+					Step-by-step guides for integrating Zed.dev, Codex CLI, and Claude Code with llm-link.
+				</p>
+				<div class="space-y-1 text-sm">
+					<a href="{basePath}/docs/apps/zed" class="text-primary hover:underline">Zed.dev</a>
+					<a href="{basePath}/docs/apps/codex" class="block text-primary hover:underline">Codex CLI</a>
+					<a href="{basePath}/docs/apps/claude" class="block text-primary hover:underline">Claude Code</a>
 				</div>
-			</Accordion>
-
-			<Accordion title="Protocol-Based Configuration">
-				<div class="space-y-4">
-					<div>
-						<h4 class="font-medium mb-2">OpenAI Protocol</h4>
-						<CodeBlock code="llm-link --protocols openai --port 8088" language="bash" />
-					</div>
-					<div>
-						<h4 class="font-medium mb-2">Ollama Protocol</h4>
-						<CodeBlock code="llm-link --protocols ollama --port 11434" language="bash" />
-					</div>
-					<div>
-						<h4 class="font-medium mb-2">Anthropic Protocol</h4>
-						<CodeBlock code="llm-link --protocols anthropic --port 8089" language="bash" />
-					</div>
-					<div>
-						<h4 class="font-medium mb-2">Multiple Protocols</h4>
-						<CodeBlock code="llm-link --protocols openai,ollama,anthropic" language="bash" />
-					</div>
+			</div>
+			<div class="rounded-lg border bg-card p-5 space-y-2">
+				<h3 class="font-semibold">Protocol Mode</h3>
+				<p class="text-sm text-muted-foreground">
+					Run llm-link as an OpenAI, Anthropic, or Ollama-compatible proxy for generic clients.
+				</p>
+				<div class="space-y-1 text-sm">
+					<a href="{basePath}/docs/protocols" class="text-primary hover:underline">Protocol configuration</a>
+					<a href="{basePath}/api" class="block text-primary hover:underline">API Reference</a>
 				</div>
-			</Accordion>
-
-			<Accordion title="Advanced Options">
-				<div class="space-y-4">
-					<div>
-						<h4 class="font-medium mb-2">Custom Port</h4>
-						<CodeBlock code="llm-link --port 9000 --protocols openai" language="bash" />
-					</div>
-					<div>
-						<h4 class="font-medium mb-2">Specific Provider</h4>
-						<CodeBlock code="llm-link --provider openai --model gpt-4" language="bash" />
-					</div>
-					<div>
-						<h4 class="font-medium mb-2">Enable All Protocols</h4>
-						<CodeBlock code="llm-link --protocols all" language="bash" />
-					</div>
-				</div>
-			</Accordion>
+			</div>
 		</div>
 	</section>
 

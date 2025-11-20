@@ -1,5 +1,6 @@
 <script>
 	import Button from '$lib/components/ui/button.svelte';
+	import CodeBlock from '$lib/components/CodeBlock.svelte';
 	import { Github, Terminal, Code, Settings, Globe, Check, AlertCircle, BookOpen, Zap, ListOrdered } from 'lucide-svelte';
 	import { base } from '$app/paths';
 	
@@ -444,88 +445,88 @@ curl -X POST http://localhost:8088/api/chat \\
 	};
 
 	const pageOutline = [
-		{ id: 'overview', label: '概览' },
-		{ id: 'management', label: '管理接口' },
-		{ id: 'protocols', label: '协议代理' },
-		{ id: 'diagnostics', label: '诊断与监控' },
-		{ id: 'error-handling', label: '错误处理' },
-		{ id: 'rate-limiting', label: '限流策略' }
+		{ id: 'overview', label: 'Overview' },
+		{ id: 'management', label: 'Management APIs' },
+		{ id: 'protocols', label: 'Protocol APIs' },
+		{ id: 'diagnostics', label: 'Diagnostics & Monitoring' },
+		{ id: 'error-handling', label: 'Error Handling' },
+		{ id: 'rate-limiting', label: 'Rate Limiting' }
 	];
 
 	const managementSections = [
 		{
-			title: '模型与 Provider 发现',
-			description: '查询实时可用的模型、Provider 以及静态支持列表。',
+			title: 'Model & Provider Discovery',
+			description: 'Query live models, providers, and the static supported model list.',
 			items: [
 				{
 					title: 'Models API',
-					description: '动态返回已注册 Provider 的实时模型。',
+					description: 'Return the live models currently registered for each provider.',
 					endpoints: ['GET /api/models', 'GET /api/models?provider=openai'],
 					exampleKey: 'models'
 				},
 				{
 					title: 'Supported Models API',
-					description: '输出包含上下文长度、能力标签的静态模型列表。',
+					description: 'Return a static model catalog with context length and capability tags.',
 					endpoints: ['GET /api/supported-models', 'GET /api/supported-models?provider=openai'],
 					exampleKey: 'supportedModels'
 				},
 				{
 					title: 'Provider List API',
-					description: '查询所有支持的 Provider 及其能力。',
+					description: 'List all supported providers and their high-level capabilities.',
 					endpoints: ['GET /api/provider-list'],
 					exampleKey: 'providerList'
 				},
 				{
 					title: 'Providers API',
-					description: '查看当前实例中每个 Provider 的状态。',
+					description: 'Inspect the status of each provider in the current instance.',
 					endpoints: ['GET /api/providers'],
 					exampleKey: 'providers'
 				}
 			]
 		},
 		{
-			title: '运行时配置与热更新',
-			description: '无需重启即可校验、更新、切换 Provider 配置。',
+			title: 'Runtime Configuration & Hot Reload',
+			description: 'Validate, update, and switch provider configuration without restart.',
 			items: [
 				{
 					title: 'Current Config',
-					description: '查看当前 Provider、模型与密钥状态。',
+					description: 'View the current provider, model, and key status.',
 					endpoints: ['GET /api/config/current'],
 					exampleKey: 'currentConfig'
 				},
 				{
 					title: 'Validate API Key',
-					description: '预先校验 Provider API Key，避免热更新失败。',
+					description: 'Validate a provider API key before applying a hot update.',
 					endpoints: ['POST /api/config/validate-key'],
 					exampleKey: 'validateKey'
 				},
 				{
 					title: 'Update API Key (Hot Reload)',
-					description: '在运行中替换单个 Provider 的密钥。',
+					description: 'Replace the API key for a single provider while the service is running.',
 					endpoints: ['POST /api/config/update-key'],
 					exampleKey: 'updateKey'
 				},
 				{
 					title: 'Switch Provider',
-					description: '一次请求中切换 Provider + 模型。',
+					description: 'Switch provider and model together in a single request.',
 					endpoints: ['POST /api/config/switch-provider'],
 					exampleKey: 'switchProvider'
 				},
 				{
 					title: 'Bulk Config Update',
-					description: '批量提交多个 Provider 的配置或密钥。',
+					description: 'Submit configuration or key updates for multiple providers at once.',
 					endpoints: ['POST /api/config/update'],
 					exampleKey: 'config'
 				}
 			]
 		},
 		{
-			title: '运维辅助',
-			description: '管理进程、触发优雅关闭，并获取运行实例信息。',
+			title: 'Operations & Process Control',
+			description: 'Manage the process, trigger graceful shutdown, and inspect runtime state.',
 			items: [
 				{
 					title: 'Process Management',
-					description: '查询 PID 或请求优雅关停，便于外部编排。',
+					description: 'Query the PID or trigger graceful shutdown for external orchestration.',
 					endpoints: ['GET /api/config/pid', 'POST /api/config/shutdown'],
 					exampleKey: 'processManagement'
 				}
@@ -535,20 +536,20 @@ curl -X POST http://localhost:8088/api/chat \\
 
 	const protocolApis = [
 		{
-			title: 'OpenAI 兼容 API',
-			description: '对接 OpenAI、Zhipu、Moonshot、Minimax、Longcat 等兼容客户端。',
+			title: 'OpenAI Compatible API',
+			description: 'Connect OpenAI, Zhipu, Moonshot, Minimax, Longcat and other OpenAI-style clients.',
 			endpoints: ['POST /v1/chat/completions', 'GET /v1/models'],
 			exampleKey: 'openai'
 		},
 		{
-			title: 'Anthropic 原生 API',
-			description: '完整支持 Claude Messages 协议与流式输出。',
+			title: 'Anthropic Native API',
+			description: 'Full support for Claude Messages protocol and streaming responses.',
 			endpoints: ['POST /v1/messages', 'GET /v1/models'],
 			exampleKey: 'anthropic'
 		},
 		{
-			title: 'Ollama 兼容 API',
-			description: '为本地模型和 Zed 这类客户端桥接 generate/chat/tags 接口。',
+			title: 'Ollama Compatible API',
+			description: 'Bridge generate/chat/tags endpoints for local models and Zed-style clients.',
 			endpoints: ['POST /api/generate', 'POST /api/chat', 'GET /api/tags'],
 			exampleKey: 'ollama'
 		}
@@ -557,13 +558,13 @@ curl -X POST http://localhost:8088/api/chat \\
 	const diagnosticApis = [
 		{
 			title: 'Service Info',
-			description: '获取版本号、当前 Provider、启用协议等信息。',
+			description: 'Get version, current provider, enabled protocols, and related metadata.',
 			endpoints: ['GET /api/info'],
 			exampleKey: 'serviceInfo'
 		},
 		{
 			title: 'Health API',
-			description: '检查实例健康度、端口、协议启用状态。',
+			description: 'Check instance health, ports, and which protocols are enabled.',
 			endpoints: ['GET /api/health'],
 			exampleKey: 'health'
 		}
@@ -572,9 +573,9 @@ curl -X POST http://localhost:8088/api/chat \\
 	const managementItemCount = managementSections.reduce((count, section) => count + section.items.length, 0);
 
 	const summaryCards = [
-		{ title: 'Base URL', value: 'http://localhost:8088', hint: '默认端口 8088，可通过 --port 修改' },
-		{ title: '管理接口', value: `${managementItemCount}`, hint: '覆盖配置、发现、运维' },
-		{ title: '协议代理', value: `${protocolApis.length}`, hint: 'OpenAI / Anthropic / Ollama' }
+		{ title: 'Base URL', value: 'http://localhost:8088', hint: 'Default port 8088, configurable via --port' },
+		{ title: 'Management APIs', value: `${managementItemCount}`, hint: 'Configuration, discovery, and operations' },
+		{ title: 'Protocol Proxies', value: `${protocolApis.length}`, hint: 'OpenAI / Anthropic / Ollama' }
 	];
 </script>
 
@@ -640,7 +641,7 @@ curl -X POST http://localhost:8088/api/chat \\
 								<code class="text-xs font-mono">Anthropic API · x-api-key + anthropic-version</code>
 							</div>
 							<div class="bg-muted rounded-md p-3">
-								<code class="text-xs font-mono">Management APIs · 默认无需鉴权</code>
+								<code class="text-xs font-mono">Management APIs · No authentication required by default</code>
 							</div>
 						</div>
 					</div>
@@ -662,7 +663,7 @@ curl -X POST http://localhost:8088/api/chat \\
 							<div class="flex flex-col gap-2 mb-4">
 								<div class="flex items-center justify-between">
 									<h3 class="text-xl font-semibold">{section.title}</h3>
-									<span class="text-xs text-muted-foreground">{section.items.length} 个端点组</span>
+									<span class="text-xs text-muted-foreground">{section.items.length} endpoint groups</span>
 								</div>
 								<p class="text-sm text-muted-foreground">{section.description}</p>
 							</div>
@@ -682,9 +683,7 @@ curl -X POST http://localhost:8088/api/chat \\
 											{/each}
 										</div>
 										{#if item.exampleKey}
-											<div class="bg-muted rounded-md p-4">
-												<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples[item.exampleKey]}</code>
-											</div>
+											<CodeBlock code={apiExamples[item.exampleKey]} language="bash" />
 										{/if}
 									</div>
 								{/each}
@@ -717,9 +716,7 @@ curl -X POST http://localhost:8088/api/chat \\
 									</div>
 								{/each}
 							</div>
-							<div class="bg-muted rounded-md p-4">
-								<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples[protocol.exampleKey]}</code>
-							</div>
+							<CodeBlock code={apiExamples[protocol.exampleKey]} language="bash" />
 						</div>
 					{/each}
 				</div>
@@ -741,9 +738,7 @@ curl -X POST http://localhost:8088/api/chat \\
 							<div class="bg-muted rounded p-3 mb-3">
 								<code class="text-xs font-mono">{diag.endpoints[0]}</code>
 							</div>
-							<div class="bg-muted rounded-md p-4">
-								<code class="text-sm font-mono whitespace-pre-wrap">{apiExamples[diag.exampleKey]}</code>
-							</div>
+							<CodeBlock code={apiExamples[diag.exampleKey]} language="bash" />
 						</div>
 					{/each}
 				</div>

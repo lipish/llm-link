@@ -34,13 +34,12 @@
 				<h4 class="text-sm font-semibold">Community</h4>
 				<ul class="space-y-2 text-sm">
 					<li><a href="https://github.com/lipish/llm-link/issues" class="text-muted-foreground hover:text-foreground">Issues</a></li>
-					<li><a href="https://github.com/lipish/llm-link/discussions" class="text-muted-foreground hover:text-foreground">Discussions</a></li>
 					<li><a href="https://github.com/lipish/llm-link/releases" class="text-muted-foreground hover:text-foreground">Releases</a></li>
 				</ul>
 			</div>
 		</div>
 		<div class="mt-8 border-t pt-8 text-center text-sm text-muted-foreground">
-			<p>&copy; 2025 LLM Link. Built with Svelte + shadcn/ui.</p>
+			<p>&copy; 2025 LLM Link. MIT License.</p>
 		</div>
 	</div>
 </footer>

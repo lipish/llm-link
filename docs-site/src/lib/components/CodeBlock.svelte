@@ -18,10 +18,37 @@
 	hljs.registerLanguage('yaml', yaml);
 	hljs.registerLanguage('json', json);
 
+	function highlightBashCommands(source: string): string {
+		return source
+			.split('\n')
+			.map((line) => {
+				const trimmed = line.trimStart();
+				if (trimmed.startsWith('#')) {
+					// Comment line
+					return `<span class=\"cb-comment\">${line}</span>`;
+				}
+
+				// Highlight first token (command) on non-empty lines
+				const leadingSpaces = line.match(/^\s*/)?.[0] ?? '';
+				const rest = line.slice(leadingSpaces.length);
+				if (!rest) return line;
+
+				const [cmd, ...args] = rest.split(' ');
+				const highlightedLine = `${leadingSpaces}<span class=\"cb-command\">${cmd}</span>${args.length ? ' ' + args.join(' ') : ''}`;
+				return highlightedLine;
+			})
+			.join('\n');
+	}
+
 	onMount(() => {
 		try {
-			const result = hljs.highlight(code, { language });
-			highlightedCode = result.value;
+			if (language === 'bash') {
+				// Use a minimal custom highlighter for shell commands
+				highlightedCode = highlightBashCommands(code);
+			} else {
+				const result = hljs.highlight(code, { language });
+				highlightedCode = result.value;
+			}
 		} catch (e) {
 			highlightedCode = code;
 		}
@@ -52,6 +79,14 @@
 
 	.code-block code {
 		font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Droid Sans Mono', 'Source Code Pro', monospace;
+	}
+
+	:global(.cb-command) {
+		color: #7ee787; /* subtle green for command name */
+	}
+
+	:global(.cb-comment) {
+		color: #8b949e; /* muted gray for comments */
 	}
 
 	.line-numbers {

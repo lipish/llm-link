@@ -7,10 +7,10 @@ function __memo(fn) {
 return {
 	appDir: "_app",
 	appPath: "llm-link/_app",
-	assets: new Set([]),
-	mimeTypes: {},
+	assets: new Set(["favicon.ico","favicon.png"]),
+	mimeTypes: {".png":"image/png"},
 	_: {
-		client: {"start":"_app/immutable/entry/start.4c45d66d.js","app":"_app/immutable/entry/app.624c4e39.js","imports":["_app/immutable/entry/start.4c45d66d.js","_app/immutable/chunks/scheduler.5d594c60.js","_app/immutable/chunks/singletons.fe8a2c51.js","_app/immutable/chunks/paths.a1e3c374.js","_app/immutable/entry/app.624c4e39.js","_app/immutable/chunks/scheduler.5d594c60.js","_app/immutable/chunks/index.1d3f9147.js"],"stylesheets":[],"fonts":[]},
+		client: {"start":"_app/immutable/entry/start.1a14af77.js","app":"_app/immutable/entry/app.48967d5b.js","imports":["_app/immutable/entry/start.1a14af77.js","_app/immutable/chunks/scheduler.5d594c60.js","_app/immutable/chunks/singletons.d3d6a68d.js","_app/immutable/chunks/paths.0b0c7f75.js","_app/immutable/entry/app.48967d5b.js","_app/immutable/chunks/scheduler.5d594c60.js","_app/immutable/chunks/index.7577e3fb.js"],"stylesheets":[],"fonts":[]},
 		nodes: [
 			__memo(() => import('./nodes/0.js')),
 			__memo(() => import('./nodes/1.js')),

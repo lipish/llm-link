@@ -6,6 +6,10 @@
 	"/docs": [
 		"src/routes/docs/+page.js"
 	],
+	"/docs/apps/claude": [],
+	"/docs/apps/codex": [],
+	"/docs/apps/zed": [],
+	"/docs/protocols": [],
 	"/providers": [
 		"src/routes/providers/+page.js"
 	]

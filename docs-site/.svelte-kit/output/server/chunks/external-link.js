@@ -1,5 +1,5 @@
 import { c as create_ssr_component, v as validate_component } from "./ssr.js";
-import { I as Icon } from "./github.js";
+import { I as Icon } from "./Icon.js";
 const External_link = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   const iconNode = [
     [

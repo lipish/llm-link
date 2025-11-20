@@ -1,7 +1,7 @@
 import { c as create_ssr_component, b as subscribe, e as escape, d as add_attribute, v as validate_component } from "../../chunks/ssr.js";
 import { p as page } from "../../chunks/stores.js";
 import { b as base } from "../../chunks/paths.js";
-import { c as cn, B as Button, G as Github } from "../../chunks/github.js";
+import { c as cn, B as Button } from "../../chunks/Icon.js";
 import { E as ExternalLink } from "../../chunks/external-link.js";
 const app = "";
 const Navbar = create_ssr_component(($$result, $$props, $$bindings, slots) => {
@@ -25,12 +25,7 @@ const Navbar = create_ssr_component(($$result, $$props, $$bindings, slots) => {
     "class",
     cn("transition-colors hover:text-foreground/80", $page.url.pathname === "{basePath}/providers" ? "text-foreground" : "text-foreground/60"),
     0
-  )}>Providers</a></nav></div> <div class="flex flex-1 items-center justify-between space-x-2 md:justify-end"><div class="w-full flex-1 md:w-auto md:flex-none">${validate_component(Button, "Button").$$render($$result, { variant: "outline", class: "mr-2" }, {}, {
-    default: () => {
-      return `${validate_component(Github, "Github").$$render($$result, { class: "mr-2 h-4 w-4" }, {}, {})}
-					GitHub`;
-    }
-  })} ${validate_component(Button, "Button").$$render($$result, {}, {}, {
+  )}>Providers</a></nav></div> <div class="flex flex-1 items-center justify-between space-x-2 md:justify-end"><div class="w-full flex-1 md:w-auto md:flex-none">${validate_component(Button, "Button").$$render($$result, {}, {}, {
     default: () => {
       return `${validate_component(ExternalLink, "ExternalLink").$$render($$result, { class: "mr-2 h-4 w-4" }, {}, {})}
 					Get Started`;
@@ -39,7 +34,7 @@ const Navbar = create_ssr_component(($$result, $$props, $$bindings, slots) => {
 });
 const Footer = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   const basePath = base;
-  return `<footer class="border-t bg-background"><div class="container py-8 md:py-12"><div class="grid grid-cols-1 gap-8 md:grid-cols-4"><div class="space-y-3" data-svelte-h="svelte-1pvo26g"><h3 class="text-lg font-semibold">LLM Link</h3> <p class="text-sm text-muted-foreground max-w-xs">Universal LLM proxy service providing zero-configuration access to multiple providers.</p></div> <div class="space-y-3"><h4 class="text-sm font-semibold" data-svelte-h="svelte-kzoimb">Product</h4> <ul class="space-y-2 text-sm"><li><a href="${escape(basePath, true) + "/docs"}" class="text-muted-foreground hover:text-foreground">Documentation</a></li> <li><a href="${escape(basePath, true) + "/api"}" class="text-muted-foreground hover:text-foreground">API Reference</a></li> <li><a href="${escape(basePath, true) + "/providers"}" class="text-muted-foreground hover:text-foreground">Providers</a></li></ul></div> <div class="space-y-3" data-svelte-h="svelte-1m3u7jc"><h4 class="text-sm font-semibold">Resources</h4> <ul class="space-y-2 text-sm"><li><a href="https://github.com/lipish/llm-link" class="text-muted-foreground hover:text-foreground">GitHub</a></li> <li><a href="https://crates.io/crates/llm-link" class="text-muted-foreground hover:text-foreground">Crates.io</a></li> <li><a href="https://docs.rs/llm-link" class="text-muted-foreground hover:text-foreground">API Docs</a></li></ul></div> <div class="space-y-3" data-svelte-h="svelte-ghwtx6"><h4 class="text-sm font-semibold">Community</h4> <ul class="space-y-2 text-sm"><li><a href="https://github.com/lipish/llm-link/issues" class="text-muted-foreground hover:text-foreground">Issues</a></li> <li><a href="https://github.com/lipish/llm-link/discussions" class="text-muted-foreground hover:text-foreground">Discussions</a></li> <li><a href="https://github.com/lipish/llm-link/releases" class="text-muted-foreground hover:text-foreground">Releases</a></li></ul></div></div> <div class="mt-8 border-t pt-8 text-center text-sm text-muted-foreground" data-svelte-h="svelte-1hbra6b"><p>© 2025 LLM Link. Built with Svelte + shadcn/ui.</p></div></div></footer>`;
+  return `<footer class="border-t bg-background"><div class="container py-8 md:py-12"><div class="grid grid-cols-1 gap-8 md:grid-cols-4"><div class="space-y-3" data-svelte-h="svelte-1pvo26g"><h3 class="text-lg font-semibold">LLM Link</h3> <p class="text-sm text-muted-foreground max-w-xs">Universal LLM proxy service providing zero-configuration access to multiple providers.</p></div> <div class="space-y-3"><h4 class="text-sm font-semibold" data-svelte-h="svelte-kzoimb">Product</h4> <ul class="space-y-2 text-sm"><li><a href="${escape(basePath, true) + "/docs"}" class="text-muted-foreground hover:text-foreground">Documentation</a></li> <li><a href="${escape(basePath, true) + "/api"}" class="text-muted-foreground hover:text-foreground">API Reference</a></li> <li><a href="${escape(basePath, true) + "/providers"}" class="text-muted-foreground hover:text-foreground">Providers</a></li></ul></div> <div class="space-y-3" data-svelte-h="svelte-1m3u7jc"><h4 class="text-sm font-semibold">Resources</h4> <ul class="space-y-2 text-sm"><li><a href="https://github.com/lipish/llm-link" class="text-muted-foreground hover:text-foreground">GitHub</a></li> <li><a href="https://crates.io/crates/llm-link" class="text-muted-foreground hover:text-foreground">Crates.io</a></li> <li><a href="https://docs.rs/llm-link" class="text-muted-foreground hover:text-foreground">API Docs</a></li></ul></div> <div class="space-y-3" data-svelte-h="svelte-na3tfz"><h4 class="text-sm font-semibold">Community</h4> <ul class="space-y-2 text-sm"><li><a href="https://github.com/lipish/llm-link/issues" class="text-muted-foreground hover:text-foreground">Issues</a></li> <li><a href="https://github.com/lipish/llm-link/releases" class="text-muted-foreground hover:text-foreground">Releases</a></li></ul></div></div> <div class="mt-8 border-t pt-8 text-center text-sm text-muted-foreground" data-svelte-h="svelte-1cx9q7i"><p>© 2025 LLM Link. MIT License.</p></div></div></footer>`;
 });
 const _layout_svelte_svelte_type_style_lang = "";
 const css = {

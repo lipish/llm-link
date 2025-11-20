@@ -15,8 +15,8 @@
 		},
 		{
 			icon: Zap,
-			title: 'Hot Reload',
-			description: 'Update API keys and configurations without service restart via REST API.'
+			title: 'Editor & Agent Integrations',
+			description: 'First-class support for developer tools like Codex, Claude Code, and Zed.dev with unified LLM routing.'
 		},
 		{
 			icon: Shield,
@@ -34,19 +34,15 @@
 		<h1 class="font-heading text-4xl font-bold sm:text-5xl md:text-6xl">
 			One Proxy for All LLM Providers
 		</h1>
-		<p class="max-w-2xl text-base text-muted-foreground sm:text-lg">
+		<p class="max-w-2xl text-base text-muted-foreground sm:text-lg mx-auto">
 			A unified proxy service supporting 10+ LLM providers with OpenAI, Ollama, and Anthropic API compatibility. Built with Rust for performance and reliability.
 		</p>
 		<div class="flex flex-wrap items-center justify-center gap-3">
-			<Button size="lg" href="https://github.com/lipish/llm-link">
-				<Github class="mr-2 h-4 w-4" />
-				GitHub
-			</Button>
-			<Button variant="outline" size="lg" href="#quickstart">
+			<Button variant="default" size="lg" href="#quickstart">
 				<Download class="mr-2 h-4 w-4" />
 				Get Started
 			</Button>
-			<Button variant="ghost" size="lg" href="{basePath}/docs">
+			<Button variant="outline" size="lg" href="{basePath}/docs">
 				Documentation
 			</Button>
 		</div>
@@ -77,17 +73,24 @@
 		</div>
 		
 		<div class="space-y-4">
-			<Accordion title="Install via Cargo (Recommended)" open={true}>
+			<Accordion title="Install via Homebrew (Recommended)" open={true}>
 				<div class="space-y-3">
-					<p class="text-sm text-muted-foreground">Install the latest stable version from crates.io:</p>
-					<CodeBlock code="cargo install llm-link" language="bash" />
+					<p class="text-sm text-muted-foreground">Add the tap and install:</p>
+					<CodeBlock code={'brew tap lipish/llm-link\nbrew install llm-link'} language="bash" />
 				</div>
 			</Accordion>
 
-			<Accordion title="Install via Homebrew (macOS)">
+			<Accordion title="Install via pip (macOS / Linux)">
 				<div class="space-y-3">
-					<p class="text-sm text-muted-foreground">Add the tap and install:</p>
-					<CodeBlock code="brew tap lipish/llm-link\nbrew install llm-link" language="bash" />
+					<p class="text-sm text-muted-foreground">Use the Python wrapper which downloads the prebuilt binary on first run:</p>
+					<CodeBlock code={'pip install pyllmlink\n# First run downloads the matching prebuilt binary into ~/.cache/llm-link'} language="bash" />
+				</div>
+			</Accordion>
+
+			<Accordion title="Install via Cargo (Developers)">
+				<div class="space-y-3">
+					<p class="text-sm text-muted-foreground">Install from crates.io (requires Rust toolchain):</p>
+					<CodeBlock code="cargo install llm-link" language="bash" />
 				</div>
 			</Accordion>
 
@@ -105,36 +108,28 @@
 	<div class="container mx-auto max-w-4xl space-y-8">
 		<div class="space-y-3 text-center">
 			<h2 class="text-3xl font-bold tracking-tight">Usage Examples</h2>
-			<p class="text-muted-foreground">Start with app presets or custom protocol configurations</p>
+			<p class="text-muted-foreground">Real-world setups for editor and agent integrations</p>
 		</div>
 		
 		<div class="space-y-4">
-			<Accordion title="For Zed Editor" open={true}>
+			<Accordion title="Zed.dev with Qwen3 via Ollama" open={true}>
 				<div class="space-y-3">
-					<p class="text-sm text-muted-foreground">Optimized preset for Zed with Ollama-compatible API:</p>
-					<CodeBlock code="llm-link --app zed" language="bash" />
-					<p class="text-xs text-muted-foreground mt-2">Configure Zed: Settings → AI → Custom provider → http://localhost:11434</p>
+					<p class="text-sm text-muted-foreground">Run Zed against a local Qwen3 model exposed through the Ollama-compatible API:</p>
+					<CodeBlock code="llm-link --app zed --provider ollama --model qwen3" language="bash" />
+					<p class="text-xs text-muted-foreground mt-2">In Zed: Settings → AI → Custom provider → http://localhost:11434</p>
 				</div>
 			</Accordion>
-
-			<Accordion title="For Continue.dev / Cursor">
-				<div class="space-y-3">
-					<p class="text-sm text-muted-foreground">OpenAI-compatible API on port 8088:</p>
-					<CodeBlock code="llm-link --app continue" language="bash" />
-				</div>
-			</Accordion>
-
-			<Accordion title="Custom Protocol Configuration">
-				<div class="space-y-3">
-					<p class="text-sm text-muted-foreground">Enable specific protocols:</p>
-					<CodeBlock code="# Enable multiple protocols\nllm-link --protocols openai,anthropic,ollama\n\n# Custom port\nllm-link --protocols openai --port 8088" language="bash" />
-				</div>
-			</Accordion>
-
-			<Accordion title="With Environment Variables">
-				<div class="space-y-3">
-					<p class="text-sm text-muted-foreground">Set API keys via environment:</p>
-					<CodeBlock code={'export OPENAI_API_KEY="sk-..."\nexport ANTHROPIC_API_KEY="sk-ant-..."\nexport ZHIPU_API_KEY="..."\n\nllm-link --protocols all'} language="bash" />
+		
+			<Accordion title="Codex & Claude Code">
+				<div class="space-y-4">
+					<div class="space-y-2">
+						<p class="text-sm text-muted-foreground">Route Codex CLI through llm-link with OpenAI-compatible API:</p>
+						<CodeBlock code="llm-link --app codex --provider openai" language="bash" />
+					</div>
+					<div class="space-y-2">
+						<p class="text-sm text-muted-foreground">Run Claude Code via llm-link using the Anthropic-compatible API:</p>
+						<CodeBlock code="llm-link --app claude --provider anthropic" language="bash" />
+					</div>
 				</div>
 			</Accordion>
 		</div>
@@ -191,7 +186,7 @@
 	<div class="container flex flex-col items-center gap-4 py-12 text-center">
 		<h3 class="text-2xl font-semibold">Ready to get started?</h3>
 		<p class="max-w-2xl text-muted-foreground">
-			Explore the full documentation for advanced configurations, API reference, and integration guides.
+			Explore the docs for configuration details and API reference.
 		</p>
 		<div class="flex gap-3">
 			<Button size="lg" href="{basePath}/docs">
