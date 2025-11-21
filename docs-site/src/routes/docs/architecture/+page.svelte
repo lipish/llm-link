@@ -60,51 +60,120 @@
 	<section class="space-y-6">
 		<h2 class="text-2xl font-semibold">Runtime components</h2>
 		<p class="text-sm text-muted-foreground">
-			At runtime, LLM Link is a single binary with three main layers:
+			LLM Link is a single Rust binary built on top of <code>axum</code> and <code>tokio</code>. Its runtime
+			pipeline consists of three distinct stages:
 		</p>
-		<ul class="text-sm text-muted-foreground list-disc pl-5 space-y-1">
-			<li>
-				<strong>CLI & app presets</strong> – parse flags, choose between app mode
-				(<code>--app zed</code>, <code>--app codex</code>, <code>--app claude</code>) or protocol
-				mode (<code>--protocols openai,ollama,anthropic</code>), and build a <code>Settings</code>
-				object.
-			</li>
-			<li>
-				<strong>Protocol layer</strong> – exposes OpenAI-style, Anthropic-style, and
-				Ollama-style HTTP endpoints and routes them into a unified internal request type.
-			</li>
-			<li>
-				<strong>Provider connectors & normalizer</strong> – map the internal request into the
-				provider-specific HTTP call, and normalize responses and streaming back to the client.
-			</li>
-		</ul>
+		<div class="grid gap-6 md:grid-cols-3">
+			<div class="space-y-2 border-l-2 pl-4 border-muted">
+				<h3 class="font-medium">1. CLI & Config Loader</h3>
+				<p class="text-sm text-muted-foreground">
+					Parses arguments using <code>clap</code>. It determines whether to run in App Mode (e.g.,
+					<code>--app zed</code>) or Protocol Mode. It generates a runtime <code>Settings</code> struct
+					that defines active protocols, ports, and provider credentials.
+				</p>
+			</div>
+			<div class="space-y-2 border-l-2 pl-4 border-muted">
+				<h3 class="font-medium">2. Protocol Adapters</h3>
+				<p class="text-sm text-muted-foreground">
+					Axum routes that mimic upstream APIs (OpenAI <code>/v1/chat/completions</code>, Anthropic
+					<code>/v1/messages</code>, etc.). These adapters accept inbound requests, validate headers,
+					and convert them into a unified internal request model.
+				</p>
+			</div>
+			<div class="space-y-2 border-l-2 pl-4 border-muted">
+				<h3 class="font-medium">3. Connectors & Normalizer</h3>
+				<p class="text-sm text-muted-foreground">
+					The core logic that dispatches the unified request to the configured provider (e.g., Zhipu,
+					DeepSeek). The <strong>Normalizer</strong> handles the response, converting provider-specific
+					JSON or SSE streams back into the format the client expects.
+				</p>
+			</div>
+		</div>
 	</section>
 
 	<!-- Request flow -->
 	<section class="space-y-6">
 		<h2 class="text-2xl font-semibold">Request flow</h2>
 		<p class="text-sm text-muted-foreground">
-			A typical request travels through the layers in order:
+			Trace the lifecycle of a request (e.g., from Codex CLI to Zhipu AI):
 		</p>
-		<div class="rounded-lg border bg-card p-5">
-			<CodeBlock
-				language="bash"
-				code={`Client (e.g. Codex CLI)
-        │
-        ▼ HTTP POST /v1/chat/completions (OpenAI endpoint)
-Protocol layer
-        │ – parse request → internal ChatCompletionRequest
-        │ – route to chosen provider (e.g. Zhipu)
-        ▼
-Provider connector (src/provider/zhipu.rs)
-        │ – map internal request → Zhipu API call
-        │ – forward to https://open.bigmodel.cn/...
-        ▼
-Normalizer (src/normalizer/*)
-        │ – translate Zhipu response → OpenAI-style JSON/stream
-        ▼
-Client receives OpenAI-compatible response`}
-			/>
+		<div class="grid gap-6 lg:grid-cols-2">
+			<div class="rounded-lg border bg-card p-5 text-xs h-fit">
+				<CodeBlock
+					language="bash"
+					code={`      Client (Codex CLI)
+             │
+             ▼
+   POST /v1/chat/completions
+             │
+┌───────────────────────────┐
+│      Protocol Layer       │
+│     (api/openai.rs)       │
+└────────────┬──────────────┘
+             ▼
+┌───────────────────────────┐
+│     Connector (Zhipu)     │
+│    (provider/zhipu.rs)    │
+└────────────┬──────────────┘
+             ▼
+┌───────────────────────────┐
+│        Normalizer         │
+│    (src/normalizer/*)     │
+└────────────┬──────────────┘
+             ▼
+ Client receives OpenAI stream`}
+				/>
+			</div>
+			<div class="space-y-4 text-sm text-muted-foreground">
+				<div class="flex gap-3">
+					<div
+						class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border bg-muted text-xs font-medium"
+					>
+						1
+					</div>
+					<div>
+						<p class="font-medium text-foreground mb-1">Inbound Request</p>
+						The client sends a standard OpenAI request. The <code>api/openai.rs</code> handler receives
+						it and deserializes it using standard serde structs.
+					</div>
+				</div>
+				<div class="flex gap-3">
+					<div
+						class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border bg-muted text-xs font-medium"
+					>
+						2
+					</div>
+					<div>
+						<p class="font-medium text-foreground mb-1">Internal Conversion</p>
+						The handler converts the OpenAI request into a unified <code>ChatCompletionRequest</code>.
+						This unifies differences between OpenAI, Anthropic, and Ollama inputs.
+					</div>
+				</div>
+				<div class="flex gap-3">
+					<div
+						class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border bg-muted text-xs font-medium"
+					>
+						3
+					</div>
+					<div>
+						<p class="font-medium text-foreground mb-1">Provider Dispatch</p>
+						The <code>Provider</code> trait implementation (e.g., <code>provider/zhipu.rs</code>) takes
+						over, transforming the internal request into Zhipu's specific JSON format and signing headers.
+					</div>
+				</div>
+				<div class="flex gap-3">
+					<div
+						class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full border bg-muted text-xs font-medium"
+					>
+						4
+					</div>
+					<div>
+						<p class="font-medium text-foreground mb-1">Normalization</p>
+						As chunks arrive from Zhipu, the <code>Normalizer</code> maps them back to standard OpenAI
+						SSE chunks (deltas) in real-time, ensuring the client sees a perfect OpenAI simulation.
+					</div>
+				</div>
+			</div>
 		</div>
 	</section>
 
