@@ -181,27 +181,54 @@
 	<section class="space-y-6">
 		<h2 class="text-2xl font-semibold">Code structure</h2>
 		<p class="text-sm text-muted-foreground">
-			The core crate is organized by responsibility; each runtime component maps to concrete modules:
+			The codebase follows a layered architecture, separating configuration, external interfaces,
+			core logic, and provider adapters.
 		</p>
 		<CodeBlock
 			language="bash"
 			code={`src/
-main.rs       # entrypoint, starts HTTP server
-service.rs    # shared application state and server wiring
-settings.rs   # configuration model loaded from CLI and presets
-
-api/          # HTTP handlers for OpenAI, Anthropic, Ollama-compatible APIs
-apps/         # app presets and generators (--app zed / codex / claude)
-cli/          # CLI args, subcommands, and loader logic
-normalizer/   # request/response shaping and streaming helpers
-provider/     # concrete provider clients (OpenAI, Anthropic, Zhipu, ...)
-models/       # shared data models and types`}
+├── 1. Entry & Config
+│   ├── main.rs           # Application entry point & server startup
+│   ├── cli/              # CLI argument parsing & command handling
+│   ├── apps/             # App presets (Zed, Claude, Codex) configuration logic
+│   └── settings.rs       # Global configuration structs
+│
+├── 2. Interfaces (Inbound)
+│   └── api/              # Axum handlers for external protocols
+│       ├── openai.rs     # /v1/chat/completions, /v1/models
+│       ├── anthropic.rs  # /v1/messages
+│       └── ollama.rs     # /api/generate, /api/chat
+│
+├── 3. Core Logic
+│   ├── service.rs        # Shared AppState & service lifecycle management
+│   ├── normalizer/       # Unified request/response shaping & streaming adapters
+│   └── models/           # Internal unified data models
+│
+└── 4. Providers (Outbound)
+    └── provider/         # Concrete adapter implementations
+        ├── zhipu.rs      # Zhipu AI (GLM) client
+        ├── aliyun.rs     # Aliyun (Qwen) client
+        ├── volcengine.rs # Volcengine (Doubao) client
+        └── ...`}
 		/>
-		<p class="text-xs text-muted-foreground">
-			For example, <code>src/apps/mod.rs</code> exposes <code>SupportedApp</code> and
-			<code>AppConfigGenerator</code>, while <code>src/provider/mod.rs</code> wires concrete
-			provider clients behind a stable internal interface.
-		</p>
+		
+		<div class="rounded-lg border bg-muted/40 p-4 space-y-3">
+			<h3 class="font-medium text-sm">Where to start contributing?</h3>
+			<ul class="text-xs text-muted-foreground space-y-2 list-disc pl-4">
+				<li>
+					<strong>Adding a new Provider:</strong> Create a new file in <code>src/provider/</code> implementing
+					the <code>Provider</code> trait, then register it in <code>src/provider/mod.rs</code>.
+				</li>
+				<li>
+					<strong>Adding a new App Preset:</strong> Add a new module in <code>src/apps/</code> to define
+					default settings and CLI flags for the tool you want to support.
+				</li>
+				<li>
+					<strong>Improving Protocol Support:</strong> Modify handlers in <code>src/api/</code> to support
+					more endpoints or fields from OpenAI/Anthropic specs.
+				</li>
+			</ul>
+		</div>
 	</section>
 
 	<!-- Design principles -->
