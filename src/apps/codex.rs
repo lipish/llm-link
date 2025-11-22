@@ -3,7 +3,6 @@ use crate::settings::{
     OpenAiApiSettings, OllamaApiSettings, AnthropicApiSettings,
     ClientAdapterSettings, ZedAdapterSettings,
 };
-use super::AppConfigGenerator;
 
 /// Codex CLI application configuration
 pub struct CodexApp;

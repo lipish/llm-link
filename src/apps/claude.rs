@@ -3,14 +3,13 @@ use crate::settings::{
     OpenAiApiSettings, OllamaApiSettings, AnthropicApiSettings,
     ClientAdapterSettings, ZedAdapterSettings,
 };
-use super::AppConfigGenerator;
 
 /// Claude Code application configuration
 pub struct ClaudeApp;
 
 impl ClaudeApp {
     /// Generate Claude Code configuration
-    pub fn generate_config(cli_api_key: Option<&str>) -> Settings {
+    pub fn generate_config(_cli_api_key: Option<&str>) -> Settings {
         Settings {
             server: ServerSettings {
                 host: "0.0.0.0".to_string(),

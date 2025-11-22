@@ -3,7 +3,6 @@ use crate::settings::{
     OpenAiApiSettings, OllamaApiSettings, AnthropicApiSettings,
     ClientAdapterSettings, ZedAdapterSettings,
 };
-use super::AppConfigGenerator;
 
 /// Generate protocol combination configuration
 pub fn generate_protocol_config(protocols: &[String], cli_api_key: Option<&str>) -> Settings {

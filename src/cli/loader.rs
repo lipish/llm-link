@@ -102,7 +102,7 @@ impl ConfigLoader {
                 config,
                 Some(provider.as_str()),
                 args.model.as_deref(),
-                args.api_key.as_deref(),
+                args.llm_api_key.as_deref(),
             )?;
         }
 
