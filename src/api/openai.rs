@@ -89,11 +89,16 @@ pub async fn chat(
                 }
             }
 
-            // 直接使用请求指定的模式（流式或非流式）
-            // 等待 llm-connector 修复流式 tool_calls 解析问题
-            if request.stream.unwrap_or(false) {
+            // 使用流式模式（llm-connector 0.5.4+ 已修复流式 tool_calls 问题）
+            let use_streaming = request.stream.unwrap_or(false);
+            if use_streaming {
+                info!("🌊 Using streaming mode");
+                if let Some(ref tools_ref) = tools {
+                    info!("🔧 Streaming with {} tools (llm-connector 0.5.4+ fix applied)", tools_ref.len());
+                }
                 handle_streaming_request(headers, state, model, messages, tools).await
             } else {
+                info!("📝 Using non-streaming mode");
                 handle_non_streaming_request(state, model, messages, tools).await
             }
         }
