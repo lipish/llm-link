@@ -89,7 +89,7 @@ pub async fn chat(
                 }
             }
 
-            // 使用流式模式（llm-connector 0.5.4+ 已修复流式 tool_calls 问题）
+            // 使用流式模式（llm-connector 0.5.6 已修复代理超时问题）
             let use_streaming = request.stream.unwrap_or(false);
             if use_streaming {
                 info!("🌊 Using streaming mode");
