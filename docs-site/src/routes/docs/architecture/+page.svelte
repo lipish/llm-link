@@ -16,24 +16,21 @@
 		</p>
 	</div>
 
+	<!-- Architecture Image -->
+	<div class="mb-8">
+		<img 
+			src={`${basePath}/architecture.png`} 
+			alt="LLM Link Architecture Diagram" 
+			class="w-full h-auto"
+		/>
+	</div>
+
 	<!-- High-level Diagram -->
 	<section class="space-y-8">
 		<h2 class="text-2xl font-semibold flex items-center">
 			<Layers class="h-6 w-6 mr-2 text-primary" />
 			High-level Diagram
 		</h2>
-
-		<!-- Architecture Image -->
-		<div class="rounded-lg border bg-card p-6">
-			<img 
-				src={`${basePath}/architecture.png`} 
-				alt="LLM Link Architecture Diagram" 
-				class="w-full h-auto rounded-md shadow-sm"
-			/>
-			<p class="text-xs text-muted-foreground mt-3 text-center">
-				LLM Link architecture showing the flow from client applications through protocol adapters to provider connectors
-			</p>
-		</div>
 
 		<!-- ASCII Diagram -->
 		<div class="rounded-lg border bg-card p-5 text-xs">
