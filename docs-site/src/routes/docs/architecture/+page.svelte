@@ -23,6 +23,19 @@
 			High-level Diagram
 		</h2>
 
+		<!-- Architecture Image -->
+		<div class="rounded-lg border bg-card p-6">
+			<img 
+				src={`${basePath}/architecture.png`} 
+				alt="LLM Link Architecture Diagram" 
+				class="w-full h-auto rounded-md shadow-sm"
+			/>
+			<p class="text-xs text-muted-foreground mt-3 text-center">
+				LLM Link architecture showing the flow from client applications through protocol adapters to provider connectors
+			</p>
+		</div>
+
+		<!-- ASCII Diagram -->
 		<div class="rounded-lg border bg-card p-5 text-xs">
 			<CodeBlock
 				language="bash"
