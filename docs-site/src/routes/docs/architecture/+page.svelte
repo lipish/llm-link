@@ -23,35 +23,11 @@
 			High-level Diagram
 		</h2>
 
-		<div class="rounded-lg border bg-card p-5 text-xs">
-			<CodeBlock
-				language="bash"
-				code={`┌──────────────────────────────────────────────────────────┐
-│                    Editors / Agents                      │
-│  Zed.dev  •  Codex CLI  •  Claude Code  •  Continue.dev  │
-└─────────────────────┬────────────────────────────────────┘
-                      │ HTTP (OpenAI/Anthropic/Ollama style)
-                      ▼
-┌──────────────────────────────────────────────────────────┐
-│                     LLM Link                             │
-│  ┌─────────────────┐   ┌─────────────────────────────┐   │
-│  │ CLI & App       │   │ Protocol Layer              │   │
-│  │ Presets         │   │ • OpenAI / Anthropic        │   │
-│  │ (--app zed…)    │   │ • Unified request format    │   │
-│  └─────────────────┘   └─────────────────────────────┘   │
-│  ┌───────────────────────────────────────────────────┐   │
-│  │ Normalizer                                        │   │
-│  │ • Shape requests/responses across providers       │   │
-│  │ • Streaming helpers                               │   │
-│  └───────────────────────────────────────────────────┘   │
-└─────────────────────┬────────────────────────────────────┘
-                      │ Provider-specific HTTP calls
-                      ▼
-┌──────────────────────────────────────────────────────────┐
-│                Provider Connectors                       │
-│  OpenAI • Anthropic • Zhipu • Volcengine • Moonshot      │
-│  Minimax • Tencent • Aliyun • Longcat • Ollama           │
-└──────────────────────────────────────────────────────────┘`}
+		<div class="flex justify-center">
+			<img 
+				src="{basePath}/architecture.jpeg" 
+				alt="LLM Link Architecture Diagram" 
+				class="max-w-full h-auto rounded-lg border shadow-lg"
 			/>
 		</div>
 	</section>
