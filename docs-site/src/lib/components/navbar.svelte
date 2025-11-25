@@ -3,7 +3,7 @@
 	import { base } from '$app/paths';
 	import Button from '$lib/components/ui/button.svelte';
 	import { Github, ExternalLink } from 'lucide-svelte';
-	import { cn } from '$lib/utils.ts';
+	import { cn } from '$lib/utils';
 	
 	const basePath = base;
 </script>

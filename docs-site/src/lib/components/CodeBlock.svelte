@@ -12,6 +12,9 @@
 	export let showLineNumbers: boolean = false;
 
 	let highlightedCode = '';
+let copied = false;
+let copyTimer: ReturnType<typeof setTimeout> | null = null;
+let wrapperRef: HTMLDivElement | null = null;
 
 	hljs.registerLanguage('bash', bash);
 	hljs.registerLanguage('rust', rust);
@@ -27,6 +30,7 @@
 					// Comment line
 					return `<span class=\"cb-comment\">${line}</span>`;
 				}
+
 
 				// Highlight first token (command) on non-empty lines
 				const leadingSpaces = line.match(/^\s*/)?.[0] ?? '';
@@ -53,9 +57,52 @@
 			highlightedCode = code;
 		}
 	});
+
+	function fallbackCopy(text: string) {
+		const textarea = document.createElement('textarea');
+		textarea.value = text;
+		textarea.style.position = 'fixed';
+		textarea.style.top = '-9999px';
+		document.body.appendChild(textarea);
+		textarea.focus();
+		textarea.select();
+		document.execCommand('copy');
+		textarea.remove();
+	}
+
+	function triggerCopiedFeedback() {
+		if (copyTimer) {
+			clearTimeout(copyTimer);
+		}
+		copied = true;
+		copyTimer = setTimeout(() => (copied = false), 2000);
+	}
+
+	async function copyToClipboard() {
+		const textToCopy = code;
+
+		try {
+			if (navigator?.clipboard?.writeText) {
+				await navigator.clipboard.writeText(textToCopy);
+			} else {
+				fallbackCopy(textToCopy);
+			}
+		} catch (err) {
+			fallbackCopy(textToCopy);
+		}
+
+		triggerCopiedFeedback();
+	}
 </script>
 
-<div class="code-block-wrapper">
+<div class="code-block-wrapper" bind:this={wrapperRef}>
+	<button class="copy-button" type="button" on:click={copyToClipboard} aria-label="Copy code">
+		{#if copied}
+			<span>Copied</span>
+		{:else}
+			<span>Copy</span>
+		{/if}
+	</button>
 	<pre class="code-block" class:line-numbers={showLineNumbers}><code>{@html highlightedCode}</code></pre>
 </div>
 
@@ -67,6 +114,30 @@
 		background: #0d1117;
 	}
 
+	.copy-button {
+		position: absolute;
+		top: 0.5rem;
+		right: 0.5rem;
+		background: rgba(255, 255, 255, 0.08);
+		color: #e6edf3;
+		border: 1px solid rgba(255, 255, 255, 0.15);
+		border-radius: 0.375rem;
+		font-size: 0.75rem;
+		padding: 0.2rem 0.6rem;
+		cursor: pointer;
+		transition: background 0.2s ease;
+		user-select: none;
+	}
+
+	.copy-button:hover {
+		background: rgba(255, 255, 255, 0.18);
+	}
+
+	.copy-button:focus-visible {
+		outline: 2px solid #60a5fa;
+		outline-offset: 2px;
+	}
+
 	.code-block {
 		margin: 0;
 		padding: 1rem;
@@ -75,10 +146,12 @@
 		line-height: 1.5;
 		background: #0d1117;
 		color: #c9d1d9;
+		user-select: text;
 	}
 
 	.code-block code {
 		font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', 'Droid Sans Mono', 'Source Code Pro', monospace;
+		user-select: text;
 	}
 
 	:global(.cb-command) {

@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import Button from '$lib/components/ui/button.svelte';
 	import CodeBlock from '$lib/components/CodeBlock.svelte';
 	import { Github, Terminal, Code, Settings, Globe, Check, AlertCircle, BookOpen, Zap, ListOrdered } from 'lucide-svelte';
@@ -6,7 +6,7 @@
 	
 	const basePath = base;
 	
-	const apiExamples = {
+	const apiExamples: Record<string, string> = {
 		models: `# Get all available models
 curl -X GET http://localhost:8088/api/models
 
