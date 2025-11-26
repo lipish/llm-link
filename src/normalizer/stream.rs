@@ -423,6 +423,12 @@ impl Client {
             tracing::info!("🔄 Starting to process stream chunks (OpenAI format)...");
             let mut chunk_count = 0;
             let mut has_tool_calls = false;  // Track if tool_calls detected
+            
+            // Track tool call IDs by index for Codex CLI compatibility
+            // Codex uses `id` field to accumulate arguments across chunks,
+            // but llm-connector only includes `id` in the first chunk.
+            // We remember the id for each index and inject it into subsequent chunks.
+            let mut tool_call_ids: std::collections::HashMap<usize, String> = std::collections::HashMap::new();
 
             while let Some(chunk) = stream.next().await {
                 tracing::debug!("📥 Received raw chunk from stream");
@@ -448,10 +454,53 @@ impl Client {
                         // Check for tool_calls (extract from choices[0].delta.tool_calls)
                         if let Some(first_choice) = stream_chunk.choices.first() {
                             if let Some(tool_calls) = &first_choice.delta.tool_calls {
-                                if let Ok(tool_calls_value) = serde_json::to_value(tool_calls) {
-                                    delta["tool_calls"] = tool_calls_value;
+                                // Build tool_calls array with id injection for Codex compatibility
+                                let mut tool_calls_array = Vec::new();
+                                
+                                for tc in tool_calls {
+                                    let index = tc.index.unwrap_or(0);
+                                    
+                                    // Remember id from first chunk, inject into subsequent chunks
+                                    if !tc.id.is_empty() {
+                                        tool_call_ids.insert(index, tc.id.clone());
+                                        tracing::debug!("🔧 Remembered tool call id for index {}: {}", index, tc.id);
+                                    }
+                                    
+                                    // Build tool call object with id always present
+                                    let mut tc_obj = serde_json::Map::new();
+                                    
+                                    // Always include id (from current chunk or remembered)
+                                    if let Some(remembered_id) = tool_call_ids.get(&index) {
+                                        tc_obj.insert("id".to_string(), Value::String(remembered_id.clone()));
+                                    }
+                                    
+                                    // Include index
+                                    tc_obj.insert("index".to_string(), Value::Number(index.into()));
+                                    
+                                    // Include type if present
+                                    if !tc.call_type.is_empty() {
+                                        tc_obj.insert("type".to_string(), Value::String(tc.call_type.clone()));
+                                    }
+                                    
+                                    // Include function object
+                                    let mut func_obj = serde_json::Map::new();
+                                    if !tc.function.name.is_empty() {
+                                        func_obj.insert("name".to_string(), Value::String(tc.function.name.clone()));
+                                    }
+                                    if !tc.function.arguments.is_empty() {
+                                        func_obj.insert("arguments".to_string(), Value::String(tc.function.arguments.clone()));
+                                    }
+                                    if !func_obj.is_empty() {
+                                        tc_obj.insert("function".to_string(), Value::Object(func_obj));
+                                    }
+                                    
+                                    tool_calls_array.push(Value::Object(tc_obj));
+                                }
+                                
+                                if !tool_calls_array.is_empty() {
+                                    delta["tool_calls"] = Value::Array(tool_calls_array);
                                     has_data = true;
-                                    has_tool_calls = true;  // Mark tool_calls detected
+                                    has_tool_calls = true;
                                     chunk_count += 1;
                                     tracing::info!("🔧 Received chunk #{} with tool_calls: {} calls", chunk_count, tool_calls.len());
                                 }
