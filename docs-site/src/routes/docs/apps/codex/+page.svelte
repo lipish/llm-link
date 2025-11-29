@@ -349,8 +349,7 @@ llm-link --app codex --provider anthropic --api-key <ANTHROPIC_KEY> --model clau
 		</div>
 	</section>
 
-	<div class="pt-6 border-t flex justify-between text-sm text-muted-foreground">
+	<div class="pt-6 border-t text-sm text-muted-foreground">
 		<a href={`${basePath}/docs`} class="hover:underline">← Back to Docs index</a>
-		<a href={`${basePath}/docs/apps/claude`} class="hover:underline">Next: Claude Code →</a>
 	</div>
 </div>

@@ -21,7 +21,7 @@
 		{
 			title: 'Editor & Agent Integrations',
 			description:
-				'First-class support for Zed.dev, Codex CLI, Claude Code and other dev tools via presets and protocols.'
+				'First-class support for Zed.dev, Codex CLI and other dev tools via presets and protocols.'
 		},
 		{
 			title: 'Hot-Reload Configuration',
@@ -52,7 +52,7 @@
 		</p>
 		<p class="text-sm text-muted-foreground">
 			LLM Link sits in the middle as a single proxy between your tools and upstream LLM providers. You
-			configure providers and routing once, then point Zed.dev, Codex CLI, Claude Code, and other clients
+			configure providers and routing once, then point Zed.dev, Codex CLI, and other clients
 			to LLM Link. It unifies protocols, centralizes API key management, and makes it easy to experiment
 			with different providers without rebuilding your setup.
 		</p>

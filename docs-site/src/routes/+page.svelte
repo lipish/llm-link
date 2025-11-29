@@ -16,7 +16,7 @@
 		{
 			icon: Zap,
 			title: 'Editor & Agent Integrations',
-			description: 'First-class support for developer tools like Codex, Claude Code, and Zed.dev with unified LLM routing.'
+			description: 'First-class support for developer tools like Codex and Zed.dev with unified LLM routing.'
 		},
 		{
 			icon: Shield,
@@ -120,15 +120,11 @@
 				</div>
 			</Accordion>
 		
-			<Accordion title="Codex & Claude Code">
+			<Accordion title="Codex CLI">
 				<div class="space-y-4">
 					<div class="space-y-2">
 						<p class="text-sm text-muted-foreground">Route Codex CLI through llm-link using GLM 4.6 via the OpenAI-compatible API:</p>
 						<CodeBlock code="llm-link --app codex --provider zhipu --api-key zhipu-... --model glm-4.6" language="bash" />
-					</div>
-					<div class="space-y-2">
-						<p class="text-sm text-muted-foreground">Run Claude Code via llm-link routing to Qwen3 Coder Plus on Aliyun:</p>
-						<CodeBlock code="llm-link --app claude --provider aliyun --api-key qwen-... --model qwen3-coder-plus" language="bash" />
 					</div>
 				</div>
 			</Accordion>

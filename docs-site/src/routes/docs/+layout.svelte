@@ -17,8 +17,7 @@
 			title: 'Applications',
 			items: [
 				{ label: 'Zed.dev', href: '/docs/apps/zed' },
-				{ label: 'Codex CLI', href: '/docs/apps/codex' },
-				{ label: 'Claude Code', href: '/docs/apps/claude' }
+				{ label: 'Codex CLI', href: '/docs/apps/codex' }
 			]
 		},
 		{

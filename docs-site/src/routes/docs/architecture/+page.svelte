@@ -38,7 +38,7 @@
 				language="bash"
 				code={`┌──────────────────────────────────────────────────────────┐
 │                    Editors / Agents                      │
-│  Zed.dev  •  Codex CLI  •  Claude Code  •  Continue.dev  │
+│  Zed.dev  •  Codex CLI  •  Continue.dev  │
 └─────────────────────┬────────────────────────────────────┘
                       │ HTTP (OpenAI/Anthropic/Ollama style)
                       ▼
@@ -200,7 +200,7 @@
 ├── 1. Entry & Config
 │   ├── main.rs           # Application entry point & server startup
 │   ├── cli/              # CLI argument parsing & command handling
-│   ├── apps/             # App presets (Zed, Claude, Codex) configuration logic
+│   ├── apps/             # App presets (Zed, Codex) configuration logic
 │   └── settings.rs       # Global configuration structs
 │
 ├── 2. Interfaces (Inbound)
@@ -299,7 +299,6 @@
 		<div class="space-y-1 text-sm">
 			<a href="{basePath}/docs/apps/zed" class="text-primary hover:underline">Zed.dev integration</a>
 			<a href="{basePath}/docs/apps/codex" class="block text-primary hover:underline">Codex CLI</a>
-			<a href="{basePath}/docs/apps/claude" class="block text-primary hover:underline">Claude Code</a>
 			<a href="{basePath}/docs/protocols" class="block text-primary hover:underline">Protocol configuration</a>
 			<a href="{basePath}/providers" class="block text-primary hover:underline">All providers</a>
 			<a href="{basePath}/api" class="block text-primary hover:underline">API reference</a>
