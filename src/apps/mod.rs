@@ -1,5 +1,8 @@
 mod codex;
 mod zed;
+mod aider;
+mod openhands;
+mod agent_zero;
 mod info;
 mod protocol;
 
@@ -11,6 +14,9 @@ pub use info::AppInfoProvider;
 // Re-export app-specific modules
 pub use codex::CodexApp;
 pub use zed::ZedApp;
+pub use aider::AiderApp;
+pub use openhands::OpenHandsApp;
+pub use agent_zero::AgentZeroApp;
 
 /// Supported application types
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -19,6 +25,12 @@ pub enum SupportedApp {
     CodexCLI,
     /// Zed - Ollama API client
     Zed,
+    /// Aider - AI pair programming tool
+    Aider,
+    /// OpenHands - AI agent framework
+    OpenHands,
+    /// Agent Zero - AI agent framework
+    AgentZero,
 }
 
 impl SupportedApp {
@@ -27,6 +39,9 @@ impl SupportedApp {
         match s.to_lowercase().as_str() {
             "codex-cli" | "codex" => Some(Self::CodexCLI),
             "zed-dev" | "zed" => Some(Self::Zed),
+            "aider" => Some(Self::Aider),
+            "openhands" => Some(Self::OpenHands),
+            "agent-zero" | "agent_zero" | "agentzero" => Some(Self::AgentZero),
             _ => None,
         }
     }
@@ -36,6 +51,9 @@ impl SupportedApp {
         match self {
             Self::CodexCLI => "codex-cli",
             Self::Zed => "zed",
+            Self::Aider => "aider",
+            Self::OpenHands => "openhands",
+            Self::AgentZero => "agent-zero",
         }
     }
 
@@ -44,6 +62,9 @@ impl SupportedApp {
         vec![
             Self::CodexCLI,
             Self::Zed,
+            Self::Aider,
+            Self::OpenHands,
+            Self::AgentZero,
         ]
     }
 }
@@ -57,6 +78,9 @@ impl AppConfigGenerator {
         match app {
             SupportedApp::CodexCLI => CodexApp::generate_config(cli_api_key),
             SupportedApp::Zed => ZedApp::generate_config(),
+            SupportedApp::Aider => AiderApp::generate_config(cli_api_key),
+            SupportedApp::OpenHands => OpenHandsApp::generate_config(cli_api_key),
+            SupportedApp::AgentZero => AgentZeroApp::generate_config(cli_api_key),
         }
     }
 

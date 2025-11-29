@@ -8,6 +8,9 @@
 |------|------|------|------|------|
 | **Codex CLI** | OpenAI API | 8088 | Bearer Token | ✅ 就绪 |
 | **Zed** | Ollama API | 11434 | 无需认证 | ✅ 就绪 |
+| **Aider** | OpenAI API | 8090 | Bearer Token | ✅ 就绪 |
+| **OpenHands** | OpenAI API | 8091 | Bearer Token | ✅ 就绪 |
+| **Agent Zero** | OpenAI API | 8092 | Bearer Token | ✅ 就绪 |
 
 ## 🏗️ 架构概览
 
@@ -17,8 +20,9 @@
 │                 │    │                 │    │                 │
 │ • Codex CLI     │───▶│ • 协议转换       │───▶│ • OpenAI        │
 │ • Zed IDE       │    │ • 格式适配       │    │ • Anthropic     │
-│                 │    │ • 路由分发       │    │ • Zhipu         │
-│                 │    │                 │    │ • Aliyun        │
+│ • Aider         │    │ • 路由分发       │    │ • Zhipu         │
+│ • OpenHands     │    │                 │    │ • Aliyun        │
+│ • Agent Zero    │    │                 │    │ • Volcengine    │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
@@ -105,6 +109,106 @@ export ALIYUN_API_KEY="sk-xxx"
 #### 2. 配置 Codex CLI
 
 Codex CLI 将自动连接到 `http://localhost:8088` 并使用 OpenAI API 格式。
+
+## 🤖 Aider 集成
+
+### 快速开始
+
+#### 1. 启动 LLM Link
+
+```bash
+# 使用智谱 GLM-4.6 (推荐)
+./llm-link --app aider --provider zhipu --model glm-4.6 --api-key "your-zhipu-key"
+
+# 使用阿里云 Qwen3 Coder Plus
+./llm-link --app aider --provider aliyun --model qwen3-coder-plus --api-key "your-aliyun-key"
+
+# 使用 MiniMax M2
+./llm-link --app aider --provider minimax --model m2 --api-key "your-minimax-key"
+
+# 使用 Moonshot K2
+./llm-link --app aider --provider moonshot --model k2 --api-key "your-moonshot-key"
+```
+
+#### 2. 配置 Aider
+
+设置环境变量并运行 Aider：
+
+```bash
+export OPENAI_API_BASE=http://localhost:8090/v1
+export OPENAI_API_KEY="your-auth-token"
+
+# 使用模型名前缀
+aider --model openai/glm-4.6
+```
+
+### 使用启动脚本
+
+```bash
+# 一键启动 Aider 代理（使用智谱 GLM-4.6）
+./scripts/start-aider.sh
+```
+
+## 🎭 OpenHands 集成
+
+### 快速开始
+
+#### 1. 启动 LLM Link
+
+```bash
+# 使用 OpenAI GPT-4
+./llm-link --app openhands --provider openai --model gpt-4 --api-key "your-openai-key"
+
+# 使用本地模型（通过 Ollama）
+./llm-link --app openhands --provider ollama --model qwen2.5-coder --api-key "dummy"
+```
+
+#### 2. 配置 OpenHands
+
+在 OpenHands Web 界面中：
+
+1. 点击 "see advanced settings"
+2. 启用 Advanced toggle
+3. 设置以下参数：
+   - **Custom Model**: `openai/<model-name>`
+   - **Base URL**: `http://host.docker.internal:8091/v1`
+   - **API Key**: 您的 API 密钥
+
+### 使用启动脚本
+
+```bash
+# 一键启动 OpenHands 代理
+./scripts/start-openhands.sh openai gpt-4 sk-your-key
+```
+
+## 🎯 Agent Zero 集成
+
+### 快速开始
+
+#### 1. 启动 LLM Link
+
+```bash
+# 使用 OpenAI GPT-4
+./llm-link --app agent-zero --provider openai --model gpt-4 --api-key "your-openai-key"
+
+# 使用 Anthropic Claude
+./llm-link --app agent-zero --provider anthropic --model claude-3-5-sonnet-20241022 --api-key "your-anthropic-key"
+```
+
+#### 2. 配置 Agent Zero
+
+在 Agent Zero 的 LiteLLM 配置中设置：
+
+- **Base URL**: `http://localhost:8092/v1`
+- **API Key**: 您的 API 密钥
+- **Model**: 您选择的模型名称
+
+### 使用启动脚本
+
+```bash
+# 一键启动 Agent Zero 代理
+./scripts/start-agent-zero.sh openai gpt-4 sk-your-key
+```
 
 ## 🎯 使用场景推荐
 

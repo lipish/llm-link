@@ -41,6 +41,39 @@ impl AppInfoProvider {
                 ],
                 auth_required: false,
             },
+            SupportedApp::Aider => AppInfo {
+                name: "Aider".to_string(),
+                description: "AI pair programming in your terminal".to_string(),
+                port: 8090,
+                protocol: "OpenAI API".to_string(),
+                endpoints: vec![
+                    "POST /v1/chat/completions".to_string(),
+                    "GET /v1/models".to_string(),
+                ],
+                auth_required: true,
+            },
+            SupportedApp::OpenHands => AppInfo {
+                name: "OpenHands".to_string(),
+                description: "AI agent framework for software development".to_string(),
+                port: 8091,
+                protocol: "OpenAI API".to_string(),
+                endpoints: vec![
+                    "POST /v1/chat/completions".to_string(),
+                    "GET /v1/models".to_string(),
+                ],
+                auth_required: true,
+            },
+            SupportedApp::AgentZero => AppInfo {
+                name: "Agent Zero".to_string(),
+                description: "Personal AI agent framework that grows and learns with you".to_string(),
+                port: 8092,
+                protocol: "OpenAI API".to_string(),
+                endpoints: vec![
+                    "POST /v1/chat/completions".to_string(),
+                    "GET /v1/models".to_string(),
+                ],
+                auth_required: true,
+            },
         }
     }
 }
