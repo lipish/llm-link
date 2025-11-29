@@ -13,7 +13,6 @@
 
 - **[应用集成指南](guides/INTEGRATION.md)** - 与各种 AI 编码工具集成
   - Zed IDE 集成
-  - Claude Code 集成
   - Codex CLI 集成
   - 提供商对比和选择
 

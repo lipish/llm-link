@@ -217,16 +217,17 @@ fn build_app(state: AppState, config: &Settings) -> Router {
         }
     }
 
-    // Add Anthropic API endpoints (temporarily disabled for compilation)
-    if let Some(_anthropic_config) = &config.apis.anthropic {
-        // if anthropic_config.enabled {
-        //     info!("Enabling Anthropic API on path: {}", anthropic_config.path);
-        //     let anthropic_routes = Router::new()
-        //         .route(&format!("{}/v1/messages", anthropic_config.path), post(api::anthropic::messages))
-        //         .route(&format!("{}/v1/models", anthropic_config.path), get(api::anthropic::models))
-        //         .with_state(state.clone());
-        //     app = app.merge(anthropic_routes);
-        // }
+    // Add Anthropic API endpoints
+    if let Some(anthropic_config) = &config.apis.anthropic {
+        if anthropic_config.enabled {
+            info!("🔮 Enabling Anthropic API on path: {}", anthropic_config.path);
+            let anthropic_routes = Router::new()
+                .route(&format!("{}/v1/messages", anthropic_config.path), post(api::anthropic::messages))
+                .route(&format!("{}/v1/messages/count_tokens", anthropic_config.path), post(api::anthropic::count_tokens))
+                .route(&format!("{}/v1/models", anthropic_config.path), get(api::anthropic::models))
+                .with_state(state.clone());
+            app = app.merge(anthropic_routes);
+        }
     }
 
     // Add catch-all route for debugging

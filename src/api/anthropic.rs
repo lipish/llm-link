@@ -13,7 +13,7 @@ use crate::api::AppState;
 use llm_connector::types::{ImageSource, Message as LlmMessage, MessageBlock, Role as LlmRole};
 
 /// Anthropic Messages API Request
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[allow(dead_code)]
 pub struct AnthropicMessagesRequest {
     #[allow(dead_code)]
@@ -146,6 +146,28 @@ pub async fn messages(
     info!("📨 Anthropic Messages API request: client_model={}, stream={}", request.model, request.stream);
     info!("📋 Request details: messages_count={}, max_tokens={:?}, temperature={:?}",
           request.messages.len(), request.max_tokens, request.temperature);
+    
+    // Debug: Check Authorization header
+    if let Some(auth_header) = headers.get("authorization") {
+        info!("🔍 DEBUG: Client Authorization header: {:?}", auth_header);
+    } else {
+        info!("🔍 DEBUG: No Authorization header from client");
+    }
+    
+    // Debug: Log request size and first message content for debugging
+    let request_json = serde_json::to_string(&request).unwrap_or_default();
+    info!("🔍 DEBUG: Request size: {} bytes", request_json.len());
+    if !request.messages.is_empty() {
+        if let Some(first_content) = request.messages[0].content.get(0) {
+            match first_content {
+                MessageBlock::Text { text } => {
+                    let preview = if text.len() > 200 { &text[..200] } else { text };
+                    info!("🔍 DEBUG: First message preview: {}", preview);
+                }
+                _ => info!("🔍 DEBUG: First message is not text"),
+            }
+        }
+    }
 
     // Check if client expects streaming via Accept header
     // Some clients (like Claude Code) may indicate streaming preference via headers
@@ -190,13 +212,25 @@ pub async fn messages(
     if request.stream {
         // Streaming response
         let llm_service = state.llm_service.read().await;
-        let stream_result = llm_service.chat_stream_openai(Some(&request.model), llm_messages, None, llm_connector::StreamFormat::SSE).await;
+        let config = state.config.read().await;
+        // Use configured model instead of client model to avoid mapping issues
+        let configured_model = match &config.llm_backend {
+            crate::settings::LlmBackendSettings::Aliyun { model, .. } => model,
+            _ => &request.model,
+        };
+        info!("🔧 DEBUG: Using model for streaming: {} (client requested: {})", configured_model, request.model);
+        let stream_result = llm_service.chat_stream_openai(Some(configured_model), llm_messages, None, llm_connector::StreamFormat::SSE).await;
 
         match stream_result {
             Ok(stream) => {
                 info!("✅ Starting Anthropic streaming response");
-                let anthropic_stream = convert_to_anthropic_stream(stream, &request.model);
-                Ok(Sse::new(anthropic_stream).into_response())
+                let anthropic_stream = convert_to_anthropic_stream(stream, request.model.clone());
+                let response = Sse::new(anthropic_stream).into_response();
+                // Add required Anthropic API headers
+                let mut response = response;
+                response.headers_mut().insert("anthropic-version", "2023-06-01".parse().unwrap());
+                response.headers_mut().insert("request-id", uuid::Uuid::new_v4().to_string().parse().unwrap());
+                Ok(response)
             }
             Err(e) => {
                 error!("❌ Streaming error: {}", e);
@@ -206,7 +240,14 @@ pub async fn messages(
     } else {
         // Non-streaming response
         let llm_service = state.llm_service.read().await;
-        let chat_result = llm_service.chat(Some(&request.model), llm_messages, None).await;
+        let config = state.config.read().await;
+        // Use configured model instead of client model to avoid mapping issues
+        let configured_model = match &config.llm_backend {
+            crate::settings::LlmBackendSettings::Aliyun { model, .. } => model,
+            _ => &request.model,
+        };
+        info!("🔧 DEBUG: Using model: {} (client requested: {})", configured_model, request.model);
+        let chat_result = llm_service.chat(Some(configured_model), llm_messages, None).await;
 
         match chat_result {
             Ok(response) => {
@@ -228,7 +269,11 @@ pub async fn messages(
                     },
                 };
 
-                Ok(Json(anthropic_response).into_response())
+                let mut response = Json(anthropic_response).into_response();
+                // Add required Anthropic API headers for non-streaming responses
+                response.headers_mut().insert("anthropic-version", "2023-06-01".parse().unwrap());
+                response.headers_mut().insert("request-id", uuid::Uuid::new_v4().to_string().parse().unwrap());
+                Ok(response)
             }
             Err(e) => {
                 error!("❌ Chat error: {}", e);
@@ -242,11 +287,43 @@ pub async fn messages(
 #[allow(dead_code)]
 fn convert_to_anthropic_stream(
     stream: tokio_stream::wrappers::UnboundedReceiverStream<String>,
-    _model: &str,
+    model: String,
 ) -> impl Stream<Item = Result<axum::response::sse::Event, std::convert::Infallible>> {
-    use futures_util::StreamExt;
+    use futures_util::{StreamExt, stream};
+    
+    let message_id = uuid::Uuid::new_v4().to_string();
+    let model_clone = model.clone();
 
-    stream.map(move |data| {
+    // Create message_start event
+    let start_event = json!({
+        "type": "message_start",
+        "message": {
+            "id": message_id,
+            "type": "message",
+            "role": "assistant",
+            "content": [],
+            "model": model_clone,
+            "stop_reason": null,
+            "stop_sequence": null,
+            "usage": {
+                "input_tokens": 0,
+                "output_tokens": 0
+            }
+        }
+    });
+
+    // Create content_block_start event
+    let block_start_event = json!({
+        "type": "content_block_start",
+        "index": 0,
+        "content_block": {
+            "type": "text",
+            "text": ""
+        }
+    });
+
+    // Process main stream
+    let content_stream = stream.map(move |data| {
         // Parse the SSE data
         let json_str = if data.starts_with("data: ") {
             &data[6..]
@@ -256,7 +333,12 @@ fn convert_to_anthropic_stream(
 
         // Skip empty lines and [DONE] markers
         if json_str.trim().is_empty() || json_str.trim() == "[DONE]" {
-            return Ok(axum::response::sse::Event::default().data(""));
+            let stop_event = json!({
+                "type": "message_stop"
+            });
+            return Ok(axum::response::sse::Event::default()
+                .event("message_stop")
+                .data(stop_event.to_string()));
         }
 
         // Try to parse as OpenAI chunk
@@ -264,20 +346,66 @@ fn convert_to_anthropic_stream(
             if let Some(content) = chunk["choices"][0]["delta"]["content"].as_str() {
                 let event = json!({
                     "type": "content_block_delta",
+                    "index": 0,
                     "delta": {
                         "type": "text_delta",
                         "text": content
                     }
                 });
                 return Ok(axum::response::sse::Event::default()
-                    .event("message")
+                    .event("content_block_delta")
                     .data(event.to_string()));
             }
         }
 
         // If parsing fails, return empty event
         Ok(axum::response::sse::Event::default().data(""))
+    });
+
+    // Chain all events together: start -> block_start -> content -> stop
+    stream::once(async move {
+        Ok(axum::response::sse::Event::default()
+            .event("message_start")
+            .data(start_event.to_string()))
     })
+    .chain(stream::once(async move {
+        Ok(axum::response::sse::Event::default()
+            .event("content_block_start")
+            .data(block_start_event.to_string()))
+    }))
+    .chain(content_stream)
+    .chain(stream::once(async move {
+        let block_stop_event = json!({
+            "type": "content_block_stop",
+            "index": 0
+        });
+        Ok(axum::response::sse::Event::default()
+            .event("content_block_stop")
+            .data(block_stop_event.to_string()))
+    }))
+    .chain(stream::once(async move {
+        let message_delta_event = json!({
+            "type": "message_delta",
+            "delta": {
+                "stop_reason": "end_turn",
+                "stop_sequence": null
+            },
+            "usage": {
+                "output_tokens": 0
+            }
+        });
+        Ok(axum::response::sse::Event::default()
+            .event("message_delta")
+            .data(message_delta_event.to_string()))
+    }))
+    .chain(stream::once(async move {
+        let stop_event = json!({
+            "type": "message_stop"
+        });
+        Ok(axum::response::sse::Event::default()
+            .event("message_stop")
+            .data(stop_event.to_string()))
+    }))
 }
 
 /// Anthropic Models API (占位符)
@@ -323,5 +451,36 @@ pub async fn models(
         }
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
     }
+}
+
+/// Anthropic Count Tokens API
+/// 
+/// Claude Code 使用此端点来计算 token 数量
+/// 我们返回一个模拟的 token 计数响应
+#[allow(dead_code)]
+pub async fn count_tokens(
+    State(_state): State<AppState>,
+    Json(request): Json<serde_json::Value>,
+) -> Result<Response, StatusCode> {
+    info!("📊 Anthropic Count Tokens API request received");
+    
+    // 计算整个请求的字符数来估算 token
+    let request_str = serde_json::to_string(&request).unwrap_or_default();
+    let total_chars = request_str.len();
+    
+    // 简单估算：每4个字符约等于1个token
+    let estimated_tokens = (total_chars / 4).max(1);
+    
+    info!("📊 Estimated tokens: {} (from {} chars)", estimated_tokens, total_chars);
+    
+    let response = json!({
+        "input_tokens": estimated_tokens
+    });
+    
+    let mut response = Json(response).into_response();
+    // Add required Anthropic API headers
+    response.headers_mut().insert("anthropic-version", "2023-06-01".parse().unwrap());
+    response.headers_mut().insert("request-id", uuid::Uuid::new_v4().to_string().parse().unwrap());
+    Ok(response)
 }
 

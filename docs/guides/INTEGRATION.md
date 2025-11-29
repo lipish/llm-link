@@ -8,7 +8,6 @@
 |------|------|------|------|------|
 | **Codex CLI** | OpenAI API | 8088 | Bearer Token | ✅ 就绪 |
 | **Zed** | Ollama API | 11434 | 无需认证 | ✅ 就绪 |
-| **Claude Code** | Anthropic API | 8089 | API Key | ✅ 就绪 |
 
 ## 🏗️ 架构概览
 
@@ -18,7 +17,7 @@
 │                 │    │                 │    │                 │
 │ • Codex CLI     │───▶│ • 协议转换       │───▶│ • OpenAI        │
 │ • Zed IDE       │    │ • 格式适配       │    │ • Anthropic     │
-│ • Claude Code   │    │ • 路由分发       │    │ • Zhipu         │
+│                 │    │ • 路由分发       │    │ • Zhipu         │
 │                 │    │                 │    │ • Aliyun        │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
@@ -82,66 +81,6 @@
 - **前端协议**：Zed IDE 使用 Ollama API 格式通信
 - **后端提供商**：LLM Link 将请求转发到智谱（或其他提供商）
 - **格式转换**：LLM Link 自动在 Ollama 和提供商格式之间转换
-
-## 🤖 Claude Code 集成
-
-### 快速开始
-
-#### 1. 使用智谱 GLM-4 作为后端
-
-```bash
-# 设置 API Key
-export ZHIPU_API_KEY="your-zhipu-api-key"
-
-# 启动 llm-link（推荐使用 glm-4-flash，速度快）
-llm-link --app claude-code --provider zhipu --model glm-4-flash
-
-# 或者使用 glm-4-plus（能力更强）
-llm-link --app claude-code --provider zhipu --model glm-4-plus
-```
-
-#### 2. 配置 Claude Code
-
-将您的 Claude Code 客户端指向：
-```
-API Endpoint: http://localhost:8089
-API Key: （非必需，但可通过 --api-key 设置）
-```
-
-### 支持的模型组合
-
-#### 智谱 AI 模型（推荐）
-
-| 模型 | 描述 | 适用场景 |
-|------|------|----------|
-| `glm-4-flash` | 快速且经济 | 快速响应，编码辅助 |
-| `glm-4-plus` | 增强能力 | 复杂任务，详细分析 |
-| `glm-4` | 标准模型 | 通用目的 |
-| `glm-4-air` | 轻量级 | 简单查询 |
-
-#### 其他提供商选项
-
-```bash
-# OpenAI
-export OPENAI_API_KEY="sk-xxx"
-llm-link --app claude-code --provider openai --model gpt-4
-
-# 阿里云通义千问
-export ALIYUN_API_KEY="sk-xxx"
-llm-link --app claude-code --provider aliyun --model qwen-max
-
-# Anthropic（直连）
-export ANTHROPIC_API_KEY="sk-ant-xxx"
-llm-link --app claude-code --provider anthropic --model claude-3-5-sonnet-20241022
-
-# 火山引擎
-export VOLCENGINE_API_KEY="xxx"
-llm-link --app claude-code --provider volcengine --model doubao-pro-32k
-
-# 腾讯混元
-export TENCENT_API_KEY="xxx"
-llm-link --app claude-code --provider tencent --model hunyuan-lite
-```
 
 ## 💻 Codex CLI 集成
 
@@ -265,24 +204,6 @@ llm-link --config config.yaml
 curl http://localhost:11434/api/tags
 ```
 
-### 测试 Claude Code 集成
-
-```bash
-curl -X POST http://localhost:8089/v1/messages \
-  -H "Content-Type: application/json" \
-  -H "anthropic-version: 2023-06-01" \
-  -d '{
-    "model": "claude-3-5-sonnet-20241022",
-    "max_tokens": 1024,
-    "messages": [
-      {
-        "role": "user",
-        "content": "你好，请用一句话介绍你自己"
-      }
-    ]
-  }'
-```
-
 ### 测试 Codex CLI 集成
 
 ```bash
@@ -305,9 +226,6 @@ curl -X POST http://localhost:8088/v1/chat/completions \
 ```bash
 # Zed
 curl http://localhost:11434/health
-
-# Claude Code  
-curl http://localhost:8089/health
 
 # Codex CLI
 curl http://localhost:8088/health

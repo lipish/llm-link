@@ -16,7 +16,7 @@ impl ConfigLoader {
         } else {
             Err(anyhow::anyhow!(
                 "Application mode required. Use --app <app-name> or --protocols <protocols>.\n\
-                 Available applications: codex-cli, zed, claude-code\n\
+                 Available applications: codex-cli, zed\n\
                  Use --list-apps for more information."
             ))
         }

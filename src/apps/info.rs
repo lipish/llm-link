@@ -29,17 +29,6 @@ impl AppInfoProvider {
                 ],
                 auth_required: true,
             },
-            SupportedApp::ClaudeCode => AppInfo {
-                name: "Claude Code".to_string(),
-                description: "Anthropic Claude for code generation and analysis".to_string(),
-                port: 8089,
-                protocol: "Anthropic API".to_string(),
-                endpoints: vec![
-                    "POST /v1/messages".to_string(),
-                    "GET /v1/models".to_string(),
-                ],
-                auth_required: true,
-            },
             SupportedApp::Zed => AppInfo {
                 name: "Zed".to_string(),
                 description: "Zed editor with AI assistant integration".to_string(),

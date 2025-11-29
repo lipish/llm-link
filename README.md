@@ -7,7 +7,7 @@
 
 🚀 **A user-friendly LLM proxy service with built-in support for popular AI coding tools**
 
-LLM Link provides zero-configuration access to LLM providers through multiple API formats, with optimized built-in support for Codex CLI, Zed, and Claude Code.
+LLM Link provides zero-configuration access to LLM providers through multiple API formats, with optimized built-in support for Codex CLI and Zed.
 
 ## ✨ Key Features
 
@@ -28,7 +28,6 @@ LLM Link provides zero-configuration access to LLM providers through multiple AP
 |-------------|----------|------|----------------|---------|
 | **Codex CLI** | OpenAI API | 8088 | Bearer Token | ✅ Ready |
 | **Zed** | Ollama API | 11434 | None | ✅ Ready |
-| **Claude Code** | Anthropic API | 8089 | API Key | ✅ Ready |
 
 ## 🚀 Quick Start
 
@@ -90,10 +89,6 @@ export LLM_LINK_API_KEY="your-auth-token"
 
 # For Zed
 ./target/release/llm-link --app zed
-
-# For Claude Code
-export ANTHROPIC_API_KEY="your-anthropic-key"
-./target/release/llm-link --app claude-code
 ```
 
 ### 📋 Get Help and Information

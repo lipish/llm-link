@@ -4,7 +4,7 @@ use clap::Parser;
 #[command(name = "llm-link")]
 #[command(about = "A configurable LLM proxy service", long_about = None)]
 pub struct Args {
-    /// Application mode (codex-cli, zed, claude-code)
+    /// Application mode (codex-cli, zed)
     #[arg(short, long)]
     pub app: Option<String>,
 

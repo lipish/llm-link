@@ -16,7 +16,6 @@ GET /api/info
 # 根据你的应用端口选择
 curl http://localhost:11434/api/info  # Zed (默认)
 curl http://localhost:8088/api/info   # Codex CLI
-curl http://localhost:8089/api/info   # Claude Code
 ```
 
 ### 响应格式

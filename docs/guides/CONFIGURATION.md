@@ -259,33 +259,6 @@ EOF
 ./llm-link --config zed-config.yaml
 ```
 
-### Claude Code 配置
-
-```bash
-# 启动 Claude Code 模式
-./llm-link --app claude-code --provider zhipu --model glm-4-plus
-
-# 或使用配置文件
-cat > claude-config.yaml << EOF
-server:
-  host: "0.0.0.0"
-  port: 8089
-
-llm_backend:
-  provider: "zhipu"
-  api_key: "your-zhipu-key"
-  model: "glm-4-plus"
-
-apis:
-  anthropic:
-    enabled: true
-    path: ""
-    api_key: "optional-auth-token"
-EOF
-
-./llm-link --config claude-config.yaml
-```
-
 ### Codex CLI 配置
 
 ```bash

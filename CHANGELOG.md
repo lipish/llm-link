@@ -5,6 +5,28 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2025-11-29
+
+### 💥 Breaking Changes
+
+#### Removed Claude Code Support
+- **🚫 Removed Feature**: Claude Code integration has been completely removed
+- **🔧 Reason**: Claude Code employs restrictive proxy mechanisms that prevent reliable third-party integration
+- **📝 Impact**: All Claude Code-related documentation, scripts, and code modules have been removed
+- **⚠️ Migration**: Users should migrate to Zed or Codex CLI for AI coding assistance
+
+### 🧹 Cleanup Changes
+- Deleted `src/apps/claude.rs` module and all related code
+- Removed Claude Code from `SupportedApp` enum and application registry
+- Updated documentation across README.md, docs/, and docs-site/
+- Removed Claude-specific scripts: `start-claude-code.sh`, `mitm_proxy.py`, `start-with-mitm.sh`
+- Cleaned up configuration examples and help text
+
+### ✅ Retained Features
+- Anthropic API implementation remains available for other clients
+- OpenAI API (Codex CLI) and Ollama API (Zed) support unchanged
+- All 10 LLM providers continue to work normally
+
 ## [0.5.0] - 2024-11-18
 
 ### 🎉 Major Features & Bug Fixes
