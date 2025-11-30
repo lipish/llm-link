@@ -20,7 +20,7 @@ impl AgentZeroApp {
                 // Provider API key is supplied via CLI (--api-key) and applied later by loader
                 api_key: String::new(),
                 base_url: None,
-                model: "gpt-4".to_string(),
+                model: "glm-4.6".to_string(),
             },
             apis: ApiSettings {
                 openai: Some(OpenAiApiSettings {
