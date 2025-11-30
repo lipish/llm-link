@@ -107,7 +107,136 @@ app.get('/api/logs/stream', (req, res) => {
 });
 ```
 
-### 4. 安全和加密
+### 5. 错误处理和故障转移
+
+#### Provider 故障处理策略
+```rust
+pub struct ProviderHealthManager {
+    circuit_breakers: HashMap<usize, CircuitBreaker>,
+    retry_policies: HashMap<String, RetryPolicy>,
+    health_check_interval: Duration,
+}
+
+impl ProviderHealthManager {
+    pub async fn handle_request_failure(&mut self, provider_id: usize, error: &Error) {
+        // 更新熔断器状态
+        let breaker = self.circuit_breakers.get_mut(&provider_id).unwrap();
+        breaker.record_failure();
+        
+        // 如果熔断器打开，切换到备用 provider
+        if breaker.is_open() {
+            self.trigger_failover(provider_id).await;
+        }
+    }
+    
+    pub async fn trigger_failover(&mut self, failed_provider_id: usize) {
+        // 根据配置的 fallback_chain 切换 provider
+        let fallback_chain = self.get_fallback_chain(failed_provider_id);
+        for provider_id in fallback_chain {
+            if self.is_provider_healthy(provider_id).await {
+                self.switch_primary_provider(provider_id).await;
+                break;
+            }
+        }
+    }
+}
+
+// 熔断器配置
+pub struct CircuitBreakerConfig {
+    failure_threshold: usize,      // 失败阈值：5次失败后打开
+    recovery_timeout: Duration,     // 恢复超时：30秒后尝试半开
+    success_threshold: usize,       // 成功阈值：3次成功后关闭
+}
+```
+
+#### 重试机制
+```rust
+pub struct RetryPolicy {
+    max_retries: usize,
+    base_delay: Duration,
+    max_delay: Duration,
+    backoff_multiplier: f64,
+}
+
+impl RetryPolicy {
+    pub async fn execute_with_retry<F, T, E>(&self, operation: F) -> Result<T, E>
+    where
+        F: Fn() -> Pin<Box<dyn Future<Output = Result<T, E>>>>,
+        E: std::fmt::Debug,
+    {
+        let mut delay = self.base_delay;
+        for attempt in 0..=self.max_retries {
+            match operation().await {
+                Ok(result) => return Ok(result),
+                Err(e) if attempt < self.max_retries => {
+                    tokio::time::sleep(delay).await;
+                    delay = std::cmp::min(
+                        Duration::from_millis((delay.as_millis() as f64 * self.backoff_multiplier) as u64),
+                        self.max_delay
+                    );
+                },
+                Err(e) => return Err(e),
+            }
+        }
+        unreachable!()
+    }
+}
+```
+
+### 6. 数据库迁移工具
+
+#### SQLx 迁移配置
+```bash
+# 项目结构
+migrations/
+├── 001_initial_schema.sql
+├── 002_add_provider_encryption.sql
+├── 003_add_fallback_chain.sql
+└── 004_add_metrics_tables.sql
+```
+
+#### 迁移脚本示例
+```sql
+-- migrations/001_initial_schema.sql
+CREATE TABLE providers (
+    id INTEGER PRIMARY KEY,
+    name VARCHAR(50) UNIQUE NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    config JSON NOT NULL,
+    enabled BOOLEAN DEFAULT true,
+    priority INTEGER DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE app_mappings (
+    id INTEGER PRIMARY KEY,
+    app_name VARCHAR(50) NOT NULL,
+    provider_id INTEGER,
+    routing_rule VARCHAR(20) DEFAULT 'priority',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (provider_id) REFERENCES providers(id)
+);
+
+-- migrations/002_add_provider_encryption.sql
+-- 添加加密字段和迁移现有配置
+ALTER TABLE providers ADD COLUMN config_encrypted TEXT;
+UPDATE providers SET config_encrypted = config WHERE config IS NOT NULL;
+ALTER TABLE providers DROP COLUMN config;
+ALTER TABLE RENAME COLUMN config_encrypted TO config;
+```
+
+#### 自动迁移集成
+```rust
+// 在 main.rs 中集成自动迁移
+#[tokio::main]
+async fn main() -> Result<()> {
+    // 运行数据库迁移
+    sqlx::migrate!("./migrations").run(&pool).await?;
+    
+    // 其余初始化代码...
+}
+```
 
 #### API 密钥加密存储
 ```rust
@@ -173,7 +302,9 @@ CREATE TABLE app_mappings (
     id INTEGER PRIMARY KEY,
     app_name VARCHAR(50) NOT NULL,
     provider_id INTEGER,
-    routing_rule VARCHAR(20) DEFAULT 'priority',  -- priority, load_balance, cost
+    routing_rule VARCHAR(20) DEFAULT 'priority',  -- priority, round_robin, least_connections, weighted
+    fallback_chain JSON,  -- 失败时切换的 provider 顺序
+    retry_config JSON DEFAULT '{"max_retries": 3, "backoff_ms": 1000}',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (provider_id) REFERENCES providers(id)
 );
@@ -193,9 +324,348 @@ CREATE TABLE metrics (
 );
 ```
 
-## 管理界面设计
+### 7. 认证授权和可观测性
 
-### shadcn/ui Dashboard 组件
+#### 管理界面认证
+```rust
+// JWT 认证中间件
+pub struct AuthMiddleware {
+    jwt_secret: String,
+}
+
+impl AuthMiddleware {
+    pub async fn authenticate_request(&self, token: &str) -> Result<User> {
+        let claims = decode_jwt(token, &self.jwt_secret)?;
+        Ok(User::from_claims(claims))
+    }
+}
+
+// 权限控制
+#[derive(Debug, Clone)]
+pub enum Permission {
+    ViewProviders,
+    EditProviders,
+    ViewMetrics,
+    SystemConfig,
+}
+
+pub struct User {
+    id: String,
+    username: String,
+    permissions: Vec<Permission>,
+}
+```
+
+#### Provider 限流和连接池
+```rust
+pub struct ProviderConnectionPool {
+    max_connections: usize,
+    active_connections: Arc<AtomicUsize>,
+    rate_limiter: RateLimiter,
+}
+
+impl ProviderConnectionPool {
+    pub async fn acquire_connection(&self) -> Result<ConnectionHandle> {
+        // 检查连接数限制
+        if self.active_connections.load(Ordering::Relaxed) >= self.max_connections {
+            return Err(Error::ConnectionPoolExhausted);
+        }
+        
+        // 检查速率限制
+        self.rate_limiter.acquire().await?;
+        
+        // 分配连接
+        self.active_connections.fetch_add(1, Ordering::Relaxed);
+        Ok(ConnectionHandle::new(self))
+    }
+}
+
+// 速率限制器
+pub struct RateLimiter {
+    requests_per_second: u32,
+    token_bucket: Arc<Mutex<TokenBucket>>,
+}
+```
+
+#### OpenTelemetry 集成
+```rust
+use opentelemetry::{trace::Tracer, metrics::Meter};
+
+pub struct ObservabilityConfig {
+    tracer: Box<dyn Tracer + Send + Sync>,
+    meter: Box<dyn Meter + Send + Sync>,
+}
+
+impl ObservabilityConfig {
+    pub fn setup_telemetry() -> Self {
+        // 设置 Jaeger/Prometheus 导出器
+        let tracer = opentelemetry_jaeger::new_pipeline()
+            .with_service_name("llm-link")
+            .install_simple()
+            .expect("Failed to install tracer");
+            
+        let meter = opentelemetry_prometheus::exporter()
+            .with_registry(prometheus::default_registry())
+            .build();
+            
+        Self { tracer, meter }
+    }
+    
+    pub fn trace_request(&self, provider_id: usize, request: &ChatRequest) {
+        let span = self.tracer.start(format!("provider_{}_request", provider_id));
+        span.set_attribute("provider.id", provider_id);
+        span.set_attribute("request.model", &request.model);
+        // 更多追踪属性...
+    }
+}
+```
+
+#### 模型版本管理策略
+```rust
+pub struct ModelVersionManager {
+    version_mappings: HashMap<String, Vec<ModelVersion>>,
+    deprecation_schedule: HashMap<String, DeprecationInfo>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ModelVersion {
+    name: String,
+    provider_type: String,
+    version: String,
+    deprecated: bool,
+    sunset_date: Option<DateTime<Utc>>,
+    alternatives: Vec<String>,
+}
+
+impl ModelVersionManager {
+    pub fn handle_model_request(&self, model: &str) -> Result<String> {
+        let versions = self.version_mappings.get(model)
+            .ok_or(Error::ModelNotFound)?;
+            
+        let active_version = versions.iter()
+            .find(|v| !v.deprecated)
+            .or_else(|| versions.first())  // 如果都废弃，使用最新版本
+            .ok_or(Error::NoActiveModel)?;
+            
+        if active_version.deprecated {
+            // 记录警告日志，建议迁移
+            warn!("Model {} is deprecated, consider migrating to: {:?}", 
+                  model, active_version.alternatives);
+        }
+        
+        Ok(active_version.name.clone())
+    }
+}
+```
+
+### 8. 部署和运维考虑
+
+#### Docker 容器化
+```dockerfile
+# Dockerfile
+FROM rust:1.75-slim as builder
+WORKDIR /app
+COPY . .
+RUN cargo build --release
+
+FROM debian:bookworm-slim
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+COPY --from=builder /app/target/release/llm-link /usr/local/bin/
+EXPOSE 8080
+CMD ["llm-link", "--config", "/etc/llm-link/config.yaml"]
+```
+
+#### Kubernetes 部署配置
+```yaml
+# deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-link
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: llm-link
+  template:
+    metadata:
+      labels:
+        app: llm-link
+    spec:
+      containers:
+      - name: llm-link
+        image: llm-link:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: llm-link-secrets
+              key: database-url
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+```
+
+### 9. 备份恢复和服务等级协议
+
+#### 数据库备份策略
+```rust
+pub struct BackupManager {
+    db_path: PathBuf,
+    backup_dir: PathBuf,
+    retention_days: u32,
+}
+
+impl BackupManager {
+    pub async fn create_backup(&self) -> Result<PathBuf> {
+        let timestamp = Utc::now().format("%Y%m%d_%H%M%S");
+        let backup_file = self.backup_dir.join(format!("backup_{}.db", timestamp));
+        
+        // 创建数据库快照
+        let db = SqlitePoolOptions::new()
+            .connect(&format!("sqlite:{}", self.db_path.display()))
+            .await?;
+            
+        // 使用 SQLite VACUUM INTO 创建备份
+        sqlx::query(&format!("VACUUM INTO '{}'", backup_file.display()))
+            .execute(&db)
+            .await?;
+            
+        // 压缩备份文件
+        self.compress_backup(&backup_file).await?;
+        
+        // 清理过期备份
+        self.cleanup_old_backups().await?;
+        
+        Ok(backup_file)
+    }
+    
+    pub async fn restore_from_backup(&self, backup_file: &Path) -> Result<()> {
+        // 验证备份文件完整性
+        self.verify_backup_integrity(backup_file).await?;
+        
+        // 停止服务
+        self.stop_service().await?;
+        
+        // 替换数据库文件
+        tokio::fs::copy(backup_file, &self.db_path).await?;
+        
+        // 重启服务
+        self.start_service().await?;
+        
+        Ok(())
+    }
+}
+```
+
+#### 服务等级协议 (SLA) 和目标 (SLO)
+```yaml
+# SLA 定义
+service_level_agreements:
+  availability:
+    target: 99.9%  # 月度可用性
+    measurement_window: 30d
+    downtime_budget: 43.2m per month
+    
+  performance:
+    latency_p50: <50ms
+    latency_p95: <100ms
+    latency_p99: <200ms
+    throughput: 1000+ requests/second
+    
+  reliability:
+    error_rate: <0.1%
+    circuit_breaker_trips: <5 per day
+    failover_time: <30s
+    
+  scalability:
+    max_concurrent_providers: 20
+    max_concurrent_requests: 5000
+    memory_usage: <1GB per instance
+```
+
+#### 回滚程序
+```bash
+#!/bin/bash
+# rollback.sh - 紧急回滚脚本
+
+set -e
+
+BACKUP_FILE=$1
+if [ -z "$BACKUP_FILE" ]; then
+    echo "Usage: $0 <backup_file>"
+    exit 1
+fi
+
+echo "开始回滚到备份: $BACKUP_FILE"
+
+# 1. 停止服务
+echo "停止 llm-link 服务..."
+systemctl stop llm-link || docker-compose down
+
+# 2. 备份当前状态（以防回滚失败）
+echo "备份当前状态..."
+cp /var/lib/llm-link/database.db /var/lib/llm-link/database.db.backup.$(date +%s)
+
+# 3. 恢复数据库
+echo "恢复数据库..."
+cp "$BACKUP_FILE" /var/lib/llm-link/database.db
+
+# 4. 验证数据库完整性
+echo "验证数据库完整性..."
+sqlite3 /var/lib/llm-link/database.db "PRAGMA integrity_check;"
+
+# 5. 重启服务
+echo "重启服务..."
+systemctl start llm-link || docker-compose up -d
+
+# 6. 健康检查
+echo "执行健康检查..."
+sleep 10
+curl -f http://localhost:8080/health || {
+    echo "健康检查失败，回滚可能不完整"
+    exit 1
+}
+
+echo "回滚完成！"
+```
+
+#### 监控和告警配置
+```yaml
+# monitoring.yaml
+alerts:
+  high_error_rate:
+    condition: error_rate > 0.1%
+    duration: 5m
+    severity: warning
+    action: notify_team
+    
+  service_down:
+    condition: availability < 99%
+    duration: 1m
+    severity: critical
+    action: immediate_notification
+    
+  high_latency:
+    condition: p95_latency > 100ms
+    duration: 10m
+    severity: warning
+    action: scale_up_resources
+    
+  provider_failure:
+    condition: provider_health_status != healthy
+    duration: 30s
+    severity: critical
+    action: automatic_failover
+```
+
+## 管理界面设计
 
 #### 1. 布局结构
 ```
