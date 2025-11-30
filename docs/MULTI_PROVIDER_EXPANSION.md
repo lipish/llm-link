@@ -324,7 +324,718 @@ CREATE TABLE metrics (
 );
 ```
 
-### 7. 认证授权和可观测性
+### 7. Token 管理和配额控制
+
+#### Token 计数和限制
+```rust
+pub struct TokenManager {
+    redis_client: redis::Client,
+    quota_store: Arc<dyn QuotaStore>,
+}
+
+impl TokenManager {
+    pub async fn check_quota(&self, api_key: &str, tokens_needed: u32) -> Result<bool> {
+        // 滑动窗口计数
+        let window_key = format!("quota:{}:{}", api_key, self.get_time_window());
+        let current_usage: u32 = self.redis_client
+            .get(&window_key)
+            .await
+            .unwrap_or(0);
+            
+        let quota = self.get_user_quota(api_key).await?;
+        Ok(current_usage + tokens_needed <= quota)
+    }
+    
+    pub async fn consume_tokens(&self, api_key: &str, tokens_used: u32) -> Result<()> {
+        let window_key = format!("quota:{}:{}", api_key, self.get_time_window());
+        self.redis_client
+            .incr(&window_key)
+            .await?;
+        self.redis_client
+            .expire(&window_key, 3600)  // 1小时窗口
+            .await?;
+        Ok(())
+    }
+}
+
+// 配额策略
+#[derive(Debug, Clone)]
+pub struct QuotaPolicy {
+    pub daily_limit: u32,
+    pub hourly_limit: u32,
+    pub minute_limit: u32,
+    pub per_request_limit: u32,
+}
+```
+
+#### 中间件插件架构
+```rust
+// 借鉴 Higress 的插件模式
+pub trait MiddlewarePlugin: Send + Sync {
+    async fn before_request(&self, ctx: &mut RequestContext) -> Result<()>;
+    async fn after_response(&self, ctx: &mut ResponseContext) -> Result<()>;
+}
+
+pub struct TokenQuotaPlugin {
+    token_manager: Arc<TokenManager>,
+}
+
+impl MiddlewarePlugin for TokenQuotaPlugin {
+    async fn before_request(&self, ctx: &mut RequestContext) -> Result<()> {
+        let tokens_needed = self.estimate_tokens(&ctx.request)?;
+        if !self.token_manager.check_quota(&ctx.api_key, tokens_needed).await? {
+            return Err(Error::QuotaExceeded);
+        }
+        ctx.tokens_needed = tokens_needed;
+        Ok(())
+    }
+    
+    async fn after_response(&self, ctx: &mut ResponseContext) -> Result<()> {
+        let tokens_used = self.count_response_tokens(&ctx.response)?;
+        self.token_manager.consume_tokens(&ctx.api_key, tokens_used).await?;
+        Ok(())
+    }
+}
+```
+
+#### Provider 级别限流和队列管理
+```rust
+pub struct ProviderRateLimiter {
+    limits: HashMap<usize, ProviderLimits>,  // provider_id -> limits
+    queues: HashMap<usize, RequestQueue>,     // provider_id -> queue
+    metrics: Arc<ProviderMetrics>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ProviderLimits {
+    pub requests_per_second: u32,
+    pub concurrent_requests: u32,
+    pub tokens_per_minute: u32,
+    pub cost_per_hour: f64,        // 成本限制
+}
+
+impl ProviderRateLimiter {
+    pub async fn acquire_permit(&self, provider_id: usize, request: &ChatRequest) -> Result<RequestPermit> {
+        let limits = self.limits.get(&provider_id)
+            .ok_or(Error::ProviderNotFound)?;
+            
+        // 检查并发限制
+        if self.metrics.get_concurrent_requests(provider_id) >= limits.concurrent_requests {
+            // 加入队列等待
+            return self.queue_request(provider_id, request).await;
+        }
+        
+        // 检查速率限制
+        if !self.check_rate_limits(provider_id, request).await? {
+            return Err(Error::ProviderRateLimited);
+        }
+        
+        // 检查成本限制
+        if !self.check_cost_limits(provider_id, request).await? {
+            return Err(Error::ProviderCostExceeded);
+        }
+        
+        Ok(RequestPermit::new(provider_id, request.estimated_tokens()))
+    }
+    
+    async fn queue_request(&self, provider_id: usize, request: &ChatRequest) -> Result<RequestPermit> {
+        let queue = self.queues.get(&provider_id)
+            .ok_or(Error::ProviderNotFound)?;
+            
+        let permit = queue.enqueue(request.clone()).await?;
+        Ok(permit)
+    }
+}
+```
+
+#### 动态服务发现机制
+```rust
+pub struct ProviderRegistry {
+    providers: Arc<RwLock<HashMap<usize, ProviderInfo>>>,
+    health_checker: Arc<HealthChecker>,
+    discovery_config: DiscoveryConfig,
+}
+
+#[derive(Debug, Clone)]
+pub struct ProviderInfo {
+    pub id: usize,
+    pub name: String,
+    pub endpoint: String,
+    pub capabilities: Vec<String>,      // 支持的模型列表
+    pub metadata: ProviderMetadata,
+    pub registered_at: DateTime<Utc>,
+    pub last_heartbeat: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone)]
+pub struct ProviderMetadata {
+    pub region: String,
+    pub cost_per_token: f64,
+    pub avg_latency_ms: f64,
+    pub success_rate: f64,
+    pub max_tokens: u32,
+}
+
+impl ProviderRegistry {
+    pub async fn register_provider(&self, info: ProviderInfo) -> Result<()> {
+        // 验证 provider 连通性
+        self.validate_provider(&info).await?;
+        
+        let mut providers = self.providers.write().await;
+        providers.insert(info.id, info);
+        
+        // 启动健康检查
+        self.health_checker.start_monitoring(info.id).await?;
+        
+        Ok(())
+    }
+    
+    pub async fn discover_providers(&self) -> Result<Vec<ProviderInfo>> {
+        let providers = self.providers.read().await;
+        let mut healthy_providers = Vec::new();
+        
+        for (_, info) in providers.iter() {
+            if self.health_checker.is_healthy(info.id) {
+                healthy_providers.push(info.clone());
+            }
+        }
+        
+        Ok(healthy_providers)
+    }
+    
+    pub async fn deregister_provider(&self, provider_id: usize) -> Result<()> {
+        let mut providers = self.providers.write().await;
+        providers.remove(&provider_id);
+        
+        // 停止健康检查
+        self.health_checker.stop_monitoring(provider_id).await?;
+        
+        Ok(())
+    }
+}
+```
+
+#### 成本追踪和优化
+```rust
+pub struct CostTracker {
+    cost_store: Arc<dyn CostStore>,
+    pricing_cache: HashMap<String, TokenPricing>,  // model -> pricing
+}
+
+#[derive(Debug, Clone)]
+pub struct TokenPricing {
+    pub input_tokens_per_million: f64,
+    pub output_tokens_per_million: f64,
+    pub currency: String,
+}
+
+#[derive(Debug)]
+pub struct RequestCost {
+    pub provider_id: usize,
+    pub model: String,
+    pub input_tokens: u32,
+    pub output_tokens: u32,
+    pub total_cost: f64,
+    pub currency: String,
+}
+
+impl CostTracker {
+    pub async fn calculate_request_cost(&self, request: &ChatRequest, response: &ChatResponse) -> Result<RequestCost> {
+        let pricing = self.get_pricing(&request.model).await?;
+        
+        let input_cost = (request.input_tokens as f64 / 1_000_000.0) * pricing.input_tokens_per_million;
+        let output_cost = (response.output_tokens as f64 / 1_000_000.0) * pricing.output_tokens_per_million;
+        let total_cost = input_cost + output_cost;
+        
+        Ok(RequestCost {
+            provider_id: request.provider_id,
+            model: request.model.clone(),
+            input_tokens: request.input_tokens,
+            output_tokens: response.output_tokens,
+            total_cost,
+            currency: pricing.currency,
+        })
+    }
+    
+    pub async fn get_cheapest_provider(&self, request: &ChatRequest, available_providers: &[usize]) -> Result<usize> {
+        let mut cheapest_provider = None;
+        let mut min_cost = f64::INFINITY;
+        
+        for &provider_id in available_providers {
+            let estimated_cost = self.estimate_cost(provider_id, request).await?;
+            if estimated_cost < min_cost {
+                min_cost = estimated_cost;
+                cheapest_provider = Some(provider_id);
+            }
+        }
+        
+        cheapest_provider.ok_or(Error::NoAvailableProviders)
+    }
+}
+```
+
+#### 请求对冲机制（请求队列优化)
+```rust
+pub struct RequestHedging {
+    hedge_threshold_ms: u64,        // 触发对冲的延迟阈值
+    hedge_providers: Vec<usize>,    // 备用 provider 列表
+    cost_threshold: f64,            // 成本阈值
+}
+
+impl RequestHedging {
+    pub async fn execute_with_hedge<F, T>(&self, primary_operation: F, request: &ChatRequest) -> Result<T>
+    where
+        F: Fn() -> Pin<Box<dyn Future<Output = Result<T>>>> + Send + Sync,
+    {
+        let start_time = Instant::now();
+        
+        // 启动主请求
+        let primary_future = primary_operation();
+        
+        // 设置超时触发对冲
+        let hedge_delay = Duration::from_millis(self.hedge_threshold_ms);
+        let hedge_future = async {
+            tokio::time::sleep(hedge_delay).await;
+            if self.should_hedge(request) {
+                self.execute_hedge_request(request).await
+            } else {
+                Err(Error::HedgeNotTriggered)
+            }
+        };
+        
+        // 等待任一完成
+        tokio::select! {
+            result = primary_future => {
+                self.record_primary_success(start_time.elapsed());
+                result
+            },
+            result = hedge_future => {
+                self.record_hedge_success(start_time.elapsed());
+                result
+            }
+        }
+    }
+    
+    fn should_hedge(&self, request: &ChatRequest) -> bool {
+        // 检查成本阈值和请求优先级
+        request.priority >= Priority::High && 
+        request.estimated_cost() <= self.cost_threshold
+    }
+}
+```
+
+#### 负载均衡策略
+```rust
+pub enum LoadBalanceStrategy {
+    RoundRobin,
+    LeastConnections,
+    WeightedRoundRobin { weights: HashMap<usize, f32> },
+    TokenBased,  // 基于剩余配额选择
+    CostOptimized,  // 成本优化
+    PerformanceBased,  // 基于历史性能
+}
+
+pub struct LoadBalancer {
+    strategy: LoadBalanceStrategy,
+    providers: Arc<RwLock<Vec<ProviderInstance>>>,
+    health_checker: Arc<HealthChecker>,
+}
+
+impl LoadBalancer {
+    pub async fn select_provider(&self, request: &ChatRequest) -> Result<usize> {
+        let providers = self.providers.read().await;
+        let healthy_providers: Vec<_> = providers.iter()
+            .enumerate()
+            .filter(|(_, p)| self.health_checker.is_healthy(p.id))
+            .collect();
+            
+        match &self.strategy {
+            LoadBalanceStrategy::WeightedRoundRobin { weights } => {
+                self.select_weighted_provider(&healthy_providers, weights)
+            },
+            LoadBalanceStrategy::TokenBased => {
+                self.select_by_quota(&healthy_providers, &request.api_key).await
+            },
+            LoadBalanceStrategy::CostOptimized => {
+                self.select_by_cost(&healthy_providers, &request).await
+            },
+            _ => self.select_round_robin(&healthy_providers),
+        }
+    }
+    
+    fn select_by_quota(&self, providers: &[(usize, &ProviderInstance)], api_key: &str) -> Result<usize> {
+        // 选择配额最充足的 provider
+        let best_provider = providers.iter()
+            .max_by(|a, b| {
+                let quota_a = self.get_remaining_quota(a.1.id, api_key);
+                let quota_b = self.get_remaining_quota(b.1.id, api_key);
+                quota_a.cmp(&quota_b)
+            })
+            .ok_or(Error::NoHealthyProviders)?;
+            
+        Ok(best_provider.0)
+    }
+}
+```
+
+#### 智能重试和故障转移
+```rust
+pub struct RetryPolicy {
+    pub max_retries: usize,
+    pub retry_conditions: Vec<RetryCondition>,
+    pub backoff_strategy: BackoffStrategy,
+    pub fallback_chain: Vec<usize>,  // Provider ID 顺序
+}
+
+#[derive(Debug)]
+pub enum RetryCondition {
+    NetworkError,
+    RateLimitError,
+    ServerError(u16),  // 5xx 错误
+    TimeoutError,
+    QuotaExceeded,
+}
+
+pub struct FailoverManager {
+    retry_policy: RetryPolicy,
+    circuit_breakers: HashMap<usize, CircuitBreaker>,
+    provider_metrics: Arc<ProviderMetrics>,
+}
+
+impl FailoverManager {
+    pub async fn execute_with_failover<F, T>(&self, operation: F) -> Result<T>
+    where
+        F: Fn(usize) -> Pin<Box<dyn Future<Output = Result<T>>>> + Send + Sync,
+    {
+        let mut last_error = None;
+        
+        // 主 Provider 尝试
+        for attempt in 0..=self.retry_policy.max_retries {
+            match self.try_primary_provider(&operation, attempt).await {
+                Ok(result) => return Ok(result),
+                Err(e) => {
+                    last_error = Some(e);
+                    if attempt < self.retry_policy.max_retries {
+                        self.wait_backoff(attempt).await;
+                    }
+                }
+            }
+        }
+        
+        // 故障转移到备用 Provider
+        for &provider_id in &self.retry_policy.fallback_chain {
+            if self.is_provider_available(provider_id).await {
+                match operation(provider_id).await {
+                    Ok(result) => {
+                        self.record_successful_failover(provider_id);
+                        return Ok(result);
+                    },
+                    Err(e) => last_error = Some(e),
+                }
+            }
+        }
+        
+        Err(last_error.unwrap_or(Error::AllProvidersFailed))
+    }
+}
+```
+
+### 10. 多租户和命名空间隔离
+
+#### 租户隔离架构
+```rust
+pub struct TenantManager {
+    tenant_store: Arc<dyn TenantStore>,
+    namespace_isolator: Arc<NamespaceIsolator>,
+}
+
+#[derive(Debug, Clone)]
+pub struct Tenant {
+    pub id: String,
+    pub name: String,
+    pub namespace: String,
+    pub quota_policy: QuotaPolicy,
+    pub provider_pool: Vec<usize>,  // 租户专属 Provider 池
+    pub created_at: DateTime<Utc>,
+}
+
+impl TenantManager {
+    pub async fn create_tenant(&self, tenant: Tenant) -> Result<()> {
+        // 创建命名空间隔离
+        self.namespace_isolator.create_namespace(&tenant.namespace).await?;
+        
+        // 分配专属 Provider 池
+        self.assign_provider_pool(&tenant.id, &tenant.provider_pool).await?;
+        
+        // 设置配额策略
+        self.set_quota_policy(&tenant.id, &tenant.quota_policy).await?;
+        
+        self.tenant_store.store(tenant).await
+    }
+    
+    pub async fn get_tenant_providers(&self, tenant_id: &str) -> Result<Vec<ProviderInfo>> {
+        let tenant = self.tenant_store.get(tenant_id).await?;
+        self.get_providers_in_pool(&tenant.provider_pool).await
+    }
+    
+    pub async fn isolate_tenant_resources(&self, tenant_id: &str) -> Result<TenantIsolation> {
+        let tenant = self.tenant_store.get(tenant_id).await?;
+        Ok(TenantIsolation {
+            namespace: tenant.namespace,
+            provider_pool: tenant.provider_pool,
+            quota_limits: tenant.quota_policy,
+        })
+    }
+}
+
+#[derive(Debug)]
+pub struct NamespaceIsolator {
+    redis_namespaces: HashMap<String, redis::Client>,
+    database_schemas: HashMap<String, String>,
+}
+```
+
+#### API 版本管理和兼容性
+```rust
+pub struct ApiVersionManager {
+    version_registry: Arc<VersionRegistry>,
+    compatibility_matrix: CompatibilityMatrix,
+}
+
+#[derive(Debug, Clone)]
+pub struct ApiVersion {
+    pub version: String,
+    pub deprecated: bool,
+    pub sunset_date: Option<DateTime<Utc>>,
+    pub supported_features: Vec<String>,
+    pub breaking_changes: Vec<String>,
+}
+
+impl ApiVersionManager {
+    pub async fn route_request(&self, request: &ApiRequest) -> Result<VersionedRequest> {
+        let version = self.extract_version(request)?;
+        let target_version = self.resolve_target_version(&version)?;
+        
+        // 检查兼容性
+        if !self.is_compatible(&version, &target_version)? {
+            return Err(Error::IncompatibleApiVersion);
+        }
+        
+        // 转换请求格式
+        self.transform_request(request, &version, &target_version).await
+    }
+    
+    pub async fn register_version(&self, version: ApiVersion) -> Result<()> {
+        // 验证版本规范
+        self.validate_version_spec(&version)?;
+        
+        // 更新兼容性矩阵
+        self.update_compatibility_matrix(&version)?;
+        
+        self.version_registry.register(version).await
+    }
+}
+```
+
+#### 金丝雀部署策略
+```rust
+pub struct CanaryDeployment {
+    deployment_config: CanaryConfig,
+    traffic_splitter: Arc<TrafficSplitter>,
+    metrics_collector: Arc<MetricsCollector>,
+}
+
+#[derive(Debug, Clone)]
+pub struct CanaryConfig {
+    pub rollout_percentage: f64,    // 金丝雀流量比例
+    pub success_threshold: f64,     // 成功率阈值
+    pub duration_minutes: u64,      // 观察期时长
+    pub rollback_on_failure: bool,  // 失败时自动回滚
+}
+
+impl CanaryDeployment {
+    pub async fn deploy_provider_config(&self, new_config: ProviderConfig) -> Result<()> {
+        // 创建金丝钥部署
+        let canary_id = self.create_canary_deployment(&new_config).await?;
+        
+        // 分配流量
+        self.traffic_splitter.set_split_ratio(canary_id, self.deployment_config.rollout_percentage).await?;
+        
+        // 监控指标
+        let metrics = self.monitor_canary_performance(canary_id, self.deployment_config.duration_minutes).await?;
+        
+        // 评估部署结果
+        if metrics.success_rate >= self.deployment_config.success_threshold {
+            self.promote_canary_to_production(canary_id).await?;
+        } else if self.deployment_config.rollback_on_failure {
+            self.rollback_canary_deployment(canary_id).await?;
+        }
+        
+        Ok(())
+    }
+    
+    async fn monitor_canary_performance(&self, canary_id: String, duration_minutes: u64) -> Result<CanaryMetrics> {
+        let start_time = Instant::now();
+        let mut metrics = CanaryMetrics::new();
+        
+        while start_time.elapsed() < Duration::from_minutes(duration_minutes) {
+            let current_metrics = self.metrics_collector.get_canary_metrics(&canary_id).await?;
+            metrics.aggregate(current_metrics);
+            
+            // 提前终止条件
+            if metrics.error_rate > 0.1 || metrics.latency_p95 > Duration::from_secs(10) {
+                warn!("金丝雀部署性能异常，提前终止");
+                break;
+            }
+            
+            tokio::time::sleep(Duration::from_secs(30)).await;
+        }
+        
+        Ok(metrics)
+    }
+}
+```
+
+#### 请求审计和调试日志
+```rust
+pub struct AuditLogger {
+    audit_store: Arc<dyn AuditStore>,
+    encryption: Arc<ConfigEncryption>,
+    retention_policy: RetentionPolicy,
+}
+
+#[derive(Debug, Clone)]
+pub struct AuditRecord {
+    pub request_id: String,
+    pub tenant_id: String,
+    pub user_id: String,
+    pub request_hash: String,        // 请求内容哈希
+    pub request_summary: RequestSummary,
+    pub response_summary: ResponseSummary,
+    pub provider_id: usize,
+    pub latency: Duration,
+    pub token_usage: TokenUsage,
+    pub cost: f64,
+    pub timestamp: DateTime<Utc>,
+    pub metadata: HashMap<String, String>,
+}
+
+#[derive(Debug, Clone)]
+pub struct RequestSummary {
+    pub method: String,
+    pub path: String,
+    pub model: String,
+    pub input_tokens: u32,
+    pub estimated_cost: f64,
+}
+
+impl AuditLogger {
+    pub async fn log_request(&self, request: &ChatRequest, response: &ChatResponse, metadata: RequestMetadata) -> Result<()> {
+        let audit_record = AuditRecord {
+            request_id: metadata.request_id.clone(),
+            tenant_id: metadata.tenant_id.clone(),
+            user_id: metadata.user_id.clone(),
+            request_hash: self.calculate_request_hash(request)?,
+            request_summary: self.create_request_summary(request)?,
+            response_summary: self.create_response_summary(response)?,
+            provider_id: metadata.provider_id,
+            latency: metadata.latency,
+            token_usage: TokenUsage {
+                input: request.input_tokens,
+                output: response.output_tokens,
+                total: request.input_tokens + response.output_tokens,
+            },
+            cost: metadata.actual_cost,
+            timestamp: Utc::now(),
+            metadata: metadata.extra,
+        };
+        
+        // 加密敏感数据
+        let encrypted_record = self.encrypt_sensitive_data(audit_record).await?;
+        
+        // 存储审计记录
+        self.audit_store.store(encrypted_record).await?;
+        
+        // 应用保留策略
+        self.apply_retention_policy().await?;
+        
+        Ok(())
+    }
+    
+    pub async fn query_audit_logs(&self, query: AuditQuery) -> Result<Vec<AuditRecord>> {
+        let records = self.audit_store.query(query).await?;
+        
+        // 解密敏感数据
+        let decrypted_records = futures::future::try_join_all(
+            records.into_iter().map(|r| self.decrypt_sensitive_data(r))
+        ).await?;
+        
+        Ok(decrypted_records)
+    }
+    
+    pub async fn replay_request(&self, request_id: &str) -> Result<ChatResponse> {
+        let audit_record = self.audit_store.get_by_request_id(request_id).await?;
+        let original_request = self.reconstruct_request(&audit_record)?;
+        
+        // 使用相同的 Provider 重新执行
+        let provider = self.get_provider(audit_record.provider_id).await?;
+        provider.chat(original_request).await
+    }
+}
+```
+
+#### 模块化架构
+```rust
+// observability/ 模块独立
+pub mod metrics;
+pub mod tracing;
+pub mod logging;
+pub mod health;
+
+// 核心接口
+pub trait ObservabilityProvider: Send + Sync {
+    fn record_request(&self, metrics: RequestMetrics);
+    fn record_error(&self, error: ErrorMetrics);
+    fn update_health(&self, provider_id: usize, status: HealthStatus);
+}
+
+// 可插拔实现
+pub struct PrometheusObservability {
+    registry: prometheus::Registry,
+    request_counter: prometheus::CounterVec,
+    latency_histogram: prometheus::HistogramVec,
+}
+
+pub struct JaegerObservability {
+    tracer: opentelemetry_jaeger::Tracer,
+}
+
+// 配置选择
+#[derive(Debug, Clone)]
+pub enum ObservabilityBackend {
+    Prometheus { endpoint: String },
+    Jaeger { endpoint: String },
+    Custom { provider: Box<dyn ObservabilityProvider> },
+    Disabled,
+}
+```
+
+#### 主程序集成
+```rust
+// main.rs 中的集成
+async fn create_observability(config: &ObservabilityConfig) -> Result<Box<dyn ObservabilityProvider>> {
+    match config.backend {
+        ObservabilityBackend::Prometheus { endpoint } => {
+            Ok(Box::new(PrometheusObservability::new(endpoint)?))
+        },
+        ObservabilityBackend::Jaeger { endpoint } => {
+            Ok(Box::new(JaegerObservability::new(endpoint)?))
+        },
+        ObservabilityBackend::Custom { provider } => Ok(provider),
+        ObservabilityBackend::Disabled => Ok(Box::new(NoOpObservability)),
+    }
+}
+```
 
 #### 管理界面认证
 ```rust
