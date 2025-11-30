@@ -30,7 +30,6 @@ LLM Link provides zero-configuration access to LLM providers through multiple AP
 | **Zed** | Ollama API | 11434 | None | ✅ Ready |
 | **Aider** | OpenAI API | 8090 | Bearer Token | ✅ Ready |
 | **OpenHands** | OpenAI API | 8091 | Bearer Token | ✅ Ready |
-| **Agent Zero** | OpenAI API | 8092 | Bearer Token | ✅ Ready |
 
 ## 🚀 Quick Start
 
@@ -99,8 +98,6 @@ export LLM_LINK_API_KEY="your-auth-token"
 # For OpenHands
 ./target/release/llm-link --app openhands --provider anthropic --model claude-3-sonnet --api-key "your-anthropic-key"
 
-# For Agent Zero
-./target/release/llm-link --app agent-zero --provider zhipu --model glm-4 --api-key "your-zhipu-key"
 ```
 
 ### 📋 Get Help and Information

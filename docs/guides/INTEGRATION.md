@@ -10,7 +10,6 @@
 | **Zed** | Ollama API | 11434 | 无需认证 | ✅ 就绪 |
 | **Aider** | OpenAI API | 8090 | Bearer Token | ✅ 就绪 |
 | **OpenHands** | OpenAI API | 8091 | Bearer Token | ✅ 就绪 |
-| **Agent Zero** | OpenAI API | 8092 | Bearer Token | ✅ 就绪 |
 
 ## 🏗️ 架构概览
 
@@ -22,7 +21,6 @@
 │ • Zed IDE       │    │ • 格式适配       │    │ • Anthropic     │
 │ • Aider         │    │ • 路由分发       │    │ • Zhipu         │
 │ • OpenHands     │    │                 │    │ • Aliyun        │
-│ • Agent Zero    │    │                 │    │ • Volcengine    │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
@@ -181,34 +179,6 @@ aider --model openai/glm-4.6
 ./scripts/start-openhands.sh openai gpt-4 sk-your-key
 ```
 
-## 🎯 Agent Zero 集成
-
-### 快速开始
-
-#### 1. 启动 LLM Link
-
-```bash
-# 使用 OpenAI GPT-4
-./llm-link --app agent-zero --provider openai --model gpt-4 --api-key "your-openai-key"
-
-# 使用 Anthropic Claude
-./llm-link --app agent-zero --provider anthropic --model claude-3-5-sonnet-20241022 --api-key "your-anthropic-key"
-```
-
-#### 2. 配置 Agent Zero
-
-在 Agent Zero 的 LiteLLM 配置中设置：
-
-- **Base URL**: `http://localhost:8092/v1`
-- **API Key**: 您的 API 密钥
-- **Model**: 您选择的模型名称
-
-### 使用启动脚本
-
-```bash
-# 一键启动 Agent Zero 代理
-./scripts/start-agent-zero.sh openai gpt-4 sk-your-key
-```
 
 ## 🎯 使用场景推荐
 

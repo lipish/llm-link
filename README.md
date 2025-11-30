@@ -27,7 +27,6 @@ LLM Link provides zero-configuration access to LLM providers through multiple AP
 | **Zed** | Ollama API | 11434 | None | ✅ Ready |
 | **Aider** | OpenAI API | 8090 | Bearer Token | ✅ Ready |
 | **OpenHands** | OpenAI API | 8091 | Bearer Token | ✅ Ready |
-| **Agent Zero** | OpenAI API | 8092 | Bearer Token | ✅ Ready |
 
 � **[Full Application Documentation →](https://lipish.github.io/llm-link/docs/apps)**
 
@@ -62,9 +61,6 @@ pip install pyllmlink
 
 # For OpenHands
 ./llm-link --app openhands --provider anthropic --model claude-3-5-sonnet --api-key "your-anthropic-key"
-
-# For Agent Zero
-./llm-link --app agent-zero --provider zhipu --model glm-4 --api-key "your-zhipu-key"
 ```
 
 📚 **[Detailed Configuration Guide →](https://lipish.github.io/llm-link/docs)**
@@ -102,7 +98,6 @@ Use multiple protocols simultaneously for maximum flexibility:
 │ • Zed IDE       │    │   Conversion    │    │ • Anthropic     │
 │ • Aider         │    │ • Format        │    │ • Zhipu         │
 │ • OpenHands     │    │   Adaptation    │    │ • Aliyun        │
-│ • Agent Zero    │    │ • Routing       │    │ • Volcengine    │
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
