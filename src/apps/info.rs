@@ -63,17 +63,6 @@ impl AppInfoProvider {
                 ],
                 auth_required: true,
             },
-            SupportedApp::AgentZero => AppInfo {
-                name: "Agent Zero".to_string(),
-                description: "Personal AI agent framework that grows and learns with you".to_string(),
-                port: 8092,
-                protocol: "OpenAI API".to_string(),
-                endpoints: vec![
-                    "POST /v1/chat/completions".to_string(),
-                    "GET /v1/models".to_string(),
-                ],
-                auth_required: true,
-            },
         }
     }
 }

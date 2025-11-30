@@ -19,8 +19,7 @@
 				{ label: 'Zed.dev', href: '/docs/apps/zed' },
 				{ label: 'Codex CLI', href: '/docs/apps/codex' },
 				{ label: 'Aider', href: '/docs/apps/aider' },
-				{ label: 'OpenHands', href: '/docs/apps/openhands' },
-				{ label: 'Agent Zero', href: '/docs/apps/agent-zero' }
+				{ label: 'OpenHands', href: '/docs/apps/openhands' }
 			]
 		},
 		{
