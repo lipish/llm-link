@@ -14,15 +14,12 @@
 	];
 </script>
 
-<section class="space-y-8 pb-12 pt-8 md:pb-16 md:pt-12 lg:py-20">
-	<div class="container flex max-w-5xl flex-col items-center gap-6 text-center">
-		<p class="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-			LLM Link · Universal LLM Proxy
-		</p>
-		<h1 class="font-heading text-4xl font-bold sm:text-5xl md:text-6xl">
-			Match Any AI Tool with Any LLM Provider
-		</h1>
-		<p class="max-w-3xl text-lg text-muted-foreground sm:text-xl mx-auto">
+<section class="space-y-8 pb-12 pt-4 md:pb-16 md:pt-8 lg:py-16 bg-gray-50">
+	<div class="container flex max-w-5xl flex-col items-center gap-4 text-center">
+		<div class="w-full max-w-6xl my-4">
+			<img src="/llmlink.jpg" alt="LLM Link Architecture" class="w-full h-auto" />
+		</div>
+		<p class="max-w-4xl text-lg text-muted-foreground sm:text-xl mx-auto">
 			LLM Link bridges your favorite AI applications with any LLM provider through a unified proxy. 
 			Use open-source models with commercial tools, switch providers instantly, and reduce costs.
 		</p>
