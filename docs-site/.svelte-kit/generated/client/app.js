@@ -22,13 +22,13 @@ export const dictionary = {
 		"/": [3],
 		"/api": [4],
 		"/docs": [5,[2]],
-		"/docs/apps/claude": [6,[2]],
+		"/docs/apps/aider": [6,[2]],
 		"/docs/apps/codex": [7,[2]],
-		"/docs/apps/zed": [8,[2]],
-		"/docs/architecture": [9,[2]],
-		"/docs/protocols": [10,[2]],
-		"/docs/quick-start": [11,[2]],
-		"/providers": [12]
+		"/docs/apps/openhands": [8,[2]],
+		"/docs/apps/zed": [9,[2]],
+		"/docs/architecture": [10,[2]],
+		"/docs/protocols": [11,[2]],
+		"/docs/quick-start": [12,[2]]
 	};
 
 export const hooks = {

@@ -48,17 +48,6 @@
 					>
 						API Reference
 				</a>
-				<a
-						href={`${basePath}/providers`}
-						class={cn(
-							"border-b-2 border-transparent pb-0.5 transition-colors hover:text-foreground/80",
-							$page.url.pathname === `${basePath}/providers`
-								? "text-foreground border-primary"
-								: "text-foreground/60"
-						)}
-					>
-						Providers
-				</a>
 			</nav>
 		</div>
 		<div class="flex flex-1 items-center justify-between space-x-2 md:justify-end">

@@ -6,13 +6,11 @@
 	"/docs": [
 		"src/routes/docs/+page.js"
 	],
-	"/docs/apps/claude": [],
+	"/docs/apps/aider": [],
 	"/docs/apps/codex": [],
+	"/docs/apps/openhands": [],
 	"/docs/apps/zed": [],
 	"/docs/architecture": [],
 	"/docs/protocols": [],
-	"/docs/quick-start": [],
-	"/providers": [
-		"src/routes/providers/+page.js"
-	]
+	"/docs/quick-start": []
 }

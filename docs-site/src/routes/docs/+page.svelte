@@ -2,10 +2,17 @@
 	import Button from '$lib/components/ui/button.svelte';
 	import CodeBlock from '$lib/components/CodeBlock.svelte';
 	import Accordion from '$lib/components/Accordion.svelte';
-	import { Github, BookOpen, Zap, Layers } from 'lucide-svelte';
+	import { Github, BookOpen, Zap, Layers, Check, ExternalLink } from 'lucide-svelte';
 	import { base } from '$app/paths';
+	import { providers as allProviders } from '$lib/data/providers.js';
 
 	const basePath = base;
+
+	// Hide providers that are not yet tested (e.g. openai/anthropic)
+	const providers = allProviders.filter((provider) => provider.id !== 'openai' && provider.id !== 'anthropic');
+	const providerCount = providers.length;
+	const nativeProviders = providers.filter((provider) => provider.apiType === 'Native');
+	const compatibleProviders = providers.filter((provider) => provider.apiType !== 'Native');
 
 	const features = [
 		{
@@ -62,6 +69,101 @@
 					<h3 class="font-semibold mb-2">{feature.title}</h3>
 					<p class="text-sm text-muted-foreground">{feature.description}</p>
 				</div>
+			{/each}
+		</div>
+	</section>
+
+	<!-- Supported Providers Section -->
+	<section class="space-y-6">
+		<h2 class="text-2xl font-semibold flex items-center">
+			<Layers class="h-6 w-6 mr-2 text-primary" />
+			Supported LLM Providers
+		</h2>
+		<p class="text-sm text-muted-foreground">
+			LLM Link supports {providerCount} major LLM providers with unified API access
+		</p>
+
+		<!-- Stats -->
+		<div class="grid gap-4 md:grid-cols-3 mb-8">
+			<div class="rounded-lg border bg-card p-6 text-center">
+				<p class="text-sm text-muted-foreground uppercase mb-2">Total Providers</p>
+				<p class="text-4xl font-bold">{providerCount}</p>
+				<p class="text-xs text-muted-foreground mt-2">Unified API access</p>
+			</div>
+			<div class="rounded-lg border bg-card p-6 text-center">
+				<p class="text-sm text-muted-foreground uppercase mb-2">Native APIs</p>
+				<p class="text-4xl font-bold">{nativeProviders.length}</p>
+				<p class="text-xs text-muted-foreground mt-2">Custom implementations</p>
+			</div>
+			<div class="rounded-lg border bg-card p-6 text-center">
+				<p class="text-sm text-muted-foreground uppercase mb-2">OpenAI Compatible</p>
+				<p class="text-4xl font-bold">{compatibleProviders.length}</p>
+				<p class="text-xs text-muted-foreground mt-2">Standard protocol</p>
+			</div>
+		</div>
+
+		<!-- Provider List -->
+		<div class="space-y-4 mb-8">
+			{#each providers as provider}
+				<Accordion title={provider.name}>
+					<div class="grid md:grid-cols-2 gap-6">
+						<div class="space-y-4">
+							<div>
+								<h4 class="text-sm font-medium text-muted-foreground mb-2">Description</h4>
+								<p class="text-sm">{provider.description}</p>
+							</div>
+							
+							<div>
+								<h4 class="text-sm font-medium text-muted-foreground mb-2">Popular Models</h4>
+								<div class="flex flex-wrap gap-2">
+									{#each provider.models as model}
+										<span class="bg-muted px-3 py-1 rounded-md text-sm">{model}</span>
+									{/each}
+								</div>
+							</div>
+
+							<div>
+								<h4 class="text-sm font-medium text-muted-foreground mb-2">Features</h4>
+								<div class="flex flex-wrap gap-2">
+									{#each provider.features as feature}
+										<span class="bg-primary/10 text-primary px-3 py-1 rounded-md text-sm flex items-center gap-1">
+											<Check class="h-3 w-3" />
+											{feature}
+										</span>
+									{/each}
+								</div>
+							</div>
+						</div>
+
+						<div class="space-y-4">
+							<div>
+								<h4 class="text-sm font-medium text-muted-foreground mb-2">Configuration</h4>
+								<div class="space-y-2">
+									<div class="flex items-center justify-between text-sm">
+										<span class="text-muted-foreground">API Type:</span>
+										<code class="bg-muted px-2 py-1 rounded text-xs">{provider.apiType}</code>
+									</div>
+									<div class="flex items-center justify-between text-sm">
+										<span class="text-muted-foreground">Base URL:</span>
+										<code class="bg-muted px-2 py-1 rounded text-xs truncate max-w-xs">{provider.baseUrl}</code>
+									</div>
+								</div>
+							</div>
+
+							<div>
+								<a 
+									href={provider.website} 
+									target="_blank" 
+									rel="noopener noreferrer"
+									class="inline-flex items-center gap-2 text-sm text-primary hover:underline"
+								>
+									Visit official website
+									<ExternalLink class="h-4 w-4" />
+								</a>
+							</div>
+						</div>
+					</div>
+				</Accordion>
 			{/each}
 		</div>
 	</section>

@@ -1,43 +1,32 @@
 <script>
 	import Button from '$lib/components/ui/button.svelte';
 	import CodeBlock from '$lib/components/CodeBlock.svelte';
-	import Accordion from '$lib/components/Accordion.svelte';
-	import { Github, Download, Zap, Shield, Layers } from 'lucide-svelte';
+	import { Download, ArrowRight, Check } from 'lucide-svelte';
 	import { base } from '$app/paths';
 
 	const basePath = base;
 
-	const highlights = [
-		{
-			icon: Layers,
-			title: 'Multi-Protocol Support',
-			description: 'Unified proxy for OpenAI-compatible and Ollama APIs with automatic protocol detection.'
-		},
-		{
-			icon: Zap,
-			title: 'Editor & Agent Integrations',
-			description: 'First-class support for developer tools like Codex and Zed.dev with unified LLM routing.'
-		},
-		{
-			icon: Shield,
-			title: 'Production Ready',
-			description: 'Built with Rust for performance, reliability, and zero-downtime updates.'
-		}
+	const integrations = [
+		{ app: 'Aider', provider: 'Zhipu', model: 'GLM-4.6', status: '✅' },
+		{ app: 'OpenHands', provider: 'Anthropic', model: 'Claude-3.5', status: '✅' },
+		{ app: 'Codex CLI', provider: 'Aliyun', model: 'Qwen-2.5', status: '✅' },
+		{ app: 'Zed.dev', provider: 'Ollama', model: 'Llama-3.1', status: '✅' },
 	];
 </script>
 
-<section class="space-y-6 pb-8 pt-6 md:pb-12 md:pt-10 lg:py-24">
-	<div class="container flex max-w-4xl flex-col items-center gap-4 text-center">
-		<p class="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
+<section class="space-y-8 pb-12 pt-8 md:pb-16 md:pt-12 lg:py-20">
+	<div class="container flex max-w-5xl flex-col items-center gap-6 text-center">
+		<p class="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground">
 			LLM Link · Universal LLM Proxy
 		</p>
 		<h1 class="font-heading text-4xl font-bold sm:text-5xl md:text-6xl">
-			One Proxy for All LLM Providers
+			Match Any AI Tool with Any LLM Provider
 		</h1>
-		<p class="max-w-2xl text-base text-muted-foreground sm:text-lg mx-auto">
-			A unified proxy service for multiple LLM providers with OpenAI-compatible and Ollama APIs. Built with Rust for performance and reliability.
+		<p class="max-w-3xl text-lg text-muted-foreground sm:text-xl mx-auto">
+			LLM Link bridges your favorite AI applications with any LLM provider through a unified proxy. 
+			Use open-source models with commercial tools, switch providers instantly, and reduce costs.
 		</p>
-		<div class="flex flex-wrap items-center justify-center gap-3">
+		<div class="flex flex-wrap items-center justify-center gap-4">
 			<Button variant="default" size="lg" href="#quickstart">
 				<Download class="mr-2 h-4 w-4" />
 				Get Started
@@ -49,138 +38,94 @@
 	</div>
 </section>
 
-<section class="border-t bg-muted/40">
-	<div class="container py-12">
-		<div class="grid gap-8 md:grid-cols-3">
-			{#each highlights as highlight}
-				<div class="rounded-2xl border bg-background p-6">
-					<div class="mb-3">
-						<svelte:component this={highlight.icon} class="h-8 w-8 text-primary" />
-					</div>
-					<h3 class="text-lg font-semibold mb-2">{highlight.title}</h3>
-					<p class="text-sm text-muted-foreground">{highlight.description}</p>
-				</div>
-			{/each}
+<!-- Integration Matching Table -->
+<section class="border-t bg-muted/30 py-16">
+	<div class="container mx-auto max-w-5xl space-y-8">
+		<div class="space-y-3 text-center">
+			<h2 class="text-3xl font-bold tracking-tight">Application + Provider = ✅ Working Integration</h2>
+			<p class="text-muted-foreground">Mix and match any AI tool with any LLM provider</p>
+		</div>
+		
+		<div class="rounded-lg border bg-card overflow-hidden">
+			<table class="w-full">
+				<thead class="bg-muted/50">
+					<tr>
+						<th class="text-left p-4 font-semibold">AI Application</th>
+						<th class="text-left p-4 font-semibold">LLM Provider</th>
+						<th class="text-left p-4 font-semibold">Model</th>
+						<th class="text-center p-4 font-semibold">Status</th>
+					</tr>
+				</thead>
+				<tbody>
+					{#each integrations as integration}
+						<tr class="border-t hover:bg-muted/30">
+							<td class="p-4 font-medium">{integration.app}</td>
+							<td class="p-4">{integration.provider}</td>
+							<td class="p-4 text-muted-foreground">{integration.model}</td>
+							<td class="p-4 text-center">
+								<span class="inline-flex items-center justify-center rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200 w-6 h-6 text-xs font-bold">
+									{integration.status}
+								</span>
+							</td>
+						</tr>
+					{/each}
+				</tbody>
+			</table>
+		</div>
+		
+		<div class="text-center">
+			<p class="text-sm text-muted-foreground mb-4">
+				Supports 10+ LLM providers: Zhipu, Anthropic, OpenAI, Aliyun, Volcengine, Moonshot, Minimax, Tencent, Longcat, Ollama
+			</p>
+			<Button variant="outline" href="{basePath}/docs">
+				View All Providers & Applications
+				<ArrowRight class="ml-2 h-4 w-4" />
+			</Button>
 		</div>
 	</div>
 </section>
 
+<!-- Quick Start -->
 <section id="quickstart" class="py-16">
 	<div class="container mx-auto max-w-4xl space-y-8">
 		<div class="space-y-3 text-center">
 			<h2 class="text-3xl font-bold tracking-tight">Quick Start</h2>
-			<p class="text-muted-foreground">Get started in under 2 minutes</p>
+			<p class="text-muted-foreground">Get started in 2 minutes</p>
 		</div>
 		
-		<div class="space-y-4">
-			<Accordion title="Install via Homebrew (Recommended)" open={true}>
-				<div class="space-y-3">
-					<p class="text-sm text-muted-foreground">Add the tap and install:</p>
-					<CodeBlock code={'brew tap lipish/llm-link\nbrew install llm-link'} language="bash" />
-				</div>
-			</Accordion>
-
-			<Accordion title="Install via pip (macOS / Linux)">
-				<div class="space-y-3">
-					<p class="text-sm text-muted-foreground">Use the Python wrapper which downloads the prebuilt binary on first run:</p>
-					<CodeBlock code={'pip install pyllmlink\n# First run downloads the matching prebuilt binary into ~/.cache/llm-link'} language="bash" />
-				</div>
-			</Accordion>
-
-			<Accordion title="Install via Cargo (Developers)">
-				<div class="space-y-3">
-					<p class="text-sm text-muted-foreground">Install from crates.io (requires Rust toolchain):</p>
-					<CodeBlock code="cargo install llm-link" language="bash" />
-				</div>
-			</Accordion>
-
-			<Accordion title="Build from Source">
-				<div class="space-y-3">
-					<p class="text-sm text-muted-foreground">Clone and build manually:</p>
-					<CodeBlock code="git clone https://github.com/lipish/llm-link.git\ncd llm-link\ncargo build --release" language="bash" />
-				</div>
-			</Accordion>
+		<div class="space-y-6">
+			<div class="rounded-lg border bg-card p-6">
+				<h4 class="font-semibold mb-3">1. Install LLM Link</h4>
+				<CodeBlock code="cargo install llm-link" language="bash" />
+			</div>
+			
+			<div class="rounded-lg border bg-card p-6">
+				<h4 class="font-semibold mb-3">2. Start with your preferred provider</h4>
+				<CodeBlock code={'# Use Aider with Zhipu GLM-4.6\nllm-link --app aider --provider zhipu --model glm-4.6 --api-key "your-zhipu-key"\n\n# Use OpenHands with Anthropic Claude\nllm-link --app openhands --provider anthropic --model claude-3-5-sonnet --api-key "your-anthropic-key"'} language="bash" />
+			</div>
+			
+			<div class="rounded-lg border bg-card p-6">
+				<h4 class="font-semibold mb-3">3. Configure your AI tool</h4>
+				<p class="text-sm text-muted-foreground mb-2">Point your AI application to the local proxy:</p>
+				<CodeBlock code={'# For OpenAI-compatible tools\nBase URL: http://localhost:8090/v1\nAPI Key: your-auth-key\n\n# For Ollama-compatible tools  \nBase URL: http://localhost:11434/api'} language="bash" />
+			</div>
 		</div>
 	</div>
 </section>
 
-<section class="border-t bg-muted/30 py-16">
-	<div class="container mx-auto max-w-4xl space-y-8">
-		<div class="space-y-3 text-center">
-			<h2 class="text-3xl font-bold tracking-tight">Usage Examples</h2>
-			<p class="text-muted-foreground">Real-world setups for editor and agent integrations</p>
-		</div>
-		
-		<div class="space-y-4">
-			<Accordion title="Zed.dev with Qwen3 via Ollama" open={true}>
-				<div class="space-y-3">
-					<p class="text-sm text-muted-foreground">Run Zed against a local Qwen3 model exposed through the Ollama-compatible API:</p>
-					<CodeBlock code="llm-link --app zed --provider ollama --model qwen3" language="bash" />
-					<p class="text-xs text-muted-foreground mt-2">In Zed: Settings → AI → Custom provider → http://localhost:11434</p>
-				</div>
-			</Accordion>
-		
-			<Accordion title="Codex CLI">
-				<div class="space-y-4">
-					<div class="space-y-2">
-						<p class="text-sm text-muted-foreground">Route Codex CLI through llm-link using GLM 4.6 via the OpenAI-compatible API:</p>
-						<CodeBlock code="llm-link --app codex --provider zhipu --api-key zhipu-... --model glm-4.6" language="bash" />
-					</div>
-				</div>
-			</Accordion>
-		</div>
-	</div>
-</section>
-
-<section class="py-16">
-	<div class="container mx-auto max-w-4xl space-y-8">
-		<div class="space-y-3 text-center">
-			<h2 class="text-3xl font-bold tracking-tight">Supported Providers</h2>
-			<p class="text-muted-foreground">10+ LLM providers with unified API access</p>
-		</div>
-		<div class="grid gap-4 grid-cols-2 md:grid-cols-5 text-center">
-			<div class="rounded-lg border bg-card p-4">
-				<p class="font-semibold">Zhipu</p>
-			</div>
-			<div class="rounded-lg border bg-card p-4">
-				<p class="font-semibold">Volcengine</p>
-			</div>
-			<div class="rounded-lg border bg-card p-4">
-				<p class="font-semibold">Moonshot</p>
-			</div>
-			<div class="rounded-lg border bg-card p-4">
-				<p class="font-semibold">Minimax</p>
-			</div>
-			<div class="rounded-lg border bg-card p-4">
-				<p class="font-semibold">Aliyun</p>
-			</div>
-			<div class="rounded-lg border bg-card p-4">
-				<p class="font-semibold">Tencent</p>
-			</div>
-			<div class="rounded-lg border bg-card p-4">
-				<p class="font-semibold">Longcat</p>
-			</div>
-		</div>
-		<div class="text-center">
-			<Button variant="outline" href="{basePath}/providers">
-				View All Providers
-			</Button>
-		</div>
-	</div>
-</section>
-
+<!-- CTA Section -->
 <section class="border-t bg-muted/40">
 	<div class="container flex flex-col items-center gap-4 py-12 text-center">
-		<h3 class="text-2xl font-semibold">Ready to get started?</h3>
+		<h3 class="text-2xl font-semibold">Ready to connect your AI tools?</h3>
 		<p class="max-w-2xl text-muted-foreground">
-			Explore the docs for configuration details and API reference.
+			Start using any LLM provider with your favorite AI applications in minutes.
 		</p>
 		<div class="flex gap-3">
 			<Button size="lg" href="{basePath}/docs">
-				Documentation
+				View Documentation
 			</Button>
 			<Button variant="outline" size="lg" href="https://github.com/lipish/llm-link">
-				<Github class="mr-2 h-4 w-4" />
+				<ArrowRight class="mr-2 h-4 w-4" />
 				GitHub
 			</Button>
 		</div>

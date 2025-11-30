@@ -1,8 +1,10 @@
-
+import * as universal from '../entries/pages/_page.js';
 
 export const index = 3;
 let component_cache;
-export const component = async () => component_cache ??= (await import('../entries/pages/api/_page.svelte.js')).default;
-export const imports = ["_app/immutable/nodes/3.9b97306a.js","_app/immutable/chunks/scheduler.5d594c60.js","_app/immutable/chunks/index.7577e3fb.js","_app/immutable/chunks/Icon.b2256389.js","_app/immutable/chunks/CodeBlock.33745d53.js","_app/immutable/chunks/paths.0b0c7f75.js","_app/immutable/chunks/settings.5d8e8ec2.js","_app/immutable/chunks/github.ea9e1a80.js"];
-export const stylesheets = ["_app/immutable/assets/CodeBlock.3291e38a.css"];
+export const component = async () => component_cache ??= (await import('../entries/pages/_page.svelte.js')).default;
+export { universal };
+export const universal_id = "src/routes/+page.js";
+export const imports = ["_app/immutable/nodes/3.1b1298e9.js","_app/immutable/chunks/scheduler.f4350b81.js","_app/immutable/chunks/index.9ea6f852.js","_app/immutable/chunks/each.e59479a4.js","_app/immutable/chunks/button.3755bcca.js","_app/immutable/chunks/Icon.c150d722.js","_app/immutable/chunks/CodeBlock.818897d2.js","_app/immutable/chunks/paths.02c97ffe.js"];
+export const stylesheets = ["_app/immutable/assets/CodeBlock.bfbaa69e.css"];
 export const fonts = [];

@@ -1,246 +1,178 @@
-import { c as create_ssr_component, v as validate_component, f as each, e as escape } from "../../../chunks/ssr.js";
-import { I as Icon, B as Button } from "../../../chunks/Icon.js";
-import { C as CodeBlock } from "../../../chunks/CodeBlock.js";
-import { A as Accordion } from "../../../chunks/Accordion.js";
+import { c as create_ssr_component, v as validate_component, f as each, e as escape, d as add_attribute } from "../../../chunks/ssr.js";
+import { B as Button } from "../../../chunks/button.js";
+/* empty css                                                       */import { A as Accordion } from "../../../chunks/Accordion.js";
 import { b as base } from "../../../chunks/paths.js";
-import { B as BookOpen, S as Settings } from "../../../chunks/settings.js";
-import { Z as Zap } from "../../../chunks/zap.js";
-import { G as Github } from "../../../chunks/github.js";
-const Globe = create_ssr_component(($$result, $$props, $$bindings, slots) => {
-  const iconNode = [
-    ["circle", { "cx": "12", "cy": "12", "r": "10" }],
-    [
-      "path",
-      {
-        "d": "M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"
-      }
-    ],
-    ["path", { "d": "M2 12h20" }]
-  ];
-  return `${validate_component(Icon, "Icon").$$render($$result, Object.assign({}, { name: "globe" }, $$props, { iconNode }), {}, {
+import { B as BookOpen, G as Github } from "../../../chunks/github.js";
+import { L as Layers } from "../../../chunks/layers.js";
+import { I as Icon } from "../../../chunks/Icon.js";
+import { E as ExternalLink } from "../../../chunks/external-link.js";
+const Check = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+  const iconNode = [["path", { "d": "M20 6 9 17l-5-5" }]];
+  return `${validate_component(Icon, "Icon").$$render($$result, Object.assign({}, { name: "check" }, $$props, { iconNode }), {}, {
     default: () => {
       return `${slots.default ? slots.default({}) : ``}`;
     }
   })}`;
 });
-const Globe$1 = Globe;
+const Check$1 = Check;
+const providers = [
+  {
+    id: "openai",
+    name: "OpenAI",
+    description: "Leading AI models including GPT-4, GPT-3.5, and more",
+    models: ["GPT-4", "GPT-4 Turbo", "GPT-3.5 Turbo"],
+    envVar: "OPENAI_API_KEY",
+    apiType: "Native",
+    baseUrl: "https://api.openai.com/v1",
+    features: ["Streaming", "Function Calling", "Vision"],
+    website: "https://openai.com"
+  },
+  {
+    id: "anthropic",
+    name: "Anthropic",
+    description: "Advanced Claude models with strong reasoning capabilities",
+    models: ["Claude 3.5 Sonnet", "Claude 3.5 Haiku", "Claude 3 Opus"],
+    envVar: "ANTHROPIC_API_KEY",
+    apiType: "Native",
+    baseUrl: "https://api.anthropic.com",
+    features: ["Streaming", "Long Context", "Vision"],
+    website: "https://anthropic.com"
+  },
+  {
+    id: "zhipu",
+    name: "Zhipu AI",
+    description: "Chinese AI models with multilingual support",
+    models: ["GLM-4.6", "GLM-4.5", "GLM-4"],
+    envVar: "ZHIPU_API_KEY",
+    apiType: "OpenAI Compatible",
+    baseUrl: "https://open.bigmodel.cn/api/paas/v4",
+    features: ["Streaming", "Multilingual", "Code Generation"],
+    website: "https://zhipuai.cn"
+  },
+  {
+    id: "aliyun",
+    name: "Aliyun",
+    description: "Alibaba Cloud's powerful Qwen models",
+    models: ["Qwen3 Max", "Qwen3 Plus", "Qwen3 Turbo"],
+    envVar: "ALIYUN_API_KEY",
+    apiType: "Native",
+    baseUrl: "https://dashscope.aliyuncs.com/api/v1",
+    features: ["Streaming", "Long Context", "Multilingual"],
+    website: "https://aliyun.com"
+  },
+  {
+    id: "volcengine",
+    name: "Volcengine",
+    description: "ByteDance's advanced Doubao models",
+    models: ["Doubao Seed 1.6", "Doubao Pro", "Doubao Lite"],
+    envVar: "VOLCENGINE_API_KEY",
+    apiType: "Native",
+    baseUrl: "https://ark.cn-beijing.volces.com/api/v3",
+    features: ["Streaming", "Cost Effective", "Fast Response"],
+    website: "https://volcengine.com"
+  },
+  {
+    id: "tencent",
+    name: "Tencent",
+    description: "Tencent's Hunyuan models for various applications",
+    models: ["Hunyuan T1", "Hunyuan A13B", "Hunyuan Turbos"],
+    envVar: "TENCENT_API_KEY",
+    apiType: "Native",
+    baseUrl: "https://hunyuan.tencentcloudapi.com",
+    features: ["Streaming", "Chinese Optimized", "Enterprise Ready"],
+    website: "https://cloud.tencent.com"
+  },
+  {
+    id: "longcat",
+    name: "Longcat",
+    description: "High-performance models for general dialogue",
+    models: ["LongCat Flash Chat", "LongCat Flash Thinking"],
+    envVar: "LONGCAT_API_KEY",
+    apiType: "OpenAI Compatible",
+    baseUrl: "https://api.longcat.ai/v1",
+    features: ["Streaming", "Fast Response", "Cost Effective"],
+    website: "https://longcat.ai"
+  },
+  {
+    id: "moonshot",
+    name: "Moonshot",
+    description: "Kimi models with large context windows",
+    models: ["Kimi K2 Turbo", "Kimi K2", "Kimi K1.5"],
+    envVar: "MOONSHOT_API_KEY",
+    apiType: "OpenAI Compatible",
+    baseUrl: "https://api.moonshot.cn/v1",
+    features: ["Streaming", "200K Context", "Document Processing"],
+    website: "https://moonshot.cn"
+  },
+  {
+    id: "minimax",
+    name: "Minimax",
+    description: "Powerful AI models with OpenAI-compatible API",
+    models: ["MiniMax-M2", "MiniMax-H2", "MiniMax-T2"],
+    envVar: "MINIMAX_API_KEY",
+    apiType: "OpenAI Compatible",
+    baseUrl: "https://api.minimaxi.com/v1",
+    features: ["Streaming", "Multilingual", "Fast Response"],
+    website: "https://minimaxi.com"
+  },
+  {
+    id: "ollama",
+    name: "Ollama",
+    description: "Local and open-source models",
+    models: ["Llama 2", "Mistral", "Code Llama", "Custom Models"],
+    envVar: "None Required",
+    apiType: "Native",
+    baseUrl: "http://localhost:11434",
+    features: ["Local Deployment", "Privacy", "Custom Models"],
+    website: "https://ollama.ai"
+  }
+];
 const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   const basePath = base;
+  const providers$1 = providers.filter((provider) => provider.id !== "openai" && provider.id !== "anthropic");
+  const providerCount = providers$1.length;
+  const nativeProviders = providers$1.filter((provider) => provider.apiType === "Native");
+  const compatibleProviders = providers$1.filter((provider) => provider.apiType !== "Native");
   const features = [
     {
-      title: "Multi-Provider Support",
-      description: "Connect to 10+ LLM providers including OpenAI, Anthropic, Zhipu, Volcengine, and more through a single unified interface."
+      title: "Universal LLM Proxy",
+      description: "Run a single service that speaks OpenAI, Ollama, and Anthropic-style APIs to your favorite tools."
     },
     {
-      title: "Protocol Flexibility",
-      description: "Expose OpenAI, Ollama, or Anthropic-compatible APIs. Switch protocols without changing your client code."
+      title: "Multi-Provider Routing",
+      description: "Connect to 10+ providers (OpenAI, Anthropic, Zhipu, Volcengine, Moonshot, Minimax, Tencent, Aliyun, Longcat, Ollama, and more)."
     },
     {
-      title: "Hot Configuration Reload",
-      description: "Update API keys, switch providers, and modify settings via REST API without service restart."
+      title: "Editor & Agent Integrations",
+      description: "First-class support for Zed.dev, Codex CLI and other dev tools via presets and protocols."
     },
     {
-      title: "App Presets",
-      description: "First-class presets for Zed.dev, Codex CLI, and Claude Code with optimized ports and protocols."
+      title: "Hot-Reload Configuration",
+      description: "Update API keys and routing rules at runtime using REST APIs, without restarting the service."
     }
   ];
-  return `<div class="container py-8 max-w-5xl mx-auto"><div class="mb-12" data-svelte-h="svelte-14cupso"><h1 class="text-4xl font-bold tracking-tight mb-4">Documentation</h1> <p class="text-lg text-muted-foreground">Complete guide to LLM Link - a universal proxy for multiple LLM providers with hot-reload configuration and multi-protocol support.</p></div>  <section class="mb-12"><h2 class="text-2xl font-semibold mb-6 flex items-center">${validate_component(BookOpen, "BookOpen").$$render($$result, { class: "h-6 w-6 mr-2 text-primary" }, {}, {})}
-			Key Features</h2> <div class="grid gap-4 md:grid-cols-2">${each(features, (feature) => {
+  return `<div class="max-w-3xl space-y-12"><div class="space-y-3" data-svelte-h="svelte-1115lh3"><h1 class="text-4xl font-bold tracking-tight mb-4">Introduction to LLM Link</h1> <p class="text-lg text-muted-foreground">LLM Link is a universal LLM gateway that normalizes different providers and protocols into a single
+			service. This page explains why it exists, what problems it solves, and how it fits into your stack.</p></div>  <section id="introduction" class="space-y-6"><h2 class="text-2xl font-semibold flex items-center">${validate_component(BookOpen, "BookOpen").$$render($$result, { class: "h-6 w-6 mr-2 text-primary" }, {}, {})}
+			Introduction</h2> <p class="text-sm text-muted-foreground" data-svelte-h="svelte-j3y9pq">Modern editors, agents, and plugins all speak slightly different &quot;OpenAI-compatible&quot; dialects and
+			expect you to copy API keys and endpoints into each of them. Switching providers or models usually
+			means touching multiple configs, rotating secrets in many places, and dealing with protocol quirks.</p> <p class="text-sm text-muted-foreground" data-svelte-h="svelte-2nz027">LLM Link sits in the middle as a single proxy between your tools and upstream LLM providers. You
+			configure providers and routing once, then point Zed.dev, Codex CLI, and other clients
+			to LLM Link. It unifies protocols, centralizes API key management, and makes it easy to experiment
+			with different providers without rebuilding your setup.</p> <div class="grid gap-4 md:grid-cols-2">${each(features, (feature) => {
     return `<div class="rounded-lg border bg-card p-5"><h3 class="font-semibold mb-2">${escape(feature.title)}</h3> <p class="text-sm text-muted-foreground">${escape(feature.description)}</p> </div>`;
-  })}</div></section>  <section class="mb-12"><h2 class="text-2xl font-semibold mb-6 flex items-center">${validate_component(Settings, "Settings").$$render($$result, { class: "h-6 w-6 mr-2 text-primary" }, {}, {})}
-			Installation</h2> <div class="space-y-4">${validate_component(Accordion, "Accordion").$$render(
-    $$result,
-    {
-      title: "Install via Cargo (Recommended)",
-      open: true
-    },
-    {},
-    {
+  })}</div></section>  <section class="space-y-6"><h2 class="text-2xl font-semibold flex items-center">${validate_component(Layers, "Layers").$$render($$result, { class: "h-6 w-6 mr-2 text-primary" }, {}, {})}
+			Supported LLM Providers</h2> <p class="text-sm text-muted-foreground">LLM Link supports ${escape(providerCount)} major LLM providers with unified API access</p>  <div class="grid gap-4 md:grid-cols-3 mb-8"><div class="rounded-lg border bg-card p-6 text-center"><p class="text-sm text-muted-foreground uppercase mb-2" data-svelte-h="svelte-5bb50g">Total Providers</p> <p class="text-4xl font-bold">${escape(providerCount)}</p> <p class="text-xs text-muted-foreground mt-2" data-svelte-h="svelte-zlwu8d">Unified API access</p></div> <div class="rounded-lg border bg-card p-6 text-center"><p class="text-sm text-muted-foreground uppercase mb-2" data-svelte-h="svelte-4qs14">Native APIs</p> <p class="text-4xl font-bold">${escape(nativeProviders.length)}</p> <p class="text-xs text-muted-foreground mt-2" data-svelte-h="svelte-1c9oaz1">Custom implementations</p></div> <div class="rounded-lg border bg-card p-6 text-center"><p class="text-sm text-muted-foreground uppercase mb-2" data-svelte-h="svelte-51zryc">OpenAI Compatible</p> <p class="text-4xl font-bold">${escape(compatibleProviders.length)}</p> <p class="text-xs text-muted-foreground mt-2" data-svelte-h="svelte-12sfcdc">Standard protocol</p></div></div>  <div class="space-y-4 mb-8">${each(providers$1, (provider) => {
+    return `${validate_component(Accordion, "Accordion").$$render($$result, { title: provider.name }, {}, {
       default: () => {
-        return `<div class="space-y-3"><p class="text-sm text-muted-foreground" data-svelte-h="svelte-or99cn">Install from crates.io:</p> ${validate_component(CodeBlock, "CodeBlock").$$render(
-          $$result,
-          {
-            code: "cargo install llm-link",
-            language: "bash"
-          },
-          {},
-          {}
-        )}</div>`;
+        return `<div class="grid md:grid-cols-2 gap-6"><div class="space-y-4"><div><h4 class="text-sm font-medium text-muted-foreground mb-2" data-svelte-h="svelte-1viozsj">Description</h4> <p class="text-sm">${escape(provider.description)}</p></div> <div><h4 class="text-sm font-medium text-muted-foreground mb-2" data-svelte-h="svelte-41nydu">Popular Models</h4> <div class="flex flex-wrap gap-2">${each(provider.models, (model) => {
+          return `<span class="bg-muted px-3 py-1 rounded-md text-sm">${escape(model)}</span>`;
+        })} </div></div> <div><h4 class="text-sm font-medium text-muted-foreground mb-2" data-svelte-h="svelte-34jfwo">Features</h4> <div class="flex flex-wrap gap-2">${each(provider.features, (feature) => {
+          return `<span class="bg-primary/10 text-primary px-3 py-1 rounded-md text-sm flex items-center gap-1">${validate_component(Check$1, "Check").$$render($$result, { class: "h-3 w-3" }, {}, {})} ${escape(feature)} </span>`;
+        })}</div> </div></div> <div class="space-y-4"><div><h4 class="text-sm font-medium text-muted-foreground mb-2" data-svelte-h="svelte-nyg31n">Configuration</h4> <div class="space-y-2"><div class="flex items-center justify-between text-sm"><span class="text-muted-foreground" data-svelte-h="svelte-16g55i6">API Type:</span> <code class="bg-muted px-2 py-1 rounded text-xs">${escape(provider.apiType)}</code></div> <div class="flex items-center justify-between text-sm"><span class="text-muted-foreground" data-svelte-h="svelte-10vndau">Base URL:</span> <code class="bg-muted px-2 py-1 rounded text-xs truncate max-w-xs">${escape(provider.baseUrl)}</code></div> </div></div> <div><a${add_attribute("href", provider.website, 0)} target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-2 text-sm text-primary hover:underline">Visit official website
+									${validate_component(ExternalLink, "ExternalLink").$$render($$result, { class: "h-4 w-4" }, {}, {})} </a></div> </div></div> `;
       }
-    }
-  )} ${validate_component(Accordion, "Accordion").$$render($$result, { title: "Install via Homebrew (macOS)" }, {}, {
-    default: () => {
-      return `<div class="space-y-3"><p class="text-sm text-muted-foreground" data-svelte-h="svelte-1nmei4y">Add tap and install:</p> ${validate_component(CodeBlock, "CodeBlock").$$render(
-        $$result,
-        {
-          code: "brew tap lipish/llm-link\\nbrew install llm-link",
-          language: "bash"
-        },
-        {},
-        {}
-      )}</div>`;
-    }
-  })} ${validate_component(Accordion, "Accordion").$$render($$result, { title: "Build from Source" }, {}, {
-    default: () => {
-      return `<div class="space-y-3"><p class="text-sm text-muted-foreground" data-svelte-h="svelte-2shz92">Clone and build:</p> ${validate_component(CodeBlock, "CodeBlock").$$render(
-        $$result,
-        {
-          code: "git clone https://github.com/lipish/llm-link.git\\ncd llm-link\\ncargo build --release",
-          language: "bash"
-        },
-        {},
-        {}
-      )}</div>`;
-    }
-  })}</div></section>  <section class="mb-12"><h2 class="text-2xl font-semibold mb-6 flex items-center">${validate_component(Zap, "Zap").$$render($$result, { class: "h-6 w-6 mr-2 text-primary" }, {}, {})}
-			Configuration</h2> <div class="space-y-4">${validate_component(Accordion, "Accordion").$$render(
-    $$result,
-    {
-      title: "Environment Variables",
-      open: true
-    },
-    {},
-    {
-      default: () => {
-        return `<div class="space-y-3"><p class="text-sm text-muted-foreground" data-svelte-h="svelte-pbhlia">Set API keys via environment variables:</p> ${validate_component(CodeBlock, "CodeBlock").$$render(
-          $$result,
-          {
-            code: 'export OPENAI_API_KEY="sk-..."\nexport ANTHROPIC_API_KEY="sk-ant-..."\nexport ZHIPU_API_KEY="..."\nexport VOLCENGINE_API_KEY="..."\n\nllm-link --protocols all',
-            language: "bash"
-          },
-          {},
-          {}
-        )}</div>`;
-      }
-    }
-  )} ${validate_component(Accordion, "Accordion").$$render($$result, { title: "Configuration File (keys.yaml)" }, {}, {
-    default: () => {
-      return `<div class="space-y-3"><p class="text-sm text-muted-foreground" data-svelte-h="svelte-ahh572">Create a keys.yaml file in your project directory:</p> ${validate_component(CodeBlock, "CodeBlock").$$render(
-        $$result,
-        {
-          code: 'providers:\n  openai:\n    api_key: "sk-..."\n  anthropic:\n    api_key: "sk-ant-..."\n  zhipu:\n    api_key: "..."\n  volcengine:\n    api_key: "..."\n    base_url: "https://ark.cn-beijing.volces.com/api/v3"',
-          language: "yaml"
-        },
-        {},
-        {}
-      )}</div>`;
-    }
-  })} ${validate_component(Accordion, "Accordion").$$render($$result, { title: "Hot Reload API" }, {}, {
-    default: () => {
-      return `<div class="space-y-3"><p class="text-sm text-muted-foreground" data-svelte-h="svelte-hispqi">Update configuration without restart:</p> ${validate_component(CodeBlock, "CodeBlock").$$render(
-        $$result,
-        {
-          code: `curl -X POST http://localhost:8088/api/config/update \\
-  -H "Content-Type: application/json" \\
-  -d '{"provider": "openai", "api_key": "new_key"}'`,
-          language: "bash"
-        },
-        {},
-        {}
-      )}</div>`;
-    }
-  })}</div></section>  <section class="mb-12"><h2 class="text-2xl font-semibold mb-6 flex items-center">${validate_component(Globe$1, "Globe").$$render($$result, { class: "h-6 w-6 mr-2 text-primary" }, {}, {})}
-			Usage by Applications &amp; Protocols</h2> <div class="space-y-4">${validate_component(Accordion, "Accordion").$$render(
-    $$result,
-    {
-      title: "Application Guides (Recommended)",
-      open: true
-    },
-    {},
-    {
-      default: () => {
-        return `<div class="space-y-4"><div><h4 class="font-medium mb-2" data-svelte-h="svelte-6m4wew">Zed.dev</h4> <p class="text-sm text-muted-foreground" data-svelte-h="svelte-1l6vssw">Runs an Ollama-compatible endpoint for Zed on port 11434:</p> ${validate_component(CodeBlock, "CodeBlock").$$render(
-          $$result,
-          {
-            code: "llm-link --app zed --provider ollama --model qwen3",
-            language: "bash"
-          },
-          {},
-          {}
-        )} <p class="text-xs text-muted-foreground mt-2" data-svelte-h="svelte-14iwfu8">In Zed: Settings → AI → Custom provider → http://localhost:11434</p></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-144p1n7">Codex CLI</h4> <p class="text-sm text-muted-foreground" data-svelte-h="svelte-bjoj7m">OpenAI-compatible endpoint for Codex on port 8088:</p> ${validate_component(CodeBlock, "CodeBlock").$$render(
-          $$result,
-          {
-            code: "llm-link --app codex --provider openai",
-            language: "bash"
-          },
-          {},
-          {}
-        )} <p class="text-xs text-muted-foreground mt-2" data-svelte-h="svelte-1w1evoe">Configure Codex to use http://localhost:8088/v1 as OpenAI endpoint.</p></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-1mw3j2h">Claude Code</h4> <p class="text-sm text-muted-foreground" data-svelte-h="svelte-1tnk4q5">Anthropic-compatible endpoint for Claude Code on port 8089:</p> ${validate_component(CodeBlock, "CodeBlock").$$render(
-          $$result,
-          {
-            code: "llm-link --app claude --provider anthropic",
-            language: "bash"
-          },
-          {},
-          {}
-        )} <p class="text-xs text-muted-foreground mt-2" data-svelte-h="svelte-1djgedk">Point Claude Code base URL to http://localhost:8089 and set a dummy API token.</p></div></div>`;
-      }
-    }
-  )} ${validate_component(Accordion, "Accordion").$$render($$result, { title: "Protocol Mode (Advanced)" }, {}, {
-    default: () => {
-      return `<div class="space-y-4"><p class="text-sm text-muted-foreground" data-svelte-h="svelte-1gn1ms1">Start llm-link directly in protocol mode when you only need a specific API surface:</p> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-1je6v3c">OpenAI Protocol</h4> ${validate_component(CodeBlock, "CodeBlock").$$render(
-        $$result,
-        {
-          code: "llm-link --protocols openai --port 8088",
-          language: "bash"
-        },
-        {},
-        {}
-      )} <p class="text-xs text-muted-foreground mt-2" data-svelte-h="svelte-4pokm7">Use this with generic OpenAI-compatible tools or SDKs.</p></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-3o2wwo">Ollama Protocol</h4> ${validate_component(CodeBlock, "CodeBlock").$$render(
-        $$result,
-        {
-          code: "llm-link --protocols ollama --port 11434",
-          language: "bash"
-        },
-        {},
-        {}
-      )} <p class="text-xs text-muted-foreground mt-2" data-svelte-h="svelte-hqi5sp">Expose Ollama-style /api/chat and /api/tags endpoints.</p></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-1ux7l3i">Anthropic Protocol</h4> ${validate_component(CodeBlock, "CodeBlock").$$render(
-        $$result,
-        {
-          code: "llm-link --protocols anthropic --port 8089",
-          language: "bash"
-        },
-        {},
-        {}
-      )} <p class="text-xs text-muted-foreground mt-2" data-svelte-h="svelte-1870jd6">Provides /v1/messages and /v1/models for Claude-compatible clients.</p></div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-1havp4l">Multiple Protocols</h4> ${validate_component(CodeBlock, "CodeBlock").$$render(
-        $$result,
-        {
-          code: "llm-link --protocols openai,ollama,anthropic",
-          language: "bash"
-        },
-        {},
-        {}
-      )} <p class="text-xs text-muted-foreground mt-2" data-svelte-h="svelte-nls35u">Serve multiple API formats from a single llm-link instance.</p></div></div>`;
-    }
-  })} ${validate_component(Accordion, "Accordion").$$render($$result, { title: "CLI Overrides" }, {}, {
-    default: () => {
-      return `<div class="space-y-4"><div><h4 class="font-medium mb-2" data-svelte-h="svelte-hcs9y8">Custom Port</h4> ${validate_component(CodeBlock, "CodeBlock").$$render(
-        $$result,
-        {
-          code: "llm-link --port 9000 --protocols openai",
-          language: "bash"
-        },
-        {},
-        {}
-      )}</div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-m24bg4">Specific Provider &amp; Model</h4> ${validate_component(CodeBlock, "CodeBlock").$$render(
-        $$result,
-        {
-          code: "llm-link --provider openai --model gpt-4",
-          language: "bash"
-        },
-        {},
-        {}
-      )}</div> <div><h4 class="font-medium mb-2" data-svelte-h="svelte-1a7pjxx">Enable All Protocols</h4> ${validate_component(CodeBlock, "CodeBlock").$$render(
-        $$result,
-        {
-          code: "llm-link --protocols all",
-          language: "bash"
-        },
-        {},
-        {}
-      )}</div></div>`;
-    }
-  })}</div></section>  <section class="mb-12" data-svelte-h="svelte-17smt6r"><h2 class="text-2xl font-semibold mb-6">API Endpoints</h2> <div class="grid gap-4 md:grid-cols-2"><div class="rounded-lg border bg-card p-4"><code class="text-sm font-mono text-primary">GET /api/health</code> <p class="text-sm text-muted-foreground mt-2">Service health and version</p></div> <div class="rounded-lg border bg-card p-4"><code class="text-sm font-mono text-primary">GET /api/providers</code> <p class="text-sm text-muted-foreground mt-2">List configured providers</p></div> <div class="rounded-lg border bg-card p-4"><code class="text-sm font-mono text-primary">GET /api/models</code> <p class="text-sm text-muted-foreground mt-2">Available models</p></div> <div class="rounded-lg border bg-card p-4"><code class="text-sm font-mono text-primary">POST /api/config/update</code> <p class="text-sm text-muted-foreground mt-2">Update configuration</p></div></div></section>  <section class="mb-12" data-svelte-h="svelte-wguoih"><h2 class="text-2xl font-semibold mb-6">Troubleshooting</h2> <div class="space-y-4"><div class="border-l-4 border-yellow-400 pl-4 py-2"><h3 class="font-medium mb-1">Port already in use</h3> <p class="text-sm text-muted-foreground">Use <code>--port</code> flag to specify a different port</p></div> <div class="border-l-4 border-blue-400 pl-4 py-2"><h3 class="font-medium mb-1">API key not working</h3> <p class="text-sm text-muted-foreground">Verify key format and use hot-reload API to update</p></div> <div class="border-l-4 border-green-400 pl-4 py-2"><h3 class="font-medium mb-1">Connection timeout</h3> <p class="text-sm text-muted-foreground">Check network and provider base URL configuration</p></div></div></section>  <div class="flex gap-3 justify-center pt-8 border-t">${validate_component(Button, "Button").$$render(
+    })}`;
+  })}</div></section> <section class="space-y-6"><h2 class="text-2xl font-semibold" data-svelte-h="svelte-1xo85fo">Next steps</h2> <p class="text-sm text-muted-foreground" data-svelte-h="svelte-3bvdtg">Continue with installation and architecture details in the dedicated guides.</p> <div class="grid gap-4 md:grid-cols-2"><div class="rounded-lg border bg-card p-5 space-y-2"><h3 class="font-semibold" data-svelte-h="svelte-1cdltdt">Quick Start</h3> <p class="text-sm text-muted-foreground" data-svelte-h="svelte-tvxpym">Step-by-step installation, key configuration, and running your first proxy.</p> <a href="${escape(basePath, true) + "/docs/quick-start"}" class="text-sm text-primary hover:underline">Open Quick Start guide</a></div> <div class="rounded-lg border bg-card p-5 space-y-2"><h3 class="font-semibold" data-svelte-h="svelte-1lfhfn5">Architecture</h3> <p class="text-sm text-muted-foreground" data-svelte-h="svelte-b2duxi">High-level diagram of clients, protocol adapters, and provider connectors.</p> <a href="${escape(basePath, true) + "/docs/architecture"}" class="text-sm text-primary hover:underline">Open Architecture overview</a></div></div></section>  <div class="flex gap-3 justify-center pt-8 border-t">${validate_component(Button, "Button").$$render(
     $$result,
     {
       size: "lg",
@@ -251,32 +183,6 @@ const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
       default: () => {
         return `${validate_component(Github, "Github").$$render($$result, { class: "mr-2 h-4 w-4" }, {}, {})}
 			GitHub`;
-      }
-    }
-  )} ${validate_component(Button, "Button").$$render(
-    $$result,
-    {
-      variant: "outline",
-      size: "lg",
-      href: basePath + "/providers"
-    },
-    {},
-    {
-      default: () => {
-        return `View All Providers`;
-      }
-    }
-  )} ${validate_component(Button, "Button").$$render(
-    $$result,
-    {
-      variant: "outline",
-      size: "lg",
-      href: basePath + "/api"
-    },
-    {},
-    {
-      default: () => {
-        return `API Reference`;
       }
     }
   )}</div></div>`;

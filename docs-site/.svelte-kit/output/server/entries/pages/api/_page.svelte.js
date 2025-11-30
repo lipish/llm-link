@@ -1,9 +1,9 @@
 import { c as create_ssr_component, v as validate_component, f as each, e as escape, d as add_attribute } from "../../../chunks/ssr.js";
-import { I as Icon, B as Button } from "../../../chunks/Icon.js";
+import { B as Button } from "../../../chunks/button.js";
 import { C as CodeBlock } from "../../../chunks/CodeBlock.js";
 import { b as base } from "../../../chunks/paths.js";
-import { B as BookOpen, S as Settings } from "../../../chunks/settings.js";
-import { G as Github } from "../../../chunks/github.js";
+import { I as Icon } from "../../../chunks/Icon.js";
+import { B as BookOpen, G as Github } from "../../../chunks/github.js";
 const Code = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   const iconNode = [
     ["polyline", { "points": "16 18 22 12 16 6" }],
@@ -56,6 +56,23 @@ const List_ordered = create_ssr_component(($$result, $$props, $$bindings, slots)
   })}`;
 });
 const ListOrdered = List_ordered;
+const Settings = create_ssr_component(($$result, $$props, $$bindings, slots) => {
+  const iconNode = [
+    [
+      "path",
+      {
+        "d": "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+      }
+    ],
+    ["circle", { "cx": "12", "cy": "12", "r": "3" }]
+  ];
+  return `${validate_component(Icon, "Icon").$$render($$result, Object.assign({}, { name: "settings" }, $$props, { iconNode }), {}, {
+    default: () => {
+      return `${slots.default ? slots.default({}) : ``}`;
+    }
+  })}`;
+});
+const Settings$1 = Settings;
 const Terminal = create_ssr_component(($$result, $$props, $$bindings, slots) => {
   const iconNode = [
     ["polyline", { "points": "4 17 10 11 4 5" }],
@@ -660,7 +677,10 @@ curl -X POST http://localhost:8088/api/chat \\
     return `<a${add_attribute("href", `#${item.id}`, 0)} class="text-sm text-muted-foreground hover:text-foreground">#${escape(item.label)} </a>`;
   })}</div></div></section> <section class="mb-12" id="overview"><div class="rounded-lg border bg-card p-6 space-y-8"><div class="flex items-center mb-2">${validate_component(BookOpen, "BookOpen").$$render($$result, { class: "h-6 w-6 mr-2 text-primary" }, {}, {})} <h2 class="text-2xl font-semibold" data-svelte-h="svelte-1g1ysmf">API Overview</h2></div> <div class="grid gap-4 md:grid-cols-3">${each(summaryCards, (card) => {
     return `<div class="rounded-lg border bg-muted/50 p-4"><p class="text-xs text-muted-foreground uppercase">${escape(card.title)}</p> <p class="text-2xl font-bold">${escape(card.value)}</p> <p class="text-xs text-muted-foreground">${escape(card.hint)}</p> </div>`;
-  })}</div> <div class="grid gap-6 md:grid-cols-2" data-svelte-h="svelte-cov9yk"><div><h3 class="text-lg font-medium mb-3">Base URL</h3> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono">http://localhost:8088</code></div> <p class="text-sm text-muted-foreground mt-2">Default port is 8088, configurable via <code>--port</code> flag.</p></div> <div><h3 class="text-lg font-medium mb-3">Authentication</h3> <div class="space-y-2"><div class="bg-muted rounded-md p-3"><code class="text-xs font-mono">OpenAI API · Authorization: Bearer</code></div> <div class="bg-muted rounded-md p-3"><code class="text-xs font-mono">Anthropic API · x-api-key + anthropic-version</code></div> <div class="bg-muted rounded-md p-3"><code class="text-xs font-mono">Management APIs · No authentication required by default</code></div></div></div></div></div></section>  <section class="mb-12" id="management"><div class="rounded-lg border bg-card p-6"><div class="flex items-center mb-6">${validate_component(Settings, "Settings").$$render($$result, { class: "h-6 w-6 mr-2 text-primary" }, {}, {})} <h2 class="text-2xl font-semibold" data-svelte-h="svelte-1y5nyj6">Management APIs</h2></div> <div class="space-y-6">${each(managementSections, (section) => {
+  })}</div> <div class="grid gap-6 md:grid-cols-2" data-svelte-h="svelte-cov9yk"><div><h3 class="text-lg font-medium mb-3">Base URL</h3> <div class="bg-muted rounded-md p-4"><code class="text-sm font-mono">http://localhost:8088</code></div> <p class="text-sm text-muted-foreground mt-2">Default port is 8088, configurable via <code>--port</code> flag.</p></div> <div><h3 class="text-lg font-medium mb-3">Authentication</h3> <div class="space-y-2"><div class="bg-muted rounded-md p-3"><code class="text-xs font-mono">OpenAI API · Authorization: Bearer</code></div> <div class="bg-muted rounded-md p-3"><code class="text-xs font-mono">Anthropic API · x-api-key + anthropic-version</code></div> <div class="bg-muted rounded-md p-3"><code class="text-xs font-mono">Management APIs · No authentication required by default</code></div></div></div></div> <div class="grid gap-4 md:grid-cols-2" data-svelte-h="svelte-smgfkn"><div class="rounded-lg border bg-muted/40 p-4 space-y-2"><h3 class="text-sm font-semibold">Security conventions</h3> <ul class="text-xs text-muted-foreground list-disc pl-4 space-y-1"><li><strong>Provider API keys</strong> are <strong>never</strong> read from environment variables
+								(e.g. <code>OPENAI_API_KEY</code>, <code>ANTHROPIC_API_KEY</code>). Always pass them explicitly
+								via CLI flags (such as <code>--api-key</code>) or through the configuration APIs.</li> <li>The <code>--auth-key</code> flag is used to protect llm-link&#39;s own HTTP/management APIs
+								(client-facing authentication) and is <strong>not</strong> forwarded to upstream LLM providers.</li></ul></div></div></div></section>  <section class="mb-12" id="management"><div class="rounded-lg border bg-card p-6"><div class="flex items-center mb-6">${validate_component(Settings$1, "Settings").$$render($$result, { class: "h-6 w-6 mr-2 text-primary" }, {}, {})} <h2 class="text-2xl font-semibold" data-svelte-h="svelte-1y5nyj6">Management APIs</h2></div> <div class="space-y-6">${each(managementSections, (section) => {
     return `<div class="rounded-lg border bg-muted/30 p-5"><div class="flex flex-col gap-2 mb-4"><div class="flex items-center justify-between"><h3 class="text-xl font-semibold">${escape(section.title)}</h3> <span class="text-xs text-muted-foreground">${escape(section.items.length)} endpoint groups</span></div> <p class="text-sm text-muted-foreground">${escape(section.description)}</p></div> <div class="space-y-4">${each(section.items, (item) => {
       return `<div class="rounded-lg border bg-card p-4"><div class="flex items-center justify-between mb-2"><h4 class="font-medium">${escape(item.title)}</h4> <span class="text-xs text-muted-foreground">${escape(item.endpoints.length)} endpoints</span></div> <p class="text-sm text-muted-foreground mb-3">${escape(item.description)}</p> <div class="grid gap-2 md:grid-cols-2 mb-3">${each(item.endpoints, (endpoint) => {
         return `<div class="bg-muted rounded p-3"><code class="text-xs font-mono">${escape(endpoint)}</code> </div>`;

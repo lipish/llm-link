@@ -13,7 +13,7 @@
     "src": "Accordion.css"
   },
   "CodeBlock.css": {
-    "file": "_app/immutable/assets/CodeBlock.3291e38a.css",
+    "file": "_app/immutable/assets/CodeBlock.bfbaa69e.css",
     "src": "CodeBlock.css"
   },
   "_Accordion.js": {
@@ -26,9 +26,16 @@
       "_Icon.js"
     ]
   },
+  "_Badge.js": {
+    "file": "chunks/Badge.js",
+    "imports": [
+      "_ssr.js",
+      "_Icon.js"
+    ]
+  },
   "_CodeBlock.js": {
     "css": [
-      "_app/immutable/assets/CodeBlock.3291e38a.css"
+      "_app/immutable/assets/CodeBlock.bfbaa69e.css"
     ],
     "file": "chunks/CodeBlock.js",
     "imports": [
@@ -37,6 +44,12 @@
   },
   "_Icon.js": {
     "file": "chunks/Icon.js",
+    "imports": [
+      "_ssr.js"
+    ]
+  },
+  "_button.js": {
+    "file": "chunks/button.js",
     "imports": [
       "_ssr.js"
     ]
@@ -62,15 +75,15 @@
       "_paths.js"
     ]
   },
-  "_paths.js": {
-    "file": "chunks/paths.js"
-  },
-  "_settings.js": {
-    "file": "chunks/settings.js",
+  "_layers.js": {
+    "file": "chunks/layers.js",
     "imports": [
       "_ssr.js",
       "_Icon.js"
     ]
+  },
+  "_paths.js": {
+    "file": "chunks/paths.js"
   },
   "_ssr.js": {
     "file": "chunks/ssr.js"
@@ -79,13 +92,6 @@
     "file": "chunks/stores.js",
     "imports": [
       "_ssr.js"
-    ]
-  },
-  "_zap.js": {
-    "file": "chunks/zap.js",
-    "imports": [
-      "_ssr.js",
-      "_Icon.js"
     ]
   },
   "node_modules/@sveltejs/kit/src/runtime/components/error.svelte": {
@@ -108,19 +114,19 @@
     "src": "node_modules/@sveltejs/kit/src/runtime/server/index.js"
   },
   "src/routes/+layout.css": {
-    "file": "_app/immutable/assets/_layout.8ac5c5f9.css",
+    "file": "_app/immutable/assets/_layout.42ec266b.css",
     "src": "src/routes/+layout.css"
   },
   "src/routes/+layout.svelte": {
     "css": [
-      "_app/immutable/assets/_layout.8ac5c5f9.css"
+      "_app/immutable/assets/_layout.42ec266b.css"
     ],
     "file": "entries/pages/_layout.svelte.js",
     "imports": [
       "_ssr.js",
       "_stores.js",
       "_paths.js",
-      "_Icon.js",
+      "_button.js",
       "_external-link.js"
     ],
     "isEntry": true,
@@ -135,12 +141,10 @@
     "file": "entries/pages/_page.svelte.js",
     "imports": [
       "_ssr.js",
-      "_Icon.js",
+      "_button.js",
       "_CodeBlock.js",
-      "_Accordion.js",
       "_paths.js",
-      "_github.js",
-      "_zap.js"
+      "_Icon.js"
     ],
     "isEntry": true,
     "src": "src/routes/+page.svelte"
@@ -149,14 +153,31 @@
     "file": "entries/pages/api/_page.svelte.js",
     "imports": [
       "_ssr.js",
-      "_Icon.js",
+      "_button.js",
       "_CodeBlock.js",
       "_paths.js",
-      "_settings.js",
+      "_Icon.js",
       "_github.js"
     ],
     "isEntry": true,
     "src": "src/routes/api/+page.svelte"
+  },
+  "src/routes/docs/+layout.css": {
+    "file": "_app/immutable/assets/_layout.a63b4f26.css",
+    "src": "src/routes/docs/+layout.css"
+  },
+  "src/routes/docs/+layout.svelte": {
+    "css": [
+      "_app/immutable/assets/_layout.a63b4f26.css"
+    ],
+    "file": "entries/pages/docs/_layout.svelte.js",
+    "imports": [
+      "_ssr.js",
+      "_stores.js",
+      "_paths.js"
+    ],
+    "isEntry": true,
+    "src": "src/routes/docs/+layout.svelte"
   },
   "src/routes/docs/+page.js": {
     "file": "entries/pages/docs/_page.js",
@@ -164,35 +185,95 @@
     "src": "src/routes/docs/+page.js"
   },
   "src/routes/docs/+page.svelte": {
+    "css": [
+      "_app/immutable/assets/CodeBlock.bfbaa69e.css"
+    ],
     "file": "entries/pages/docs/_page.svelte.js",
     "imports": [
       "_ssr.js",
-      "_Icon.js",
-      "_CodeBlock.js",
+      "_button.js",
       "_Accordion.js",
       "_paths.js",
-      "_settings.js",
-      "_zap.js",
-      "_github.js"
+      "_github.js",
+      "_layers.js",
+      "_Icon.js",
+      "_external-link.js"
     ],
     "isEntry": true,
     "src": "src/routes/docs/+page.svelte"
   },
-  "src/routes/providers/+page.js": {
-    "file": "entries/pages/providers/_page.js",
-    "isEntry": true,
-    "src": "src/routes/providers/+page.js"
-  },
-  "src/routes/providers/+page.svelte": {
-    "file": "entries/pages/providers/_page.svelte.js",
+  "src/routes/docs/apps/aider/+page.svelte": {
+    "file": "entries/pages/docs/apps/aider/_page.svelte.js",
     "imports": [
       "_ssr.js",
-      "_Icon.js",
-      "_Accordion.js",
-      "_external-link.js",
-      "_github.js"
+      "_paths.js",
+      "_CodeBlock.js",
+      "_Badge.js"
     ],
     "isEntry": true,
-    "src": "src/routes/providers/+page.svelte"
+    "src": "src/routes/docs/apps/aider/+page.svelte"
+  },
+  "src/routes/docs/apps/codex/+page.svelte": {
+    "file": "entries/pages/docs/apps/codex/_page.svelte.js",
+    "imports": [
+      "_ssr.js",
+      "_CodeBlock.js",
+      "_paths.js"
+    ],
+    "isEntry": true,
+    "src": "src/routes/docs/apps/codex/+page.svelte"
+  },
+  "src/routes/docs/apps/openhands/+page.svelte": {
+    "file": "entries/pages/docs/apps/openhands/_page.svelte.js",
+    "imports": [
+      "_ssr.js",
+      "_paths.js",
+      "_CodeBlock.js",
+      "_Badge.js"
+    ],
+    "isEntry": true,
+    "src": "src/routes/docs/apps/openhands/+page.svelte"
+  },
+  "src/routes/docs/apps/zed/+page.svelte": {
+    "file": "entries/pages/docs/apps/zed/_page.svelte.js",
+    "imports": [
+      "_ssr.js",
+      "_CodeBlock.js",
+      "_paths.js"
+    ],
+    "isEntry": true,
+    "src": "src/routes/docs/apps/zed/+page.svelte"
+  },
+  "src/routes/docs/architecture/+page.svelte": {
+    "file": "entries/pages/docs/architecture/_page.svelte.js",
+    "imports": [
+      "_ssr.js",
+      "_CodeBlock.js",
+      "_paths.js",
+      "_layers.js"
+    ],
+    "isEntry": true,
+    "src": "src/routes/docs/architecture/+page.svelte"
+  },
+  "src/routes/docs/protocols/+page.svelte": {
+    "file": "entries/pages/docs/protocols/_page.svelte.js",
+    "imports": [
+      "_ssr.js",
+      "_CodeBlock.js",
+      "_paths.js"
+    ],
+    "isEntry": true,
+    "src": "src/routes/docs/protocols/+page.svelte"
+  },
+  "src/routes/docs/quick-start/+page.svelte": {
+    "file": "entries/pages/docs/quick-start/_page.svelte.js",
+    "imports": [
+      "_ssr.js",
+      "_CodeBlock.js",
+      "_Accordion.js",
+      "_Icon.js"
+    ],
+    "isEntry": true,
+    "src": "src/routes/docs/quick-start/+page.svelte"
   }
 }
