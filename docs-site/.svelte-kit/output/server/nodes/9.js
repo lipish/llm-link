@@ -3,6 +3,6 @@
 export const index = 9;
 let component_cache;
 export const component = async () => component_cache ??= (await import('../entries/pages/docs/apps/zed/_page.svelte.js')).default;
-export const imports = ["_app/immutable/nodes/9.ba9137a4.js","_app/immutable/chunks/scheduler.f4350b81.js","_app/immutable/chunks/index.9ea6f852.js","_app/immutable/chunks/CodeBlock.818897d2.js","_app/immutable/chunks/paths.02c97ffe.js"];
+export const imports = ["_app/immutable/nodes/9.9de172ba.js","_app/immutable/chunks/scheduler.2b9f022a.js","_app/immutable/chunks/index.6ae5f468.js","_app/immutable/chunks/CodeBlock.fdbad5f1.js","_app/immutable/chunks/paths.e5c13239.js"];
 export const stylesheets = ["_app/immutable/assets/CodeBlock.bfbaa69e.css"];
 export const fonts = [];

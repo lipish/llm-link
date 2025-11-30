@@ -1,4 +1,4 @@
-import { c as create_ssr_component, v as validate_component, f as each, e as escape } from "../../chunks/ssr.js";
+import { c as create_ssr_component, v as validate_component, e as escape, f as each } from "../../chunks/ssr.js";
 import { B as Button } from "../../chunks/button.js";
 import { C as CodeBlock } from "../../chunks/CodeBlock.js";
 import { b as base } from "../../chunks/paths.js";
@@ -66,7 +66,7 @@ const Page = create_ssr_component(($$result, $$props, $$bindings, slots) => {
       status: "✅"
     }
   ];
-  return `<section class="space-y-8 pb-12 pt-8 md:pb-16 md:pt-12 lg:py-20"><div class="container flex max-w-5xl flex-col items-center gap-6 text-center"><p class="text-sm font-semibold uppercase tracking-[0.2em] text-muted-foreground" data-svelte-h="svelte-b8i0l0">LLM Link · Universal LLM Proxy</p> <h1 class="font-heading text-4xl font-bold sm:text-5xl md:text-6xl" data-svelte-h="svelte-2ws84i">Match Any AI Tool with Any LLM Provider</h1> <p class="max-w-3xl text-lg text-muted-foreground sm:text-xl mx-auto" data-svelte-h="svelte-rrp66o">LLM Link bridges your favorite AI applications with any LLM provider through a unified proxy. 
+  return `<section class="space-y-8 pb-12 pt-4 md:pb-16 md:pt-8 lg:py-16 bg-gray-50"><div class="container flex max-w-5xl flex-col items-center gap-4 text-center"><div class="w-full max-w-6xl my-4"><img src="${escape(basePath, true) + "/llmlink.jpg"}" alt="LLM Link Architecture" class="w-full h-auto"></div> <p class="max-w-4xl text-lg text-muted-foreground sm:text-xl mx-auto" data-svelte-h="svelte-15lty77">LLM Link bridges your favorite AI applications with any LLM provider through a unified proxy. 
 			Use open-source models with commercial tools, switch providers instantly, and reduce costs.</p> <div class="flex flex-wrap items-center justify-center gap-4">${validate_component(Button, "Button").$$render(
     $$result,
     {

@@ -47,7 +47,6 @@ declare module '$env/static/private' {
 	export const NO_PROXY: string;
 	export const http_proxy: string;
 	export const USER: string;
-	export const OPENAI_API_KEY: string;
 	export const COMMAND_MODE: string;
 	export const npm_config_globalconfig: string;
 	export const SSH_AUTH_SOCK: string;
@@ -68,11 +67,9 @@ declare module '$env/static/private' {
 	export const EDITOR: string;
 	export const npm_package_name: string;
 	export const LANG: string;
-	export const OPENAI_API_BASE: string;
 	export const npm_config_npm_version: string;
 	export const VSCODE_GIT_ASKPASS_EXTRA_ARGS: string;
 	export const XPC_FLAGS: string;
-	export const OPENAI_MODEL: string;
 	export const npm_config_node_gyp: string;
 	export const https_proxy: string;
 	export const npm_package_version: string;
@@ -147,7 +144,6 @@ declare module '$env/dynamic/private' {
 		NO_PROXY: string;
 		http_proxy: string;
 		USER: string;
-		OPENAI_API_KEY: string;
 		COMMAND_MODE: string;
 		npm_config_globalconfig: string;
 		SSH_AUTH_SOCK: string;
@@ -168,11 +164,9 @@ declare module '$env/dynamic/private' {
 		EDITOR: string;
 		npm_package_name: string;
 		LANG: string;
-		OPENAI_API_BASE: string;
 		npm_config_npm_version: string;
 		VSCODE_GIT_ASKPASS_EXTRA_ARGS: string;
 		XPC_FLAGS: string;
-		OPENAI_MODEL: string;
 		npm_config_node_gyp: string;
 		https_proxy: string;
 		npm_package_version: string;

@@ -114,12 +114,12 @@
     "src": "node_modules/@sveltejs/kit/src/runtime/server/index.js"
   },
   "src/routes/+layout.css": {
-    "file": "_app/immutable/assets/_layout.42ec266b.css",
+    "file": "_app/immutable/assets/_layout.418d085a.css",
     "src": "src/routes/+layout.css"
   },
   "src/routes/+layout.svelte": {
     "css": [
-      "_app/immutable/assets/_layout.42ec266b.css"
+      "_app/immutable/assets/_layout.418d085a.css"
     ],
     "file": "entries/pages/_layout.svelte.js",
     "imports": [
