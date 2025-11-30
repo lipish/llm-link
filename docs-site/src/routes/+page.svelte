@@ -17,7 +17,7 @@
 <section class="space-y-8 pb-12 pt-4 md:pb-16 md:pt-8 lg:py-16 bg-gray-50">
 	<div class="container flex max-w-5xl flex-col items-center gap-4 text-center">
 		<div class="w-full max-w-6xl my-4">
-			<img src="/llmlink.jpg" alt="LLM Link Architecture" class="w-full h-auto" />
+			<img src="{basePath}/llmlink.jpg" alt="LLM Link Architecture" class="w-full h-auto" />
 		</div>
 		<p class="max-w-4xl text-lg text-muted-foreground sm:text-xl mx-auto">
 			LLM Link bridges your favorite AI applications with any LLM provider through a unified proxy. 
