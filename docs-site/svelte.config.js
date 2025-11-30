@@ -21,6 +21,7 @@ const config = {
 		},
 		prerender: {
 			handleMissingId: 'warn',
+			handleHttpError: 'ignore',
 			entries: ['*']
 		}
 	}
