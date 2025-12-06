@@ -326,37 +326,84 @@ CREATE TABLE metrics (
 
 ### 7. Token 管理和配额控制
 
-#### Token 计数和限制
+#### Token 计数和限制（轻量级方案）
 ```rust
+// 方案一：SQLite + 内存缓存（单实例推荐）
 pub struct TokenManager {
-    redis_client: redis::Client,
-    quota_store: Arc<dyn QuotaStore>,
+    sqlite_store: Arc<SqlitePool>,
+    memory_cache: Arc<RwLock<HashMap<String, TokenUsage>>>,
+    cleanup_interval: Duration,
 }
 
 impl TokenManager {
     pub async fn check_quota(&self, api_key: &str, tokens_needed: u32) -> Result<bool> {
-        // 滑动窗口计数
-        let window_key = format!("quota:{}:{}", api_key, self.get_time_window());
-        let current_usage: u32 = self.redis_client
-            .get(&window_key)
-            .await
-            .unwrap_or(0);
-            
+        // 1. 检查内存缓存（快速路径）
+        if let Some(usage) = self.get_memory_usage(api_key).await? {
+            if usage.can_consume(tokens_needed) {
+                return Ok(true);
+            }
+        }
+        
+        // 2. 查询 SQLite（慢速路径）
+        let current_usage = self.get_persistent_usage(api_key).await?;
         let quota = self.get_user_quota(api_key).await?;
-        Ok(current_usage + tokens_needed <= quota)
+        
+        let can_consume = current_usage + tokens_needed <= quota;
+        if can_consume {
+            self.update_memory_cache(api_key, current_usage + tokens_needed).await?;
+        }
+        
+        Ok(can_consume)
     }
     
     pub async fn consume_tokens(&self, api_key: &str, tokens_used: u32) -> Result<()> {
-        let window_key = format!("quota:{}:{}", api_key, self.get_time_window());
-        self.redis_client
-            .incr(&window_key)
-            .await?;
-        self.redis_client
-            .expire(&window_key, 3600)  // 1小时窗口
-            .await?;
+        // 更新内存缓存
+        self.update_memory_usage(api_key, tokens_used).await?;
+        
+        // 异步持久化到 SQLite
+        tokio::spawn(async move {
+            if let Err(e) = self.persist_usage(api_key, tokens_used).await {
+                error!("Failed to persist token usage: {}", e);
+            }
+        });
+        
         Ok(())
     }
 }
+
+// 方案二：纯内存（超轻量级）
+pub struct InMemoryTokenManager {
+    usage_windows: Arc<RwLock<HashMap<String, SlidingWindow>>>,
+    quotas: Arc<RwLock<HashMap<String, QuotaPolicy>>>,
+}
+
+// 方案三：Redis（分布式部署可选）
+pub struct RedisTokenManager {
+    redis_client: redis::Client,
+    fallback: Arc<InMemoryTokenManager>,  // Redis 不可用时的降级方案
+}
+```
+
+#### 存储策略选择
+```yaml
+# 配置文件中的存储选择
+token_management:
+  # 单实例轻量级部署
+  storage: "sqlite_memory"  # sqlite_memory | memory_only | redis
+  
+  sqlite_memory:
+    database_path: "data/llm_link.db"
+    cache_ttl: 300  # 5分钟缓存
+    cleanup_interval: 3600  # 1小时清理一次
+    
+  memory_only:
+    cleanup_interval: 1800  # 30分钟清理一次
+    
+  redis:
+    url: "redis://localhost:6379"
+    key_prefix: "llm_link:"
+    fallback_to_memory: true
+```
 
 // 配额策略
 #[derive(Debug, Clone)]

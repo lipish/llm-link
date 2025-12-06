@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,209 +17,272 @@ import {
   Zap,
   Clock,
   TrendingUp,
-  MoreHorizontal,
   Play,
   Pencil,
   Trash2,
 } from "lucide-react"
 
-const stats = [
-  {
-    title: "总 Providers",
-    value: "6",
-    change: "+2",
-    changeType: "positive" as const,
-    icon: Server,
-  },
-  {
-    title: "在线 Providers",
-    value: "5",
-    change: "+1",
-    changeType: "positive" as const,
-    icon: Activity,
-  },
-  {
-    title: "今日请求",
-    value: "1,234",
-    change: "+24%",
-    changeType: "positive" as const,
-    icon: Zap,
-  },
-  {
-    title: "平均延迟",
-    value: "245ms",
-    change: "-12%",
-    changeType: "positive" as const,
-    icon: Clock,
-  },
-]
+interface ProviderStats {
+  total: number
+  enabled: number
+  disabled: number
+}
 
-const recentProviders = [
-  {
-    id: 1,
-    name: "OpenAI GPT-4",
-    type: "openai",
-    status: "online",
-    priority: 10,
-    requests: 523,
-    createdAt: "2024-01-15",
-  },
-  {
-    id: 2,
-    name: "Anthropic Claude",
-    type: "anthropic",
-    status: "online",
-    priority: 8,
-    requests: 312,
-    createdAt: "2024-01-14",
-  },
-  {
-    id: 3,
-    name: "智谱 AI",
-    type: "zhipu",
-    status: "offline",
-    priority: 6,
-    requests: 156,
-    createdAt: "2024-01-13",
-  },
-  {
-    id: 4,
-    name: "阿里云通义",
-    type: "aliyun",
-    status: "online",
-    priority: 5,
-    requests: 89,
-    createdAt: "2024-01-12",
-  },
-]
+interface Provider {
+  id: number
+  name: string
+  provider_type: string
+  config: string
+  enabled: boolean
+  priority: number
+  created_at: string
+  updated_at: string
+}
 
 export function DashboardPage() {
+  const [stats, setStats] = useState<ProviderStats | null>(null)
+  const [recentProviders, setRecentProviders] = useState<Provider[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetchDashboardData()
+  }, [])
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true)
+      
+      // Fetch stats and providers in parallel
+      const [statsResponse, providersResponse] = await Promise.all([
+        fetch('/api/providers/stats'),
+        fetch('/api/providers')
+      ])
+      
+      const statsResult = await statsResponse.json()
+      const providersResult = await providersResponse.json()
+      
+      if (statsResult.success) {
+        setStats(statsResult.data)
+      } else {
+        setError(statsResult.message || 'Failed to fetch stats')
+      }
+      
+      if (providersResult.success) {
+        // Get the 4 most recent providers
+        setRecentProviders((providersResult.data || []).slice(0, 4))
+      } else {
+        setError(providersResult.message || 'Failed to fetch providers')
+      }
+      
+    } catch (err) {
+      setError('Network error: Failed to fetch dashboard data')
+      console.error('Error fetching dashboard data:', err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const statsCards = [
+    {
+      title: "总 Providers",
+      value: stats?.total.toString() || "0",
+      change: stats?.total ? "+1" : "0",
+      changeType: "positive" as const,
+      icon: Server,
+    },
+    {
+      title: "在线 Providers",
+      value: stats?.enabled.toString() || "0",
+      change: stats?.enabled ? "+1" : "0",
+      changeType: "positive" as const,
+      icon: Activity,
+    },
+    {
+      title: "今日请求",
+      value: "--",
+      change: "--",
+      changeType: "positive" as const,
+      icon: Zap,
+    },
+    {
+      title: "平均延迟",
+      value: "--",
+      change: "--",
+      changeType: "positive" as const,
+      icon: Clock,
+    },
+  ]
   return (
     <div className="flex flex-col">
       <Header title="仪表板" description="LLM Link 多 Provider AI 网关概览" />
 
       <div className="flex-1 space-y-6 p-6">
+        {/* Loading and Error States */}
+        {loading && (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Card key={i}>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <div className="h-4 w-20 bg-muted animate-pulse rounded" />
+                  <div className="h-4 w-4 bg-muted animate-pulse rounded" />
+                </CardHeader>
+                <CardContent>
+                  <div className="h-8 w-12 bg-muted animate-pulse rounded mb-2" />
+                  <div className="h-3 w-16 bg-muted animate-pulse rounded" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+        
+        {error && (
+          <Card>
+            <CardContent className="p-6">
+              <div className="text-center text-red-500">{error}</div>
+              <div className="text-center mt-2">
+                <Button onClick={fetchDashboardData}>Retry</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat) => (
-            <Card key={stat.title}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {stat.title}
-                </CardTitle>
-                <stat.icon className="h-4 w-4 text-muted-foreground" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold">{stat.value}</div>
-                <p className="text-xs text-muted-foreground">
-                  <span
-                    className={
-                      stat.changeType === "positive"
-                        ? "text-green-600"
-                        : "text-red-600"
-                    }
-                  >
-                    {stat.change}
-                  </span>{" "}
-                  较上周
-                </p>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+        {!loading && !error && (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {statsCards.map((stat) => (
+              <Card key={stat.title}>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {stat.title}
+                  </CardTitle>
+                  <stat.icon className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{stat.value}</div>
+                  <p className="text-xs text-muted-foreground">
+                    <span
+                      className={
+                        stat.changeType === "positive"
+                          ? "text-green-600"
+                          : "text-red-600"
+                      }
+                    >
+                      {stat.change}
+                    </span>{" "}
+                    较上周
+                  </p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {/* Recent Activity */}
-        <div className="grid gap-4 md:grid-cols-7">
-          {/* Providers Table */}
-          <Card className="md:col-span-4">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle>最近的 Providers</CardTitle>
-                  <CardDescription>
-                    管理您的 AI 服务提供商
-                  </CardDescription>
+        {!loading && !error && (
+          <div className="grid gap-4 md:grid-cols-7">
+            {/* Providers Table */}
+            <Card className="md:col-span-4">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle>最近的 Providers</CardTitle>
+                    <CardDescription>
+                      管理您的 AI 服务提供商
+                    </CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm">
+                    查看全部
+                  </Button>
                 </div>
-                <Button variant="outline" size="sm">
-                  查看全部
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>名称</TableHead>
-                    <TableHead>类型</TableHead>
-                    <TableHead>状态</TableHead>
-                    <TableHead className="text-right">请求数</TableHead>
-                    <TableHead className="w-[50px]"></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recentProviders.map((provider) => (
-                    <TableRow key={provider.id}>
-                      <TableCell className="font-medium">
-                        {provider.name}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant="secondary">{provider.type}</Badge>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            provider.status === "online"
-                              ? "success"
-                              : "destructive"
-                          }
-                        >
-                          {provider.status === "online" ? "在线" : "离线"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        {provider.requests}
-                      </TableCell>
-                      <TableCell>
-                        <Button variant="ghost" size="icon">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </TableCell>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>名称</TableHead>
+                      <TableHead>类型</TableHead>
+                      <TableHead>状态</TableHead>
+                      <TableHead>优先级</TableHead>
+                      <TableHead>创建时间</TableHead>
+                      <TableHead className="w-[100px]">操作</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {recentProviders.map((provider) => (
+                      <TableRow key={provider.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-2">
+                            <div
+                              className={`h-2 w-2 rounded-full ${
+                                provider.enabled ? "bg-green-500" : "bg-red-500"
+                              }`}
+                            />
+                            <span className="font-medium">{provider.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{provider.provider_type}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={provider.enabled ? "success" : "destructive"}
+                          >
+                            {provider.enabled ? "启用" : "禁用"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{provider.priority}</TableCell>
+                        <TableCell>{new Date(provider.created_at).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="icon" title="测试">
+                              <Play className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" title="编辑">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" title="删除">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
 
-          {/* Quick Actions */}
-          <Card className="md:col-span-3">
-            <CardHeader>
-              <CardTitle>快速操作</CardTitle>
-              <CardDescription>常用功能快捷入口</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Button className="w-full justify-start" variant="outline">
-                <Play className="mr-2 h-4 w-4" />
-                测试所有 Providers
-              </Button>
-              <Button className="w-full justify-start" variant="outline">
-                <Pencil className="mr-2 h-4 w-4" />
-                批量编辑配置
-              </Button>
-              <Button className="w-full justify-start" variant="outline">
-                <TrendingUp className="mr-2 h-4 w-4" />
-                查看性能报告
-              </Button>
-              <Button
-                className="w-full justify-start"
-                variant="outline"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                清理无效 Providers
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+            {/* Quick Actions */}
+            <Card className="md:col-span-3">
+              <CardHeader>
+                <CardTitle>快速操作</CardTitle>
+                <CardDescription>常用功能快捷入口</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Button className="w-full justify-start" variant="outline">
+                  <Play className="mr-2 h-4 w-4" />
+                  测试所有 Providers
+                </Button>
+                <Button className="w-full justify-start" variant="outline">
+                  <Pencil className="mr-2 h-4 w-4" />
+                  批量编辑配置
+                </Button>
+                <Button className="w-full justify-start" variant="outline">
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  查看性能报告
+                </Button>
+                <Button
+                  className="w-full justify-start"
+                  variant="outline"
+                >
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  清理无效 Providers
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
 
         {/* System Status */}
         <Card>

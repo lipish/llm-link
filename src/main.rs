@@ -1,3 +1,4 @@
+// Core modules (always present)
 mod adapters;
 mod apps;
 mod settings;
@@ -7,6 +8,11 @@ mod api;
 mod models;
 mod cli;
 mod provider;
+
+// New modules for multi-mode support
+mod db;
+mod mode;
+mod admin;
 
 use anyhow::Result;
 use axum::{
@@ -25,10 +31,15 @@ use tower_http::{
     trace::TraceLayer,
     classify::ServerErrorsFailureClass,
 };
-use tracing::{info, error, Span};
+use tracing::{info, error, warn, Span};
 use std::time::Duration;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 use cli::{Args, ConfigLoader, list_applications, show_application_info};
+
+// Import new modules
+use mode::RunMode;
+use db::DatabasePool;
+use admin::create_admin_app;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -51,7 +62,23 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
-    // Load configuration
+    // Get run mode (default to multi for better UX)
+    let run_mode = args.mode.unwrap_or_default();
+    
+    info!("🚀 Starting LLM Link in {} mode", run_mode);
+    
+    // Route to appropriate mode handler
+    match run_mode {
+        RunMode::Single => run_single_mode(args).await,
+        RunMode::Multi => run_multi_mode(args).await,
+    }
+}
+
+/// Run in single provider mode (traditional)
+async fn run_single_mode(args: Args) -> Result<()> {
+    info!("📋 Single provider mode: Using YAML configuration");
+    
+    // Load configuration (required for single mode)
     let (config, config_source) = ConfigLoader::load_config(&args)?;
     let config = ConfigLoader::apply_cli_overrides(config, &args);
 
@@ -63,10 +90,182 @@ async fn main() -> Result<()> {
     let app_state = AppState::new(llm_service, config.clone());
 
     // Build and start server
-    let app = build_app_with_middleware(app_state, &config);
+    let app = build_single_mode_app(app_state, &config);
     start_server(app, &config).await?;
 
     Ok(())
+}
+
+/// Run in multi provider mode (new zero-config experience)
+async fn run_multi_mode(args: Args) -> Result<()> {
+    info!("🌐 Multi provider mode: Using database and web interface");
+    
+    // First test with in-memory database to isolate SQLite library issues
+    match test_in_memory_database().await {
+        Ok(_) => info!("✅ In-memory database test passed - SQLite library works"),
+        Err(e) => {
+            error!("❌ In-memory database test failed: {}", e);
+            error!("This indicates a SQLite library installation issue");
+            std::process::exit(1);
+        }
+    }
+    
+    // Try file-based database first, fallback to in-memory if it fails
+    let db_pool = match try_file_database().await {
+        Ok(pool) => {
+            info!("✅ File-based database initialized successfully");
+            pool
+        }
+        Err(e) => {
+            warn!("⚠️ File-based database failed: {}", e);
+            info!("🔄 Falling back to in-memory database for Phase 1");
+            info!("📝 Note: File persistence will be implemented in Phase 2");
+            
+            match DatabasePool::new_memory().await {
+                Ok(pool) => {
+                    info!("✅ In-memory database initialized successfully");
+                    pool
+                }
+                Err(e) => {
+                    error!("❌ In-memory database also failed: {}", e);
+                    std::process::exit(1);
+                }
+            }
+        }
+    };
+    
+    // Check if this is first run
+    let is_first_run = db_pool.is_first_run().await.unwrap_or(true); // Assume first run for in-memory
+    
+    // Start admin interface
+    let admin_app = create_admin_app(db_pool.clone());
+    let admin_port = args.admin_port.unwrap_or(8081);
+    let admin_bind_addr = format!("0.0.0.0:{}", admin_port);
+    
+    info!("🌐 Admin interface: http://localhost:{}", admin_port);
+    
+    if is_first_run {
+        info!("📝 First time setup? Visit: http://localhost:{}/setup", admin_port);
+    }
+    
+    // Start admin server in background
+    let admin_listener = tokio::net::TcpListener::bind(&admin_bind_addr).await?;
+    let admin_handle = tokio::spawn(async move {
+        if let Err(e) = axum::serve(admin_listener, admin_app).await {
+            error!("Admin server error: {}", e);
+        }
+    });
+    
+    // TODO: Start main API server (placeholder for now)
+    info!("📡 Main API server will be implemented in Phase 2");
+    info!("🎉 Multi-mode setup complete. Admin interface is running.");
+    
+    // Wait for admin server (in real implementation, this would also start the main API)
+    admin_handle.await?;
+    
+    Ok(())
+}
+
+/// Try to initialize file-based database
+async fn try_file_database() -> Result<DatabasePool> {
+    info!("Attempting file-based database initialization...");
+    
+    // Use absolute path for database to avoid path resolution issues
+    let db_path = std::env::current_dir()
+        .map_err(|e| anyhow::anyhow!("Failed to get current directory: {}", e))?
+        .join("data")
+        .join("llm_link.db");
+    
+    info!("Database path: {:?}", db_path);
+    
+    // Test with /tmp location to rule out project directory permissions
+    let tmp_path = std::path::Path::new("/tmp").join("llm_link_test.db");
+    info!("Testing with temp path: {:?}", tmp_path);
+    
+    match test_sqlite_connection(&tmp_path).await {
+        Ok(_) => info!("✅ Temp directory SQLite test passed"),
+        Err(e) => {
+            warn!("⚠️ Temp directory SQLite test failed: {}", e);
+            return Err(anyhow::anyhow!("File-based SQLite not working: {}", e));
+        }
+    }
+    
+    // Now try the actual data directory
+    let data_dir = db_path.parent().unwrap();
+    
+    // Create directory and verify it exists
+    std::fs::create_dir_all(data_dir)
+        .map_err(|e| anyhow::anyhow!("Failed to create data directory: {}", e))?;
+    
+    // Verify directory was created and is writable
+    match std::fs::metadata(data_dir) {
+        Ok(metadata) => {
+            info!("✅ Data directory exists, is_dir: {}, readonly: {}", 
+                  metadata.is_dir(), metadata.permissions().readonly());
+        }
+        Err(e) => {
+            warn!("⚠️ Cannot access data directory: {}", e);
+            return Err(anyhow::anyhow!("Directory access failed: {}", e));
+        }
+    }
+    
+    // Test file creation in the directory
+    let test_file = data_dir.join(".test_write");
+    match std::fs::write(&test_file, "test") {
+        Ok(_) => {
+            info!("✅ Data directory is writable");
+            let _ = std::fs::remove_file(&test_file);
+        }
+        Err(e) => {
+            warn!("⚠️ Data directory is not writable: {}", e);
+            return Err(anyhow::anyhow!("Directory not writable: {}", e));
+        }
+    }
+    
+    // Initialize database
+    DatabasePool::new(&db_path).await
+}
+
+/// Test in-memory database to verify SQLite library works
+async fn test_in_memory_database() -> Result<()> {
+    info!("Testing in-memory SQLite database...");
+    
+    let pool = sqlx::SqlitePool::connect(":memory:").await?;
+    
+    // Run a simple query
+    let result: i64 = sqlx::query_scalar("SELECT 1")
+        .fetch_one(&pool)
+        .await?;
+    
+    if result == 1 {
+        info!("✅ In-memory database test successful");
+        pool.close().await;
+        Ok(())
+    } else {
+        anyhow::bail!("Unexpected query result: {}", result);
+    }
+}
+
+/// Test basic SQLite connectivity
+async fn test_sqlite_connection(db_path: &std::path::Path) -> Result<()> {
+    info!("Testing SQLite connectivity...");
+    
+    // Create a simple test connection
+    let test_conn_str = format!("sqlite://{}", db_path.display());
+    let pool = sqlx::SqlitePool::connect(&test_conn_str).await?;
+    
+    // Run a simple query
+    let result: i64 = sqlx::query_scalar("SELECT 1")
+        .fetch_one(&pool)
+        .await?;
+    
+    if result == 1 {
+        info!("✅ Basic SQLite query successful");
+        pool.close().await;
+        Ok(())
+    } else {
+        anyhow::bail!("Unexpected query result: {}", result);
+    }
 }
 
 /// Initialize logging system
@@ -111,11 +310,11 @@ fn initialize_llm_service(config: &Settings) -> Result<service::Service> {
     Ok(llm_service)
 }
 
-/// Build application and add middleware
-fn build_app_with_middleware(app_state: AppState, config: &Settings) -> Router {
-    info!("🏗️ Building application routes...");
+/// Build single mode application and add middleware
+fn build_single_mode_app(app_state: AppState, config: &Settings) -> Router {
+    info!("🏗️ Building single-mode application routes...");
 
-    build_app(app_state, config)
+    build_single_mode_routes(app_state, config)
         .layer(
             TraceLayer::new_for_http()
                 .make_span_with(|request: &Request<_>| {
@@ -162,12 +361,12 @@ async fn start_server(app: Router, config: &Settings) -> Result<()> {
     Ok(())
 }
 
-fn build_app(state: AppState, config: &Settings) -> Router {
+fn build_single_mode_routes(state: AppState, config: &Settings) -> Router {
     // Create basic routes (no state required)
     let basic_routes = Router::new()
         .route("/", get(|| {
             info!("🏠 Root endpoint accessed");
-            async { "Ollama is running" }
+            async { "LLM Link is running in single mode" }
         }))
         .route("/health", get(|| {
             info!("🏥 Health check endpoint accessed");

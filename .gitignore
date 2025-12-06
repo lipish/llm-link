@@ -1,3 +1,6 @@
+# admin node modules
+/admin/node_modules
+
 # Local model overrides (per-user, may contain private endpoint IDs)
 model-overrides.yaml
 

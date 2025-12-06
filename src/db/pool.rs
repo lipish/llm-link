@@ -1,7 +1,7 @@
 use sqlx::SqlitePool;
 use std::path::Path;
 use tracing::info;
-use crate::db::{initialize_database, Provider, NewProvider, UpdateProvider};
+use crate::db::{initialize_database, Provider, NewProvider, UpdateProvider, ProviderStats};
 use anyhow::Result;
 
 #[derive(Clone)]
@@ -58,13 +58,13 @@ impl DatabasePool {
             r#"
             SELECT 
                 id,
-                name as "name!",
-                type as "provider_type!",
-                config as "config!",
-                enabled as "enabled!",
-                priority as "priority!",
-                created_at as "created_at!",
-                updated_at as "updated_at!"
+                name,
+                type,
+                config,
+                enabled,
+                priority,
+                created_at,
+                updated_at
             FROM providers 
             ORDER BY priority DESC, created_at ASC
             "#
@@ -81,13 +81,13 @@ impl DatabasePool {
             r#"
             SELECT 
                 id,
-                name as "name!",
-                type as "provider_type!",
-                config as "config!",
-                enabled as "enabled!",
-                priority as "priority!",
-                created_at as "created_at!",
-                updated_at as "updated_at!"
+                name,
+                type,
+                config,
+                enabled,
+                priority,
+                created_at,
+                updated_at
             FROM providers 
             WHERE id = ?
             "#
@@ -100,19 +100,19 @@ impl DatabasePool {
     }
 
     /// Get enabled providers
-    #[allow(dead_code)] // Will be used in Phase 2 for load balancing
+    #[allow(dead_code)] // Will be used in Phase 3 for multi-provider routing
     pub async fn get_enabled_providers(&self) -> Result<Vec<Provider>> {
         let providers = sqlx::query_as::<_, Provider>(
             r#"
             SELECT 
                 id,
-                name as "name!",
-                type as "provider_type!",
-                config as "config!",
-                enabled as "enabled!",
-                priority as "priority!",
-                created_at as "created_at!",
-                updated_at as "updated_at!"
+                name,
+                type,
+                config,
+                enabled,
+                priority,
+                created_at,
+                updated_at
             FROM providers 
             WHERE enabled = true
             ORDER BY priority DESC, created_at ASC
@@ -210,9 +210,38 @@ impl DatabasePool {
         Ok(value)
     }
 
-    /// Close the database pool
-    #[allow(dead_code)] // Will be used in Phase 2 for graceful shutdown
-    pub async fn close(self) {
+    /// Close database pool
+    #[allow(dead_code)] // Will be used in Phase 2 for proper cleanup
+    pub async fn close(&self) {
         self.pool.close().await;
+    }
+
+    /// Toggle provider enabled status
+    pub async fn toggle_provider(&self, id: i64) -> Result<bool> {
+        let result = sqlx::query(
+            "UPDATE providers SET enabled = NOT enabled, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+        )
+        .bind(id)
+        .execute(&self.pool)
+        .await?;
+
+        Ok(result.rows_affected() > 0)
+    }
+
+    /// Get provider statistics
+    pub async fn get_provider_stats(&self) -> Result<ProviderStats> {
+        let total: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM providers")
+            .fetch_one(&self.pool)
+            .await?;
+        
+        let enabled: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM providers WHERE enabled = true")
+            .fetch_one(&self.pool)
+            .await?;
+
+        Ok(ProviderStats {
+            total: total as usize,
+            enabled: enabled as usize,
+            disabled: (total - enabled) as usize,
+        })
     }
 }

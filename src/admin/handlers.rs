@@ -46,6 +46,13 @@ pub struct TestResponse {
     pub latency_ms: Option<u64>,
 }
 
+#[derive(Debug, Serialize)]
+pub struct ProviderStatsResponse {
+    pub success: bool,
+    pub data: Option<crate::db::ProviderStats>,
+    pub message: String,
+}
+
 /// List all providers
 pub async fn list_providers_api(
     State(db_pool): State<DatabasePool>,
@@ -211,6 +218,56 @@ pub async fn delete_provider_api(
         })),
         Err(e) => {
             tracing::error!("Failed to delete provider: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+/// Toggle provider enabled status
+pub async fn toggle_provider_api(
+    State(db_pool): State<DatabasePool>,
+    Path(id): Path<i64>,
+) -> Result<Json<SingleProviderResponse>, StatusCode> {
+    match db_pool.toggle_provider(id).await {
+        Ok(true) => {
+            // Return updated provider
+            match db_pool.get_provider(id).await {
+                Ok(Some(provider)) => Ok(Json(SingleProviderResponse {
+                    success: true,
+                    data: Some(provider),
+                    message: "Provider status toggled successfully".to_string(),
+                })),
+                Ok(None) => Err(StatusCode::INTERNAL_SERVER_ERROR),
+                Err(e) => {
+                    tracing::error!("Failed to retrieve updated provider: {}", e);
+                    Err(StatusCode::INTERNAL_SERVER_ERROR)
+                }
+            }
+        }
+        Ok(false) => Ok(Json(SingleProviderResponse {
+            success: false,
+            data: None,
+            message: "Provider not found".to_string(),
+        })),
+        Err(e) => {
+            tracing::error!("Failed to toggle provider: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+
+/// Get provider statistics
+pub async fn get_provider_stats_api(
+    State(db_pool): State<DatabasePool>,
+) -> Result<Json<ProviderStatsResponse>, StatusCode> {
+    match db_pool.get_provider_stats().await {
+        Ok(stats) => Ok(Json(ProviderStatsResponse {
+            success: true,
+            data: Some(stats),
+            message: "Provider statistics retrieved successfully".to_string(),
+        })),
+        Err(e) => {
+            tracing::error!("Failed to get provider stats: {}", e);
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }

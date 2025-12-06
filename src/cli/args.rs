@@ -1,8 +1,9 @@
 use clap::Parser;
+use crate::mode::RunMode;
 
 #[derive(Parser, Debug)]
 #[command(name = "llm-link")]
-#[command(about = "A configurable LLM proxy service", long_about = None)]
+#[command(about = "A configurable LLM proxy service with multi-provider support", long_about = None)]
 pub struct Args {
     /// Application mode (codex-cli, zed, aider, openhands)
     #[arg(short, long)]
@@ -19,6 +20,14 @@ pub struct Args {
     /// Show application information
     #[arg(long)]
     pub app_info: Option<String>,
+
+    /// Run mode: single (YAML config) or multi (database + web interface)
+    #[arg(long, value_enum)]
+    pub mode: Option<RunMode>,
+
+    /// Admin interface port (for multi-mode)
+    #[arg(long = "admin-port", default_value = "8081")]
+    pub admin_port: Option<u16>,
 
     /// API key for protecting LLM Link's own HTTP APIs (not forwarded to providers)
     #[arg(long = "auth-key")]

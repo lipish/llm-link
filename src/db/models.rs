@@ -6,6 +6,7 @@ use chrono::{DateTime, Utc};
 pub struct Provider {
     pub id: i64,
     pub name: String,
+    #[sqlx(rename = "type")]
     pub provider_type: String,
     pub config: String,  // JSON string
     pub enabled: bool,
@@ -38,6 +39,13 @@ pub struct Config {
     pub value: String,
     pub created_at: DateTime<Utc>,
     pub updated_at: DateTime<Utc>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ProviderStats {
+    pub total: usize,
+    pub enabled: usize,
+    pub disabled: usize,
 }
 
 impl Provider {
